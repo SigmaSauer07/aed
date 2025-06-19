@@ -1,0 +1,4 @@
+body{font-family:sans-serif;background:#001f3f;color:#39ff14;text-align:center;padding:2rem;}
+input{padding:.5rem;font-size:1rem;width:60%;max-width:400px;}
+button{padding:.5rem 1rem;margin-left:.5rem;background:#39ff14;color:#001f3f;font-weight:bold;cursor:pointer;border:none;}
+pre{white-space:pre-wrap;margin-top:1rem;font-size:1rem;}

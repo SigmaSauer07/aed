@@ -1,155 +1,165 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.23;
+pragma solidity ^0.8.30;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/finance/PaymentSplitter.sol";
+import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 contract EnhancedDomain is
     Initializable,
     ERC721URIStorageUpgradeable,
     AccessControlUpgradeable,
-    UUPSUpgradeable
+    PausableUpgradeable,
+    UUPSUpgradeable,
+    IERC2981
 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
-    bytes32 public constant GUARDIAN_ROLE = keccak256("GUARDIAN_ROLE");
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
-    struct DomainData {
+    struct Domain {
+        string name;
+        string tld;
         string profileURI;
         string imageURI;
-        EnumerableSet.AddressSet linkedWallets;
-        bytes32 recoveryRoot;
+        uint256 subdomainCount;
+        uint256 mintFee;
+        bool feeEnabled;
     }
 
-    mapping(uint256 => DomainData) private _domainInfo;
-    mapping(bytes32 => uint256) public subdomainParent; // hash(name) => parent tokenId
-    uint256 private _subdomainCounter;
+    mapping(uint256 => Domain) public domains;
+    mapping(string => bool) public registered;
+    uint256 public nextTokenId;
+    string public baseImageURI;
 
-    event DomainMinted(uint256 indexed tokenId, address owner);
-    event SubdomainMinted(uint256 indexed subId, string name, uint256 indexed parentId);
-    event ProfileUpdated(uint256 indexed tokenId);
-    event WalletLinked(uint256 indexed tokenId, address wallet);
-
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize(
-        string memory name_,
-        string memory symbol_,
-        address admin_
-    ) public initializer {
-        __ERC721_init(name_, symbol_);
+    function initialize() public initializer {
+        __ERC721_init("Alsania Enhanced Domain", "AED");
         __ERC721URIStorage_init();
         __AccessControl_init();
+        __Pausable_init();
         __UUPSUpgradeable_init();
 
-        _grantRole(DEFAULT_ADMIN_ROLE, admin_);
-        _grantRole(ADMIN_ROLE, admin_);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
+        _grantRole(UPGRADER_ROLE, msg.sender);
+
+        nextTokenId = 1;
     }
 
-    function _normalize(string memory input) internal pure returns (string memory) {
-        bytes memory bStr = bytes(input);
-        for (uint i = 0; i < bStr.length; i++) {
-            if ((uint8(bStr[i]) >= 65) && (uint8(bStr[i]) <= 90)) {
-                bStr[i] = bytes1(uint8(bStr[i]) + 32); // A-Z to a-z
-            }
+    function registerDomain(string memory name, string memory tld, uint256 mintFee, bool feeEnabled) external {
+        string memory full = string(abi.encodePacked(name, ".", tld));
+        require(!registered[full], "Domain already registered");
+
+        uint256 tokenId = nextTokenId++;
+        _safeMint(msg.sender, tokenId);
+
+        domains[tokenId] = Domain({
+            name: name,
+            tld: tld,
+            profileURI: "",
+            imageURI: "",
+            subdomainCount: 0,
+            mintFee: mintFee,
+            feeEnabled: feeEnabled
+        });
+
+        registered[full] = true;
+    }
+
+    function mintSubdomain(uint256 rootTokenId, string memory subName) external payable {
+        require(_exists(rootTokenId), "Root domain doesn't exist");
+
+        Domain storage root = domains[rootTokenId];
+        string memory full = string(abi.encodePacked(subName, ".", root.name, ".", root.tld));
+        require(!registered[full], "Subdomain taken");
+
+        if (root.feeEnabled && msg.sender != ownerOf(rootTokenId)) {
+            uint256 requiredFee = root.mintFee * (1 + root.subdomainCount);
+            require(msg.value >= requiredFee, "Insufficient mint fee");
         }
-        return string(bStr);
+
+        uint256 tokenId = nextTokenId++;
+        _safeMint(msg.sender, tokenId);
+
+        domains[tokenId] = Domain({
+            name: subName,
+            tld: string(abi.encodePacked(root.name, ".", root.tld)),
+            profileURI: "",
+            imageURI: "",
+            subdomainCount: 0,
+            mintFee: 0,
+            feeEnabled: false
+        });
+
+        root.subdomainCount++;
+        registered[full] = true;
     }
 
-    // ====== Minting Domains ======
-    function mintDomain(
-        address to,
-        uint256 tokenId,
-        string calldata profileURI,
-        string calldata domainImageURI
-    ) external onlyRole(ADMIN_ROLE) {
-        _mint(to, tokenId);
-        _domainInfo[tokenId].profileURI = profileURI;
-        _domainInfo[tokenId].imageURI = domainImageURI;
-        _domainInfo[tokenId].linkedWallets.add(to);
-
-        emit DomainMinted(tokenId, to);
+    function setBaseImageURI(string memory uri) external onlyRole(ADMIN_ROLE) {
+        baseImageURI = uri;
     }
 
-    // ====== Minting Subdomains as NFTs ======
-    function mintSubdomain(string calldata name, uint256 parentTokenId) external {
-        require(ownerOf(parentTokenId) == msg.sender, "Not owner of parent");
-
-        string memory lower = _normalize(name);
-        bytes32 hash = keccak256(abi.encodePacked(lower));
-        require(subdomainParent[hash] == 0, "Subdomain exists");
-
-        _subdomainCounter++;
-        uint256 subId = _subdomainCounter + 10_000_000; // offset to avoid overlap
-
-        _mint(msg.sender, subId);
-        subdomainParent[hash] = parentTokenId;
-
-        emit SubdomainMinted(subId, lower, parentTokenId);
+    function setProfileURI(uint256 tokenId, string memory uri) external {
+        require(_isApprovedOrOwner(msg.sender, tokenId), "Not authorized");
+        domains[tokenId].profileURI = uri;
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(AccessControlUpgradeable, ERC721URIStorageUpgradeable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
-
-    // ====== Profile Metadata ======
-    function updateProfile(uint256 tokenId, string calldata newProfileURI, string calldata newImageURI) external {
-        require(ownerOf(tokenId) == msg.sender, "Not token owner");
-
-        _domainInfo[tokenId].profileURI = newProfileURI;
-        _domainInfo[tokenId].imageURI = newImageURI;
-
-        emit ProfileUpdated(tokenId);
+    function setImageURI(uint256 tokenId, string memory uri) external {
+        require(_isApprovedOrOwner(msg.sender, tokenId), "Not authorized");
+        domains[tokenId].imageURI = uri;
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        _requireOwned(tokenId);
-        return _domainInfo[tokenId].profileURI;
+        require(_exists(tokenId), "Token doesn't exist");
+        Domain memory d = domains[tokenId];
+
+        string memory name = string(abi.encodePacked(d.name, ".", d.tld));
+        string memory image = bytes(d.imageURI).length > 0 ? d.imageURI : generateDefaultSVG(name);
+        string memory profile = d.profileURI;
+
+        return string(abi.encodePacked(
+            'data:application/json;utf8,{',
+                '"name":"', name, '",',
+                '"description":"Alsania Enhanced Domain",',
+                '"image":"', image, '",',
+                '"external_url":"', profile, '"',
+            '}'
+        ));
     }
 
-    function imageURI(uint256 tokenId) public view returns (string memory) {
-        _requireOwned(tokenId);
-        return _domainInfo[tokenId].imageURI;
+    function generateDefaultSVG(string memory name) internal pure returns (string memory) {
+        string memory svg = string(abi.encodePacked(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" style="background:#0a2472">',
+                '<style>.text{fill:#39ff14;font-size:24px;font-family:monospace;}</style>',
+                '<text x="50%" y="50%" class="text" dominant-baseline="middle" text-anchor="middle">',
+                    name,
+                '</text>',
+            '</svg>'
+        ));
+        return string(abi.encodePacked("data:image/svg+xml;utf8,", svg));
     }
 
-    // ====== Wallet Linking ======
-    function linkWallet(uint256 tokenId, address wallet) external {
-        require(ownerOf(tokenId) == msg.sender, "Not owner");
-        require(wallet != address(0), "Invalid wallet");
-        _domainInfo[tokenId].linkedWallets.add(wallet);
-        emit WalletLinked(tokenId, wallet);
+    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {}
+
+    function pause() public onlyRole(ADMIN_ROLE) {
+        _pause();
     }
 
-    function isWalletLinked(uint256 tokenId, address wallet) external view returns (bool) {
-        return _domainInfo[tokenId].linkedWallets.contains(wallet);
+    function unpause() public onlyRole(ADMIN_ROLE) {
+        _unpause();
     }
 
-    function getLinkedWallets(uint256 tokenId) external view returns (address[] memory) {
-        return _domainInfo[tokenId].linkedWallets.values();
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721URIStorageUpgradeable, AccessControlUpgradeable) returns (bool) {
+        return super.supportsInterface(interfaceId) || interfaceId == type(IERC2981).interfaceId;
     }
-
-    // ====== Recovery ======
-    function setRecoveryRoot(uint256 tokenId, bytes32 root) external onlyRole(GUARDIAN_ROLE) {
-        _domainInfo[tokenId].recoveryRoot = root;
-    }
-
-    function getRecoveryRoot(uint256 tokenId) external view returns (bytes32) {
-        return _domainInfo[tokenId].recoveryRoot;
-    }
-
-    // ====== Upgradeability ======
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 }
+

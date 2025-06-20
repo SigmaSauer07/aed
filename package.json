@@ -1,0 +1,18 @@
+{
+  "name": "aed-project",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "npx hardhat test",
+    "deploy:mumbai": "npx hardhat run scripts/deploy.js --network mumbai"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@openzeppelin/contracts-upgradeable": "^4.9.0",
+    "@openzeppelin/hardhat-upgrades": "^1.28.0",
+    "dotenv": "^16.0.0",
+    "ethers": "^5.8.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.3.0"
+  }
+}

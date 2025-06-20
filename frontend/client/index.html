@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Register Alsania Domain</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.8.0/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+<div class="container">
+<h1>Get your .alsania Domain</h1>
+<p id="wallet">Not connected</p>
+
+<div class="panel">
+<h2>Register Free Domain</h2>
+<input id="domainName" placeholder="name"/>
+<select id="tld">
+  <option value="alsania">alsania</option>
+  <option value="fx">fx</option>
+  <option value="07">07</option>
+</select>
+<button onclick="registerFree()">Register</button>
+</div>
+
+<div class="panel">
+<h2>Upgrade existing Web3 domain</h2>
+<input id="tokenId" placeholder="tokenId"/>
+<button onclick="upgrade()">Upgrade (one‑time fee)</button>
+</div>
+
+<div class="panel">
+<h2>Premium Subscription</h2>
+<button onclick="subscribe()">Pay Monthly</button>
+</div>
+
+</div>
+<script src="js/client.js"></script>
+</body>
+</html>

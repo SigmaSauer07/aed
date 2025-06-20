@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>AED Admin Dashboard</title>
+<link rel="stylesheet" href="css/style.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.8.0/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+<div class="container">
+<h1>AED Admin Dashboard</h1>
+<p id="wallet">Not connected</p>
+
+<div class="panel">
+<h2>Register Root Domain</h2>
+<input id="domainName" placeholder="name"/>
+<input id="domainTld" placeholder="tld (.fx, .alsania, etc)"/>
+<input id="duration" type="number" placeholder="Duration seconds"/>
+<input id="mintFee" type="number" placeholder="Mint Fee (wei)"/>
+<label><input type="checkbox" id="feeEnabled"/> Fee Enabled</label>
+<button onclick="registerDomain()">Register</button>
+</div>
+
+<div class="panel">
+<h2>Set Royalty Bps (0-1000)</h2>
+<input id="royalty" type="number" placeholder="bps"/>
+<button onclick="setRoyalty()">Set Royalty</button>
+</div>
+
+<div class="panel">
+<h2>Renew Domain</h2>
+<input id="renewId" type="number" placeholder="tokenId"/>
+<input id="renewDur" type="number" placeholder="additional seconds"/>
+<button onclick="renewDomain()">Renew</button>
+</div>
+
+<div class="panel">
+<h2>Reverse Lookup</h2>
+<input id="addrLookup" placeholder="Address"/>
+<button onclick="reverseLookup()">Lookup</button>
+<div id="reverseOut"></div>
+</div>
+
+</div>
+<script src="js/admin.js"></script>
+</body>
+</html>

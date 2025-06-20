@@ -1,0 +1,43 @@
+
+body{
+    margin:0;
+    font-family:'Permanent Marker',cursive;
+    background:url('../img/bg.png') no-repeat center center fixed;
+    background-size:cover;
+    color:#39FF14;
+}
+.container{
+    max-width:800px;
+    margin:40px auto;
+    background:rgba(0,0,0,.8);
+    padding:30px;
+    border-radius:12px;
+    box-shadow:0 0 20px #39FF14;
+}
+h1,h2{
+    text-align:center;
+}
+input,select,button{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border-radius:6px;
+    border:none;
+    font-size:16px;
+}
+input,select{
+    background:#000;
+    color:#39FF14;
+}
+button{
+    background:#39FF14;
+    color:#000;
+    cursor:pointer;
+    font-weight:bold;
+}
+.panel{
+    border:2px solid #39FF14;
+    padding:20px;
+    margin-top:25px;
+    border-radius:8px;
+}

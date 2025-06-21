@@ -4,7 +4,7 @@ body {
   background: url('img/bg.png') no-repeat center center fixed;
   background-size: cover;
   color: #39FF14;
-  font-size: 18px; /* Base font size for desktop */
+  font-size: 17px;
 }
 
 .container {
@@ -63,6 +63,7 @@ button {
 }
 
 .info-text a {
+  font-size: 15px;
   text-decoration: underline;
   color: #39FF14;
   display: inline-block;
@@ -70,12 +71,8 @@ button {
 }
 
 .small-text {
-  font-size: 16px;
+  font-size: 15px;
   opacity: 0.85;
-}
-
-.small-text a {
-  font-size: 16px;
 }
 
 .checkbox-group label {
@@ -131,11 +128,11 @@ button {
     padding: 8px;
   }
 
-  .info-text.small-text {
+  .small-text {
     font-size: 14px;
   }
 
-  .info-text.small-text a {
+  .info-text a {
     font-size: 14px;
   }
 

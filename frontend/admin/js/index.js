@@ -47,3 +47,48 @@ async function reverseLookup(){
 }
 
 function val(id){return document.getElementById(id).value;}
+
+async function checkAdminRole() {
+  const addr = val('roleAccount');
+  const has = await AED.hasRole(await AED.ADMIN_ROLE(), addr);
+  alert(addr + (has ? " HAS " : " DOES NOT HAVE ") + "ADMIN ROLE");
+}
+async function grantAdminRole() {
+  const addr = val('roleAccount');
+  const tx = await AED.grantRole(await AED.ADMIN_ROLE(), addr);
+  await tx.wait();
+  alert("Granted ADMIN role");
+}
+async function revokeAdminRole() {
+  const addr = val('roleAccount');
+  const tx = await AED.revokeRole(await AED.ADMIN_ROLE(), addr);
+  await tx.wait();
+  alert("Revoked ADMIN role");
+}
+async function addGuardian() {
+  const id = parseInt(val('guardianTokenId'));
+  const addr = val('guardianAddress');
+  const tx = await AED.addGuardian(id, addr);
+  await tx.wait();
+  alert("Guardian added");
+}
+async function removeGuardian() {
+  const id = parseInt(val('guardianTokenId'));
+  const addr = val('guardianAddress');
+  const tx = await AED.removeGuardian(id, addr);
+  await tx.wait();
+  alert("Guardian removed");
+}
+async function initiateRecovery() {
+  const id = parseInt(val('recoverId'));
+  const tx = await AED.initiateRecovery(id);
+  await tx.wait();
+  alert("Recovery started");
+}
+async function completeRecovery() {
+  const id = parseInt(val('recoverId'));
+  const newOwner = val('recoverNewOwner');
+  const tx = await AED.completeRecovery(id, newOwner, []);
+  await tx.wait();
+  alert("Recovery completed");
+}

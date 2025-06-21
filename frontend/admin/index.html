@@ -2,16 +2,30 @@
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Alsania Enhanced Domains</title>
+  <title>AED Admin Panel</title>
   <link rel="stylesheet" href="style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.8.0/dist/ethers.umd.min.js"></script>
+  <style>
+    .signature {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      max-height: 60px;
+      z-index: 999;
+    }
+    .hero-logo-wrapper {
+      position: relative;
+    }
+  </style>
 </head>
 <body>
 <div class="container">
 
-  <div class="hero-logo">
-    <img src="img/AEDlogo.png" alt="Alsania Enhanced Domains Logo">
+  <div class="hero-logo-wrapper">
+    <img src="img/sigma_signature.png" alt="Signature" class="signature">
+    <div class="hero-logo">
+      <img src="img/AEDlogo.png" alt="Alsania Enhanced Domains Logo">
+    </div>
   </div>
 
   <p id="wallet" class="wallet-button">
@@ -19,82 +33,104 @@
   </p>
 
   <div class="panel">
-    <h2>Register Free Domain</h2>
-    <input id="domainName" placeholder="name"/>
-    <select id="tld">
-      <option value="alsania">.alsania</option>
-      <option value="aed">.aed</option>
-      <option value="07">.07</option>
-      <option value="fx">.fx</option>
-      <option value="alsa">.alsa</option>
-    </select>
-    <p class="info-text small-text">
-      Free domains support subdomain minting only.<br/>
-      Max 20 subdomains. Linear fee applies.<br/>
-      <a href="#" onclick="alert('Fee doubles each subdomain after 2: 3rd=$0.10, 4th=$0.20, 5th=$0.40...')">Subdomain linear fee explained</a>
-    </p>
-    <button onclick="registerFree()">Register</button>
-    <button onclick="location.href='/profile'">Go to profile</button>
+    <h2>Register New Domain</h2>
+    <input id="domainName" placeholder="Domain name (no dot)"/>
+    <input id="domainTld" placeholder="TLD (e.g. alsania)"/>
+    <input id="mintFee" placeholder="Mint fee (in wei)" />
+    <input id="duration" placeholder="Years" />
+    <label><input type="checkbox" id="feeEnabled"/> Enable Mint Fee</label>
+    <button onclick="registerDomain()">Register Domain</button>
   </div>
 
   <div class="panel">
-    <h2>Extra Enhancements</h2>
-    <div class="checkbox-group">
-      <label><input type="checkbox" class="enhance"/> <span>IPFS Profile Link ($1/mo)</span></label>
-      <label><input type="checkbox" class="enhance"/> <span>Verified Owner Badge ($1/mo)</span></label>
-      <label><input type="checkbox" class="enhance"/> <span>Featured Domain Listing ($1/mo)</span></label>
-      <label><input type="checkbox" class="enhance"/> <span>Custom Metadata Fields ($1/mo)</span></label>
-    </div>
-    <p>Total Monthly Fee: <span id="enhanceTotal">$0</span></p>
+    <h2>Set Royalty (bps)</h2>
+    <input id="royalty" placeholder="Royalty in basis points (e.g. 500 for 5%)"/>
+    <button onclick="setRoyalty()">Set Royalty</button>
   </div>
 
   <div class="panel">
-    <h2>Upgrade Existing Web3 Domain</h2>
-    <input id="tokenId" placeholder="tokenId"/>
-    <p class="info-text small-text">
-      Max 20 subdomains. Linear fee applies.<br/>
-      <a href="#" onclick="alert('Fee doubles each subdomain after 2: 3rd=$0.10, 4th=$0.20, 5th=$0.40...')">Subdomain linear fee explained</a>
-    </p>
-    <div class="checkbox-group">
-      <label class="disabled-option"><input type="checkbox" disabled/> <span>One-time fee: $5 to mint subdomains</span></label>
-      <label><input type="checkbox" class="enhanceUpgrade"/> <span>IPFS Profile Link ($1/mo)</span></label>
-      <label><input type="checkbox" class="enhanceUpgrade"/> <span>Verified Owner Badge ($1/mo)</span></label>
-      <label><input type="checkbox" class="enhanceUpgrade"/> <span>Featured Domain Listing ($1/mo)</span></label>
-      <label><input type="checkbox" class="enhanceUpgrade"/> <span>Custom Metadata Fields ($1/mo)</span></label>
-    </div>
-    <p>Total Monthly Fee: <span id="upgradeTotal">$5 (first month), $0 after</span></p>
-    <button onclick="upgrade()">Upgrade</button>
-    <button onclick="location.href='/dashboard'">To dashboard</button>
+    <h2>Renew Domain</h2>
+    <input id="renewId" placeholder="Token ID"/>
+    <input id="renewDur" placeholder="Years"/>
+    <button onclick="renewDomain()">Renew</button>
   </div>
+
+  <div class="panel">
+    <h2>Reverse Lookup</h2>
+    <input id="addrLookup" placeholder="Address"/>
+    <button onclick="reverseLookup()">Lookup</button>
+    <p id="reverseOut" class="info-text"></p>
+  </div>
+
 </div>
 
-<script src="js/client.js"></script>
-<script>
-function connect() {
-  if (!window.ethereum) return alert("Install MetaMask");
-  ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {
+<!-- Load ethers -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.8.0/dist/ethers.umd.min.js"></script>
+
+<!-- Inline module script -->
+<script type="module">
+  import abi from './js/aedABI.json' assert { type: 'json' };
+
+  const address = '0xF331AA1dAe471c2e77C1ed98dB36bC2e25f36D9f';
+  let provider, signer, AED;
+
+  window.connect = async function () {
+    if (!window.ethereum) return alert('MetaMask required');
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send('eth_requestAccounts', []);
+    signer = provider.getSigner();
+    AED = new ethers.Contract(address, abi, signer);
+    const account = await signer.getAddress();
     document.getElementById("wallet").innerHTML =
-      'Wallet: ' + accounts[0] + ' <button onclick="disconnect()">Disconnect</button>';
+      'Wallet: ' + account + ' <button onclick="disconnect()">Disconnect</button>';
+  };
+
+  window.disconnect = function () {
+    document.getElementById("wallet").innerHTML =
+      '<button onclick="connect()" id="walletButton">Connect Wallet</button>';
+  };
+
+  window.registerDomain = async function () {
+    const name = val('domainName');
+    const tld = val('domainTld');
+    const dur = parseInt(val('duration') || '0');
+    const fee = parseInt(val('mintFee') || '0');
+    const feeEnabled = document.getElementById('feeEnabled').checked;
+    const price = await AED.renewalPrice();
+    const tx = await AED.registerDomain(name, tld, fee, feeEnabled, dur, { value: price.mul(dur) });
+    await tx.wait();
+    alert('Domain minted');
+  };
+
+  window.setRoyalty = async function () {
+    const bps = parseInt(val('royalty'));
+    const tx = await AED.setRoyaltyBps(bps);
+    await tx.wait();
+    alert('Royalty updated');
+  };
+
+  window.renewDomain = async function () {
+    const id = parseInt(val('renewId'));
+    const dur = parseInt(val('renewDur'));
+    const price = await AED.renewalPrice();
+    const tx = await AED.renewDomain(id, dur, { value: price.mul(dur) });
+    await tx.wait();
+    alert('Renewed');
+  };
+
+  window.reverseLookup = async function () {
+    const addr = val('addrLookup');
+    const domain = await AED.getReverseDomain(addr);
+    document.getElementById('reverseOut').innerText = domain;
+  };
+
+  function val(id) {
+    return document.getElementById(id).value;
+  }
+
+  window.addEventListener("load", () => {
+    console.log("Page loaded — ready to connect...");
   });
-}
-function disconnect() {
-  document.getElementById("wallet").innerHTML =
-    '<button onclick="connect()" id="walletButton">Connect Wallet</button>';
-}
-document.querySelectorAll(".enhance").forEach(box => box.addEventListener("change", calcEnhance));
-document.querySelectorAll(".enhanceUpgrade").forEach(box => box.addEventListener("change", calcEnhanceUpgrade));
-function calcEnhance() {
-  const boxes = document.querySelectorAll(".enhance");
-  let total = 0;
-  boxes.forEach(b => { if (b.checked) total += 1; });
-  document.getElementById("enhanceTotal").innerText = "$" + total;
-}
-function calcEnhanceUpgrade() {
-  const boxes = document.querySelectorAll(".enhanceUpgrade");
-  let monthly = 0;
-  boxes.forEach(b => { if (b.checked) monthly += 1; });
-  document.getElementById("upgradeTotal").innerText = `$${5 + monthly} (first month), $${monthly} after`;
-}
 </script>
 </body>
 </html>

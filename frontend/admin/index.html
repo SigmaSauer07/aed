@@ -1,49 +1,100 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8"/>
-<title>AED Admin Dashboard</title>
-<link rel="stylesheet" href="css/style.css"/>
-<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.8.0/dist/ethers.umd.min.js"></script>
+  <meta charset="utf-8"/>
+  <title>Alsania Enhanced Domains</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.8.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 <div class="container">
-<h1>AED Admin Dashboard</h1>
-<p id="wallet">Not connected</p>
 
-<div class="panel">
-<h2>Register Root Domain</h2>
-<input id="domainName" placeholder="name"/>
-<input id="domainTld" placeholder="tld (.fx, .alsania, etc)"/>
-<input id="duration" type="number" placeholder="Duration seconds"/>
-<input id="mintFee" type="number" placeholder="Mint Fee (wei)"/>
-<label><input type="checkbox" id="feeEnabled"/> Fee Enabled</label>
-<button onclick="registerDomain()">Register</button>
+  <div class="hero-logo">
+    <img src="img/AEDlogo.png" alt="Alsania Enhanced Domains Logo">
+  </div>
+
+  <p id="wallet" class="wallet-button">
+    <button onclick="connect()" id="walletButton">Connect Wallet</button>
+  </p>
+
+  <div class="panel">
+    <h2>Register Free Domain</h2>
+    <input id="domainName" placeholder="name"/>
+    <select id="tld">
+      <option value="alsania">.alsania</option>
+      <option value="aed">.aed</option>
+      <option value="07">.07</option>
+      <option value="fx">.fx</option>
+      <option value="alsa">.alsa</option>
+    </select>
+    <p class="info-text small-text">
+      Free domains support subdomain minting only.<br/>
+      Max 20 subdomains. Linear fee applies.<br/>
+      <a href="#" onclick="alert('Fee doubles each subdomain after 2: 3rd=$0.10, 4th=$0.20, 5th=$0.40...')">Subdomain linear fee explained</a>
+    </p>
+    <button onclick="registerFree()">Register</button>
+    <button onclick="location.href='/profile'">Go to profile</button>
+  </div>
+
+  <div class="panel">
+    <h2>Extra Enhancements</h2>
+    <div class="checkbox-group">
+      <label><input type="checkbox" class="enhance"/> <span>IPFS Profile Link ($1/mo)</span></label>
+      <label><input type="checkbox" class="enhance"/> <span>Verified Owner Badge ($1/mo)</span></label>
+      <label><input type="checkbox" class="enhance"/> <span>Featured Domain Listing ($1/mo)</span></label>
+      <label><input type="checkbox" class="enhance"/> <span>Custom Metadata Fields ($1/mo)</span></label>
+    </div>
+    <p>Total Monthly Fee: <span id="enhanceTotal">$0</span></p>
+  </div>
+
+  <div class="panel">
+    <h2>Upgrade Existing Web3 Domain</h2>
+    <input id="tokenId" placeholder="tokenId"/>
+    <p class="info-text small-text">
+      Max 20 subdomains. Linear fee applies.<br/>
+      <a href="#" onclick="alert('Fee doubles each subdomain after 2: 3rd=$0.10, 4th=$0.20, 5th=$0.40...')">Subdomain linear fee explained</a>
+    </p>
+    <div class="checkbox-group">
+      <label class="disabled-option"><input type="checkbox" disabled/> <span>One-time fee: $5 to mint subdomains</span></label>
+      <label><input type="checkbox" class="enhanceUpgrade"/> <span>IPFS Profile Link ($1/mo)</span></label>
+      <label><input type="checkbox" class="enhanceUpgrade"/> <span>Verified Owner Badge ($1/mo)</span></label>
+      <label><input type="checkbox" class="enhanceUpgrade"/> <span>Featured Domain Listing ($1/mo)</span></label>
+      <label><input type="checkbox" class="enhanceUpgrade"/> <span>Custom Metadata Fields ($1/mo)</span></label>
+    </div>
+    <p>Total Monthly Fee: <span id="upgradeTotal">$5 (first month), $0 after</span></p>
+    <button onclick="upgrade()">Upgrade</button>
+    <button onclick="location.href='/dashboard'">To dashboard</button>
+  </div>
 </div>
 
-<div class="panel">
-<h2>Set Royalty Bps (0-1000)</h2>
-<input id="royalty" type="number" placeholder="bps"/>
-<button onclick="setRoyalty()">Set Royalty</button>
-</div>
-
-<div class="panel">
-<h2>Renew Domain</h2>
-<input id="renewId" type="number" placeholder="tokenId"/>
-<input id="renewDur" type="number" placeholder="additional seconds"/>
-<button onclick="renewDomain()">Renew</button>
-</div>
-
-<div class="panel">
-<h2>Reverse Lookup</h2>
-<input id="addrLookup" placeholder="Address"/>
-<button onclick="reverseLookup()">Lookup</button>
-<div id="reverseOut"></div>
-</div>
-
-</div>
-<script src="js/admin.js"></script>
+<script src="js/client.js"></script>
+<script>
+function connect() {
+  if (!window.ethereum) return alert("Install MetaMask");
+  ethereum.request({ method: 'eth_requestAccounts' }).then(accounts => {
+    document.getElementById("wallet").innerHTML =
+      'Wallet: ' + accounts[0] + ' <button onclick="disconnect()">Disconnect</button>';
+  });
+}
+function disconnect() {
+  document.getElementById("wallet").innerHTML =
+    '<button onclick="connect()" id="walletButton">Connect Wallet</button>';
+}
+document.querySelectorAll(".enhance").forEach(box => box.addEventListener("change", calcEnhance));
+document.querySelectorAll(".enhanceUpgrade").forEach(box => box.addEventListener("change", calcEnhanceUpgrade));
+function calcEnhance() {
+  const boxes = document.querySelectorAll(".enhance");
+  let total = 0;
+  boxes.forEach(b => { if (b.checked) total += 1; });
+  document.getElementById("enhanceTotal").innerText = "$" + total;
+}
+function calcEnhanceUpgrade() {
+  const boxes = document.querySelectorAll(".enhanceUpgrade");
+  let monthly = 0;
+  boxes.forEach(b => { if (b.checked) monthly += 1; });
+  document.getElementById("upgradeTotal").innerText = `$${5 + monthly} (first month), $${monthly} after`;
+}
+</script>
 </body>
 </html>

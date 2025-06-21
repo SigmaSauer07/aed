@@ -1,0 +1,135 @@
+body {
+  margin: 0;
+  font-family: 'Permanent Marker', cursive;
+  background: url('img/bg.png') no-repeat center center fixed;
+  background-size: cover;
+  color: #39FF14;
+}
+
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  background: rgba(0, 0, 0, .8);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px #39FF14;
+}
+
+h1, h2 {
+  text-align: center;
+}
+
+input, select, button {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 6px;
+  border: none;
+  font-size: 16px;
+}
+
+input, select {
+  background: #000;
+  color: #39FF14;
+}
+
+button {
+  background: #39FF14;
+  color: #000;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.panel {
+  border: 2px solid #39FF14;
+  padding: 20px;
+  margin-top: 25px;
+  border-radius: 8px;
+}
+
+.wallet-button {
+  text-align: center;
+}
+
+.subtitle {
+  text-align: center;
+  font-style: italic;
+}
+
+.info-text {
+  line-height: 1.5em;
+  margin-bottom: 10px;
+}
+
+.info-text a {
+  font-size: 1rem;
+  text-decoration: underline;
+  color: #39FF14;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.small-text {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.checkbox-group label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+  font-size: 1rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.disabled-option {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.disabled-option input {
+  pointer-events: none;
+}
+
+/* Centered logo block */
+.hero-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 20px;
+  text-align: center;
+}
+
+.hero-logo img {
+  max-width: 100%;
+  height: auto;
+  max-height: 140px;
+}
+
+/* Responsive improvements */
+@media (max-width: 600px) {
+  body {
+    font-size: 14px;
+  }
+  h1 {
+    font-size: 22px;
+  }
+  h2 {
+    font-size: 18px;
+  }
+  button {
+    font-size: 14px;
+    padding: 8px;
+  }
+  input, select {
+    font-size: 14px;
+  }
+  .container {
+    margin: 20px 10px;
+    padding: 20px;
+  }
+}

@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&family=Orbitron:wght@600&family=Rajdhani:wght@500&display=swap');
+
 body {
   margin: 0;
-  font-family: 'Permanent Marker', cursive;
+  font-family: 'Open Sans', sans-serif;
   background: url('img/bg.png') no-repeat center center fixed;
   background-size: cover;
   color: #39FF14;

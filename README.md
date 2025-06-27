@@ -1,23 +1,20 @@
+# Aed
 
-# Alsania Enhanced Domains (AED)
+**Project:** `aed` — part of the Alsania Master Ecosystem.
 
-Production‑ready, modular, upgradeable smart‑contract system for on‑chain domains & subdomains.
+**Detected Stack:** Solidity Smart Contracts, HTML/JS Frontend, Testing Suite (Solidity or JS), Documentation Files
 
-## Modules
-* `AEDCore` – storage, roles, counters
-* `AEDMinting` – domain & sub‑domain mint / renewal
-* `AEDBridge` – Merkle proof cross‑chain bridge receipts
-* `AEDRecovery` – guardian‑based social recovery
-* `AEDMetadata` – on‑chain SVG + adjustable royalties
+## 🧠 Description
+_This project is a key module of Alsania. Description goes here._
 
-## Quick Start
+## 🚀 Usage
+- Compile contracts with Hardhat or Remix
+- Serve `frontend/` locally or with IPFS for minting and interaction
+- Run tests via `npx hardhat test` or appropriate test runner
 
-```bash
-npm install
-cp .env.example .env   # add PRIVATE_KEY
-npx hardhat test
-npx hardhat run scripts/deploy.js --network mumbai
-```
+## 🔐 .env Setup
+Use `.env.example` as a reference and create your local `.env` file with real values.
 
-## License
-MIT
+## 📄 License
+MIT (or project-specific)
+

@@ -1,29 +1,28 @@
 const { ethers, upgrades } = require("hardhat");
-require("dotenv").config();
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
-  console.log("Deploying with:", deployer.address);
+    const AED = await ethers.getContractFactory("AED");
 
-  const payees = [deployer.address];
-  const shares = [100];  
-  const AED = await ethers.getContractFactory("AED");
-  const proxy = await upgrades.deployProxy(
-    AED,
-    [payees, shares],
-    {
-      initializer: "initialize",
-      unsafeAllow: ["delegatecall"]
-    }
-  );
-  await proxy.deployed();
-  const implAddr = await upgrades.erc1967.getImplementationAddress(proxy.address);
+    const feeCollector = "0x78dB155AA7f39A8D13a0e1E8EEB41d71e2ce3F43";
+    const payees = ["0x78dB155AA7f39A8D13a0e1E8EEB41d71e2ce3F43"];
+    const shares = [100];
 
-  console.log("AED proxy deployed to:", proxy.address);
-  console.log("AED implementation at:", implAddr);
+    console.log("Deploying AED proxy to Amoy via Alchemy...");
+
+    const aed = await upgrades.deployProxy(
+        AED,
+        [payees, shares],
+        {
+            initializer: "initialize",
+            kind: "uups"
+        }
+    );
+
+    await aed.deployed();
+    console.log("AED deployed to proxy address:", aed.address);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exitCode = 1;
+main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
 });

@@ -31,10 +31,48 @@ contract AED is
         nextTokenId  = 1;
         renewalPrice = 0.01 ether;
         royaltyBps   = 500;
+        feeCollector = 0x78dB155AA7f39A8D13a0e1E8EEB41d71e2ce3F43;
     }
 
     function _authorizeUpgrade(address newImpl) internal override onlyRole(UPGRADER_ROLE) {}
-    /* -------------------------------------------------------------------------- */
+    
+
+    // Feature constants
+    uint8 public constant FEATURE_PROFILE    = 0x01;
+    uint8 public constant FEATURE_REVERSE    = 0x02;
+    uint8 public constant FEATURE_SUBDOMAINS = 0x04;
+
+    // Feature flag storage
+    mapping(uint256 => uint8) public domainFeatures;
+
+    // Modifier to check feature activation
+    modifier hasFeature(uint256 tokenId, uint8 feature) {
+        require((domainFeatures[tokenId] & feature) != 0, "Feature not enabled");
+        _;
+    }
+
+    // Function to purchase/enable enhancements
+    function purchaseFeature(uint256 tokenId, uint8 feature) external payable {
+        require(ownerOf(tokenId) == msg.sender, "Not domain owner");
+        require((domainFeatures[tokenId] & feature) == 0, "Already enabled");
+
+        if (feature == FEATURE_SUBDOMAINS) {
+            require(msg.value >= 2 ether / 1000, "Insufficient payment");
+        payable(feeCollector).transfer(msg.value); // $2 in MATIC
+        }
+
+        domainFeatures[tokenId] |= feature;
+    }
+
+
+    address public feeCollector;
+
+    function setFeeCollector(address newFeeCollector) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        feeCollector = newFeeCollector;
+    }
+
+
+/* -------------------------------------------------------------------------- */
     /*                           Interface & Metadata                             */
     /* -------------------------------------------------------------------------- */
 

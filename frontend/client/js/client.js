@@ -3,7 +3,7 @@ let provider, signer, AED;
 
 async function connectWallet() {
   try {
-    provider = new ethers.providers.Web3Provider(window.ethereum);
+    provider = new ethers.providers.Web3Provider(window.ethereum, "any");
     await provider.send("eth_requestAccounts", []);
     signer = provider.getSigner();
     const abi = await fetch('js/aedABI.json').then(r => r.json());
@@ -13,35 +13,48 @@ async function connectWallet() {
     console.log("✅ Connected:", address);
   } catch (e) {
     console.error("Connection failed:", e);
+    alert("❌ Failed to connect wallet.");
   }
 }
 
 function updateFee() {
-  const fee = document.getElementById("enhSubdomain").checked ? 2 : 0;
+  const enabled = document.getElementById("enhSubdomain").checked;
+  const fee = enabled ? 2 : 0;
   document.getElementById("feePreview").innerText = "$" + fee.toFixed(2);
 }
 
 async function registerDomain() {
-  if (!AED) return alert("Connect wallet first.");
-  const name = document.getElementById("domainName").value;
+  if (!AED) return alert("❌ Connect your wallet first.");
+
+  const name = document.getElementById("domainName").value.trim();
   const tld = document.getElementById("tld").value;
-  const { ethers } = window;
+  const subdomainEnh = document.getElementById("enhSubdomain").checked;
 
-  const duration = 3153600000;
-  const price = await AED.renewalPrice();
-  const tx = await AED.registerDomain(name, tld, 0, false, duration, {
-    value: price.mul(duration)
-  });
-  const receipt = await tx.wait();
+  if (!name || !tld) return alert("❌ Name and TLD are required");
 
-  const event = receipt.events.find(e => e.event === "DomainRegistered");
-  const tokenId = event?.args?.tokenId;
+  const duration = ethers.BigNumber.from("3153600000"); // 100 years
+  const fee = subdomainEnh ? ethers.utils.parseEther("2") : ethers.constants.Zero;
 
-  if (document.getElementById("enhSubdomain").checked && tokenId) {
-    const fee = ethers.utils.parseEther("2.0").div(1000);
-    const enhanceTx = await AED.purchaseFeature(tokenId, 0x04, { value: fee });
-    await enhanceTx.wait();
+  console.log("📦 ARGS:", { name, tld, fee: fee.toString(), subdomainEnh, duration: duration.toString() });
+
+  try {
+    await AED.callStatic.registerDomain(name, tld, fee, subdomainEnh, duration, { value: fee });
+  } catch (err) {
+    console.error("⛔ callStatic revert:", err);
+    return alert("❌ Revert: " + (err.reason || err.message));
   }
 
-  alert("✅ Domain registered!");
+  try {
+    const est = await AED.estimateGas.registerDomain(name, tld, fee, subdomainEnh, duration, { value: fee });
+    const tx = await AED.registerDomain(name, tld, fee, subdomainEnh, duration, {
+      value: fee,
+      gasLimit: est.mul(12).div(10) // +20%
+    });
+    const receipt = await tx.wait();
+    alert("✅ Registered! Tx Hash: " + receipt.transactionHash);
+    console.log("🔗 Tx Receipt:", receipt);
+  } catch (err) {
+    console.error("❌ Tx failed:", err);
+    alert("❌ Tx failed: " + (err.reason || err.message));
+  }
 }

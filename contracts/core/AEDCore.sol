@@ -1,89 +1,129 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/finance/PaymentSplitterUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "./AEDConstants.sol";
+import "./CoreState.sol";
 
+    event DomainRegistered(uint256 indexed id, string full);
+    event SubdomainCreated(uint256 indexed root, uint256 indexed sub, string full);
+    event DomainUpdated(uint256 indexed id, string profileURI, string imageURI);
+    event AEDCoreInitialized(address indexed initializer, string name, string symbol);
+
+/**
+ * @title AEDCore
+ * @dev Core logic for AED, including domain storage and access control.
+ */
 abstract contract AEDCore is
-    Initializable,
-    ERC721URIStorageUpgradeable,
-    PaymentSplitterUpgradeable,
+    ERC721Upgradeable,
     AccessControlUpgradeable,
-    PausableUpgradeable
-{
-    using EnumerableSet for EnumerableSet.AddressSet;
-    using Strings for uint256;
+    PausableUpgradeable,
+    UUPSUpgradeable,
+    ReentrancyGuardUpgradeable,
+    AEDConstants,
+    CoreState {
 
-    /* Roles */
-    bytes32 public constant ADMIN_ROLE     = keccak256("ADMIN_ROLE");
-    bytes32 public constant UPGRADER_ROLE  = keccak256("UPGRADER_ROLE");
-    bytes32 public constant BRIDGE_MANAGER = keccak256("BRIDGE_MANAGER");
-
-    /* Brand */
-    string internal constant NEON_GREEN = "#39FF14";
-
-    /* IPFS backgrounds */
-    string internal constant DOMAIN_BG = "https://gateway.pinata.cloud/ipfs/bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/domain_background.png";
-    string internal constant SUB_BG    = "https://gateway.pinata.cloud/ipfs/bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/subdomain_background.png";
-
-    /* Storage */
-    struct Domain {
-        string  name;
-        string  tld;
-        string  profileURI;
-        string  imageURI;
-        uint256 subdomainCount;
-        uint256 mintFee;
-        bool    feeEnabled;
-        uint64  expiresAt;
-        bool    isSubdomain;
-    }
-    struct BridgeReceipt {
-        uint256 destChainId;
-        bytes32 merkleRoot;
-        uint256 timestamp;
-    }
-
-    mapping(uint256 => Domain) internal domains;
-    mapping(string  => bool)  internal registered;
-    mapping(uint256 => BridgeReceipt) internal bridgeReceipts;
-    mapping(uint256 => bool)  internal isBridged;
-    mapping(uint256 => EnumerableSet.AddressSet) internal guardians;
-    mapping(uint256 => uint256) internal recoveryTimestamps;
-
-    uint256 public nextTokenId;
-    uint256 public renewalPrice;
-    uint256 public royaltyBps;
-
-    /* Events */
-    event DomainRegistered(uint256 indexed id,string full);
-    event SubdomainCreated(uint256 indexed root,uint256 indexed sub,string full);
-    event Renewed(uint256 indexed id,uint256 duration);
-    event BridgeInitiated(uint256 indexed id,uint256 dest);
-    event RecoveryStarted(uint256 indexed id);
-
-    function __AEDCore_init(string memory name_,string memory symbol_,address[] memory payees_,uint256[] memory shares_) internal onlyInitializing {
-        __ERC721_init(name_,symbol_);
-        __ERC721URIStorage_init();
+    /**
+     * @dev Initializes the AEDCore contract.
+     */
+    function __AEDCore_init(
+        string memory name_,
+        string memory symbol_,
+        address admin
+    ) external initializer {
+        __ERC721_init(name_, symbol_);
         __AccessControl_init();
         __Pausable_init();
-        __PaymentSplitter_init(payees_,shares_);
+        __UUPSUpgradeable_init();
 
-        _grantRole(DEFAULT_ADMIN_ROLE,msg.sender);
-        _grantRole(ADMIN_ROLE,msg.sender);
-        _grantRole(UPGRADER_ROLE,msg.sender);
-        _grantRole(BRIDGE_MANAGER,msg.sender);
+        require(bytes(name_).length > 0, "Name cannot be empty");
+        require(bytes(symbol_).length > 0, "Symbol cannot be empty");
 
-        nextTokenId=1;
-        renewalPrice=0.01 ether;
-        royaltyBps=500;
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        _grantRole(ADMIN_ROLE, admin);
+        _grantRole(UPGRADER_ROLE, admin);
+        _grantRole(BRIDGE_MANAGER, admin);
+        _grantRole(FEE_MANAGER_ROLE, admin);
+        _grantRole(TLD_MANAGER_ROLE, admin);
+
+        nextTokenId = 1;
+        royaltyBps = 500; // 5% default royalty
+        feeCollector = admin;
+
+        emit AEDCoreInitialized(msg.sender, name_, symbol_);
     }
-    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable, ERC721URIStorageUpgradeable) returns (bool) {
+
+    function _authorizeUpgrade(address) internal override(UUPSUpgradeable) {}
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721Upgradeable, AccessControlUpgradeable)
+        returns (bool)
+    {
         return super.supportsInterface(interfaceId);
     }
+
+    function _setApprovalForAll(address owner, address operator, bool approved)
+        internal override {
+        super._setApprovalForAll(owner, operator, approved);
+    }
+
+    function _pause() internal whenNotPaused override(PausableUpgradeable) {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Caller does not have the required role");
+        super._pause();
+    }
+
+    function _unpause() internal whenPaused override(PausableUpgradeable) {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Caller does not have the required role");
+        super._unpause();
+    }
+
+    // Getter functions
+    function getDomain(uint256 id) external view returns (Domain memory) {
+        return domains[id];
+    }
+
+    function isRegistered(string memory name, string memory tld) external view returns (bool) {
+        return registered[keccak256(abi.encodePacked(name, tld))];
+    }
+
+    function getNextTokenId() external view returns (uint256) {
+        return nextTokenId;
+    }
+
+    function getRoyaltyBps() external view returns (uint256) {
+        return royaltyBps;
+    }
+
+    function getFeeCollector() external view returns (address) {
+        return feeCollector;
+    }
+    
+    function _domain(uint256 tokenId) internal view override returns (Domain storage) {
+        return domains[tokenId];
+    }
+
+    function ownerOf(uint256 tokenId) public view override(CoreState, ERC721Upgradeable) returns (address) {
+        return ERC721Upgradeable.ownerOf(tokenId);
+    }
+
+    function hasRole(bytes32 role, address account) public view override(AccessControlUpgradeable, CoreState) returns (bool) {
+        return AccessControlUpgradeable.hasRole(role, account);
+    }
+
+    function _exists(uint256 tokenId) internal view override(ERC721Upgradeable, CoreState) returns (bool) {
+        return super._exists(tokenId);
+    }
+
+    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view override(CoreState, ERC721Upgradeable) returns (bool) {
+        return super._isApprovedOrOwner(spender, tokenId);
+    }
+
+    // Storage gap for future upgrades
+    uint256[50] private __gap;
 }

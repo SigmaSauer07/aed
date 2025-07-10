@@ -1,165 +1,133 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+// OpenZeppelin Upgradeable Imports
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
+// AED Core and Modules
 import "./core/AEDCore.sol";
+import "./modules/AEDAdmin.sol";
+import "./modules/AEDRegistry.sol";
 import "./modules/AEDMinting.sol";
 import "./modules/AEDBridge.sol";
 import "./modules/AEDRecovery.sol";
 import "./modules/AEDMetadata.sol";
 import "./modules/AEDReverse.sol";
-import "./modules/AEDRegistry.sol";
-import "./modules/AEDAdmin.sol";
+import "./core/AEDConstants.sol";
+
+/**
+ * @title AED
+ * @dev Main contract for the Alsania Ecosystem Domains (AED) system.
+ * Inherits all AED modules and OpenZeppelin upgradeable patterns.
+ */
 contract AED is
     Initializable,
     UUPSUpgradeable,
+    ReentrancyGuardUpgradeable,
     AEDCore,
+    AEDAdmin,
     AEDRegistry,
     AEDMinting,
     AEDBridge,
     AEDRecovery,
     AEDMetadata,
     AEDReverse,
-    ReentrancyGuardUpgradeable
+    AEDConstants
 {
-    // Use constant for feature flags if possible
-    uint8 public constant FEATURE_PROFILE     = 0x01;
-    uint8 public constant FEATURE_REVERSE     = 0x02;
-    uint8 public constant FEATURE_SUBDOMAINS  = 0x04;
+    // Versioning for upgrades
+    uint256 public version;
 
-    mapping(uint8 => uint256) public enhancementPrices;
+    // Events
+    event VersionUpgraded(uint256 newVersion);
+    event Initialized(string name, string symbol, address feeCollector, address admin);
 
-    event FeatureEnabled(uint256 indexed tokenId, uint8 feature);
-    event TLDPriceUpdated(string tld, uint256 price);
-    event EnhancementPriceUpdated(uint8 feature, uint256 price);
-
-    /// @notice Initializes the AED contract with payees and shares
-    function initialize(address[] memory payees, uint256[] memory shares_) public initializer {
-        __ERC721_init("Alsania Enhanced Domain", "AED");
-        __PaymentSplitter_init(payees, shares_);
-        __Pausable_init();
-        __AEDCore_init("Alsania Enhanced Domain", "AED", payees, shares_);
-        __UUPSUpgradeable_init();
-
-        // TLD pricing
-        setTLDPrice("aed", 0);
-        setTLDPrice("07", 0);
-        setTLDPrice("alsa", 0);
-        setTLDPrice("alsania", 1 ether / 1000);
-        setTLDPrice("fx",      1 ether / 1000);
-
-        // Enhancement pricing
-        enhancementPrices[FEATURE_SUBDOMAINS] = 2 ether / 1000;
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
     }
 
-    /// @dev Only allow upgrades by UPGRADER_ROLE
-    function _authorizeUpgrade(address newImpl) internal override(AEDCore, UUPSUpgradeable) onlyRole(UPGRADER_ROLE) {}
+    /**
+     * @notice Initializes the AED contract and all inherited modules.
+     * @dev Can only be called once. Uses OpenZeppelin's initializer modifier.
+     * @param name_ The name of the ERC721 token.
+     * @param symbol_ The symbol of the ERC721 token.
+     * @param feeCollector_ Address to collect protocol fees.
+     * @param admin Address with admin privileges.
+     */
+    function initialize(
+        string memory name_,
+        string memory symbol_,
+        address feeCollector_,
+        address admin
+    )
+        public
+        override(
+            AEDCore,
+            AEDAdmin,
+            AEDRegistry,
+            AEDMinting,
+            AEDBridge,
+            AEDRecovery,
+            AEDMetadata,
+            AEDReverse,
+            AEDConstants,
+            UUPSUpgradeable,
+            ReentrancyGuardUpgradeable
+        )
+        initializer {
 
-    /// @notice Purchase a feature for a domain
-    function purchaseFeature(uint256 tokenId, uint8 feature) external payable nonReentrant {
-        require(ownerOf(tokenId) == msg.sender, "Not domain owner");
-        require((domainFeatures[tokenId] & feature) == 0, "Already enabled");
-        require(
-            feature == FEATURE_PROFILE || 
-            feature == FEATURE_REVERSE || 
-            feature == FEATURE_SUBDOMAINS,
-            "Invalid feature"
-        );
-        require(enhancementPrices[feature] != 0, "Feature not available");
+        require(admin != address(0), "Admin address cannot be zero");
+        require(feeCollector_ != address(0), "Fee collector address cannot be zero");
+        require(msg.sender == tx.origin, "Only EOA can initialize");
 
-        uint256 price = enhancementPrices[feature];
-        require(msg.value >= price, "Insufficient payment");
-        require(feeCollector != address(0), "Fee collector not set");
+        // Initialize all modules and base contracts
+        AEDCore.__AEDCore_init(name_, symbol_, admin);
+        AEDAdmin.__AEDAdmin_init(feeCollector_);
+        AEDRegistry.__AEDRegistry_init();
+        AEDMinting.__AEDMinting_init();
+        AEDBridge.__AEDBridge_init();
+        AEDRecovery.__AEDRecovery_init();
+        AEDMetadata.__AEDMetadata_init();
+        AEDReverse.__AEDReverse_init();
+        UUPSUpgradeable.__UUPSUpgradeable_init();
+        ReentrancyGuardUpgradeable.__ReentrancyGuard_init();
 
-        // Effects before interactions (checks-effects-interactions pattern)
-        domainFeatures[tokenId] |= feature;
-        emit FeatureEnabled(tokenId, feature);
+        version = 1;
 
-        Address.sendValue(payable(feeCollector), msg.value);
+        emit VersionUpgraded(version);
+        emit Initialized(name_, symbol_, feeCollector_, admin);
     }
 
-    /// @notice Set the price for a feature enhancement
-    function setEnhancementPrice(uint8 feature, uint256 price) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(
-            feature == FEATURE_PROFILE || 
-            feature == FEATURE_REVERSE || 
-            feature == FEATURE_SUBDOMAINS,
-            "Invalid feature"
-        );
-        uint256 oldPrice = enhancementPrices[feature];
-        if (oldPrice != price) {
-            enhancementPrices[feature] = price;
-            emit EnhancementPriceUpdated(feature, price);
-        }
+    /**
+     * @dev Authorizes contract upgrades. Only callable by UPGRADER_ROLE.
+     * @param newImplementation Address of the new implementation contract.
+     */
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyRole(UPGRADER_ROLE)
+    {
+        require(newImplementation != address(0), "Invalid implementation");
+        version += 1;
+        emit VersionUpgraded(version);
     }
 
-    /// @notice Set the price for a TLD
-    function setTLDPrice(string memory tld, uint256 price) public override onlyRole(DEFAULT_ADMIN_ROLE) {
-        uint256 oldPrice = tldPrices[tld];
-        if (oldPrice != price) {
-            tldPrices[tld] = price;
-            emit TLDPriceUpdated(tld, price);
-        }
-    }
-
-    /// @notice Get the price for a TLD
-    function getTLDPrice(string memory tld) public view returns (uint256) {
-        return tldPrices[tld];
-    }
-
-    /// @notice Set the fee collector address
-    function setFeeCollector(address newFeeCollector) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(newFeeCollector != address(0), "Zero address");
-        if (feeCollector != newFeeCollector) {
-            feeCollector = newFeeCollector;
-        }
-    }
-
-    /// @inheritdoc IERC165
+    /**
+     * @notice Checks if the contract supports a given interface.
+     * @param interfaceId The interface identifier.
+     * @return True if the interface is supported, false otherwise.
+     */
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(AEDCore, AEDMetadata)
+        override(AEDCore, AEDMetadata, AccessControlUpgradeable)
         returns (bool)
     {
-        return interfaceId == type(IERC2981).interfaceId || super.supportsInterface(interfaceId);
+        return super.supportsInterface(interfaceId);
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(AEDCore, AEDMetadata)
-        returns (string memory)
-    {
-        return AEDMetadata.tokenURI(tokenId);
-    }
-
-    function _burn(uint256 tokenId)
-        internal
-        virtual
-        override(AEDCore)
-    {
-        super._burn(tokenId);
-    }
-
-    function _exists(uint256 tokenId)
-        internal
-        view
-        override(AEDCore)
-        returns (bool)
-    {
-        return AEDCore._exists(tokenId);
-    }
-
-    function _isApprovedOrOwner(address spender, uint256 tokenId)
-        internal
-        view
-        override(AEDCore)
-        returns (bool)
-    {
-        return AEDCore._isApprovedOrOwner(spender, tokenId);
-    }
+    // Storage gap for future upgrades
+    uint256[50] private __gap;
 }

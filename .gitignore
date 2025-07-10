@@ -24,6 +24,9 @@ dist/
 
 # VSCode settings
 .vscode/
+settings.json
+.qodo
+.deps
 
 # OS-specific
 .DS_Store

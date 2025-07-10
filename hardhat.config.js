@@ -1,3 +1,4 @@
+require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-toolbox");
 require("@openzeppelin/hardhat-upgrades");
 require("dotenv").config();
@@ -20,4 +21,19 @@ module.exports = {
       timeout: 120000,
     },
   },
-};
+etherscan: {
+  apiKey: {
+    polygonAmoy: "YOUR_POLYGONSCAN_API_KEY"
+  },
+  customChains: [
+    {
+      network: "polygonAmoy",
+      chainId: 80002,
+      urls: {
+        apiURL: "https://amoy.polygonscan.com/api",
+        browserURL: "https://amoy.polygonscan.com"
+      }
+    }
+  ]
+}
+}

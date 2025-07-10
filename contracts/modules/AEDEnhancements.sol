@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../core/AEDConstants.sol";
 import "../core/CoreState.sol";
 
 /**
  * @title AEDEnhancements
- * @dev Handles feature enhancements and upgrades for AED domains.
+ * @dev Module for purchasing and enabling enhancement features on domains (e.g., enabling certain flags for a fee).
+ * (NOTE: This module is not integrated in the main AED contract yet; potential future use.)
  */
-abstract contract AEDEnhancements is CoreState, ReentrancyGuard, AEDConstants {
+abstract contract AEDEnhancements is CoreState, ReentrancyGuardUpgradeable, AEDConstants {
     // Events
     event FeatureEnabled(uint256 indexed tokenId, uint8 feature);
     event FeatureRemoved(uint256 indexed tokenId, uint8 feature);
@@ -18,26 +19,19 @@ abstract contract AEDEnhancements is CoreState, ReentrancyGuard, AEDConstants {
     event FeaturePurchased(address indexed buyer, uint256 indexed tokenId, uint8 feature, uint256 price);
     event FeaturePayment(address indexed payer, address indexed feeCollector, uint256 amount, uint256 tokenId, uint8 feature);
     event DomainFeaturesUpdated(uint256 indexed tokenId, uint256 features);
-
-    /// @notice Emitted when the enhancement price is set for a feature.
-    /// @param feature The identifier of the enhancement feature.
-    /// @param price The new price set for the feature.
     event EnhancementPriceSet(uint8 indexed feature, uint256 price);
 
-    /// @dev Error thrown when the price is not greater than zero.
+    // Errors
     error PriceMustBeGreaterThanZero();
-
-    /// @dev Error thrown when the feature identifier is invalid.
     error InvalidFeature();
 
     // State
     mapping(uint8 => uint256) public enhancementPrices;
     mapping(uint256 => uint256) public domainFeatures;
 
-    /**
-     * @dev Initializes enhancement prices.
-     */
-    function __AEDEnhancements_init() internal {
+    function __AEDEnhancements_init() internal onlyInitializing {
+        __ReentrancyGuard_init();
+        // Set a default price for an enhancement (example: enabling subdomains for 0.002 ETH)
         enhancementPrices[FEATURE_SUBDOMAINS] = 0.002 ether;
     }
 
@@ -54,7 +48,7 @@ abstract contract AEDEnhancements is CoreState, ReentrancyGuard, AEDConstants {
         require(ownerOf(tokenId) == msg.sender, "Not owner");
         require((domainFeatures[tokenId] & feature) == 0, "Already enabled");
         require(_isValidFeature(feature), "Invalid feature");
-        require(feature != 0 && (feature & (feature - 1)) == 0, "Must be power of two");
+        require(feature != 0 && (feature & (feature - 1)) == 0, "Feature must be a power of two");
 
         uint256 price = enhancementPrices[feature];
         require(msg.value >= price, "Insufficient payment");
@@ -70,21 +64,16 @@ abstract contract AEDEnhancements is CoreState, ReentrancyGuard, AEDConstants {
         emit DomainFeaturesUpdated(tokenId, domainFeatures[tokenId]);
 
         Address.sendValue(payable(feeCollector), price);
-
         if (msg.value > price) {
             Address.sendValue(payable(msg.sender), msg.value - price);
         }
 
         emit FeaturePayment(msg.sender, feeCollector, price, tokenId, feature);
+        emit FeaturePurchased(msg.sender, tokenId, feature, price);
     }
 
-    /**
-     * @notice Sets the price for a specific enhancement feature.
-     * @param feature The identifier of the enhancement feature.
-     * @param price The new price to set for the feature (must be greater than 0).
-     * @dev Only callable by accounts with the `ADMIN_ROLE`.
-     */
-    function setEnhancementPrice(uint8 feature, uint256 price) public hasRole(ADMIN_ROLE) {
+    function setEnhancementPrice(uint8 feature, uint256 price) public {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Not authorized");
         if (!_isValidFeature(feature)) revert InvalidFeature();
         if (price == 0) revert PriceMustBeGreaterThanZero();
         enhancementPrices[feature] = price;
@@ -95,6 +84,7 @@ abstract contract AEDEnhancements is CoreState, ReentrancyGuard, AEDConstants {
         if (feature == 0 || (feature & (feature - 1)) != 0) {
             return false;
         }
+        // Only features defined in constants are allowed
         return feature == FEATURE_PROFILE ||
                feature == FEATURE_REVERSE ||
                feature == FEATURE_SUBDOMAINS ||
@@ -103,6 +93,5 @@ abstract contract AEDEnhancements is CoreState, ReentrancyGuard, AEDConstants {
                feature == FEATURE_METADATA;
     }
 
-    //gap
     uint256[50] private __gap;
 }

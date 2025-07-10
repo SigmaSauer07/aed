@@ -21,7 +21,7 @@ abstract contract CoreState {
     uint256 internal royaltyBps;
     address internal feeCollector;
 
-    // Abstract function declarations for core access logic
+    // Abstract functions to be implemented by core logic
     function _exists(uint256 tokenId) internal view virtual returns (bool);
     function _isApprovedOrOwner(address spender, uint256 tokenId) internal view virtual returns (bool);
     function _isApproved(address spender, uint256 tokenId) internal view virtual returns (bool);
@@ -30,5 +30,5 @@ abstract contract CoreState {
     function ownerOf(uint256 tokenId) public view virtual returns (address);
     function paused() public view virtual returns (bool);
 
-    uint256[50] private __gap;
+    uint256[50] private __gap;  // storage gap for upgradeability
 }

@@ -5,6 +5,11 @@ import "../core/CoreState.sol";
 import "../core/AEDConstants.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
+/**
+ * @title AEDBridge
+ * @dev Module for bridging domains to other chains. Allows marking a domain as bridged (locked) and verifying 
+ * its transfer to another chain via a Merkle proof.
+ */
 abstract contract AEDBridge is CoreState, AEDConstants {
     event DomainBridged(uint256 indexed tokenId, uint256 indexed destChainId, bytes32 merkleRoot);
     event DomainReceived(uint256 indexed tokenId, address indexed newOwner);
@@ -18,16 +23,17 @@ abstract contract AEDBridge is CoreState, AEDConstants {
     mapping(uint256 => BridgeReceipt) public bridgeReceipts;
     mapping(uint256 => bool) public isBridged;
 
-    function __AEDBridge_init() internal {}
+    function __AEDBridge_init() internal onlyInitializing {
+        // No specific state to init (placeholder for future)
+    }
 
     function bridgeDomain(uint256 tokenId, uint256 destChainId) external {
         require(hasRole(BRIDGE_MANAGER, msg.sender), "Not authorized");
         require(_exists(tokenId), "Nonexistent token");
         require(!isBridged[tokenId], "Already bridged");
 
-        bytes32 merkleRoot = keccak256(abi.encode(
-            tokenId, destChainId, block.timestamp, ownerOf(tokenId)
-        ));
+        // Compute a Merkle tree leaf for this bridging event (for off-chain verification on dest chain)
+        bytes32 merkleRoot = keccak256(abi.encode(tokenId, destChainId, block.timestamp, ownerOf(tokenId)));
 
         bridgeReceipts[tokenId] = BridgeReceipt(destChainId, merkleRoot, block.timestamp);
         isBridged[tokenId] = true;
@@ -36,18 +42,18 @@ abstract contract AEDBridge is CoreState, AEDConstants {
     }
 
     function completeBridge(uint256 tokenId, address newOwner, bytes32[] calldata proof) external {
-        require(!_exists(tokenId), "Token exists");
+        require(!_exists(tokenId), "Token exists (bridge not completed)");  // tokenId must not exist yet on this chain
         require(newOwner != address(0), "Invalid owner");
 
         BridgeReceipt storage receipt = bridgeReceipts[tokenId];
-        require(receipt.timestamp > 0, "No receipt");
+        require(receipt.timestamp > 0, "No receipt");  // must have a bridging record
 
         bytes32 leaf = keccak256(abi.encodePacked(newOwner));
         require(MerkleProof.verify(proof, receipt.merkleRoot, leaf), "Invalid proof");
 
+        // Mint token to newOwner on this chain as completing the bridge
         domains[tokenId].owner = newOwner;
         isBridged[tokenId] = false;
-
         emit DomainReceived(tokenId, newOwner);
     }
 

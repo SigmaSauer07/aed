@@ -6,8 +6,11 @@ import "../core/AEDConstants.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 
+/**
+ * @title AEDMetadata
+ * @dev Module for managing on-chain metadata (profile URI, image URI) and generating token URI JSON.
+ */
 abstract contract AEDMetadata is CoreState, AEDConstants {
-
     using Strings for uint256;
     using Base64 for bytes;
 
@@ -16,7 +19,7 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
     event ImageUpdated(uint256 indexed tokenId, string newURI);
     event RoyaltyInfoCalculated(uint256 indexed tokenId, uint256 salePrice, address receiver, uint256 royaltyAmount);
 
-    // Custom errors for gas efficiency and better error handling
+    // Custom errors
     error NonexistentToken();
     error NotAuthorized();
     error InvalidURI();
@@ -28,7 +31,6 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
     error UnsafeURI();
 
     /// @notice Restricts access to only the token owner or an account with ADMIN_ROLE.
-    /// @param tokenId The ID of the token to check ownership against.
     modifier onlyOwnerOrAdmin(uint256 tokenId) {
         require(
             msg.sender == ownerOf(tokenId) || hasRole(ADMIN_ROLE, msg.sender),
@@ -37,7 +39,9 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
         _;
     }
 
-    function __AEDMetadata_init() internal {}
+    function __AEDMetadata_init() internal onlyInitializing {
+        // No state initialization needed for metadata
+    }
 
     function setProfileURI(uint256 tokenId, string memory uri) external onlyOwnerOrAdmin(tokenId) {
         if (!_exists(tokenId)) revert NonexistentToken();
@@ -61,6 +65,7 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
         emit ImageUpdated(tokenId, uri);
     }
 
+    // Internal URI validation helper
     function _validateURI(bytes memory b, string memory uri) internal pure {
         uint256 uriLength = b.length;
         if (uriLength == 0) revert EmptyURI();
@@ -71,6 +76,7 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
     }
 
     function _isValidURI(string memory /*uri*/, bytes memory b) private pure returns (bool) {
+        // Only allow URIs beginning with http:// or https://
         return _hasHttpOrHttpsPrefix(b);
     }
 
@@ -78,13 +84,8 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
         if (b.length >= 7) {
             // "http://"
             if (
-                b[0] == 0x68 && // 'h'
-                b[1] == 0x74 && // 't'
-                b[2] == 0x74 && // 't'
-                b[3] == 0x70 && // 'p'
-                b[4] == 0x3a && // ':'
-                b[5] == 0x2f && // '/'
-                b[6] == 0x2f    // '/'
+                b[0] == 0x68 && b[1] == 0x74 && b[2] == 0x74 && 
+                b[3] == 0x70 && b[4] == 0x3a && b[5] == 0x2f && b[6] == 0x2f
             ) {
                 return true;
             }
@@ -92,14 +93,8 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
         if (b.length >= 8) {
             // "https://"
             if (
-                b[0] == 0x68 && // 'h'
-                b[1] == 0x74 && // 't'
-                b[2] == 0x74 && // 't'
-                b[3] == 0x70 && // 'p'
-                b[4] == 0x73 && // 's'
-                b[5] == 0x3a && // ':'
-                b[6] == 0x2f && // '/'
-                b[7] == 0x2f    // '/'
+                b[0] == 0x68 && b[1] == 0x74 && b[2] == 0x74 && b[3] == 0x70 &&
+                b[4] == 0x73 && b[5] == 0x3a && b[6] == 0x2f && b[7] == 0x2f
             ) {
                 return true;
             }
@@ -108,9 +103,12 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
     }
 
     function _isSafeURIFromBytes(bytes memory b) private pure returns (bool) {
-        for (uint i = 0; i < b.length; ) {
-            // Disallow control characters (0x00-0x1F, 0x22, 0x7F), and newlines (0x0A, 0x0D)
-            if ((b[i] < 0x20) || (b[i] == 0x22) || (b[i] == 0x7F) || (b[i] == 0x0A) || (b[i] == 0x0D)) {
+        for (uint256 i = 0; i < b.length; ) {
+            // Disallow control characters and quotes/newlines
+            if (
+                b[i] < 0x20 || b[i] == 0x22 || b[i] == 0x7F || 
+                b[i] == 0x0A || b[i] == 0x0D
+            ) {
                 return false;
             }
             unchecked { ++i; }
@@ -122,72 +120,49 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
         return keccak256(bytes(a)) == keccak256(bytes(b));
     }
 
-    function _hasLeadingOrTrailingWhitespace(string memory str) internal pure returns (bool) {
-        bytes memory b = bytes(str);
-        if (b.length == 0) return false;
-        return (b[0] == 0x20 || b[b.length - 1] == 0x20);
-    }
-
     function _hasLeadingOrTrailingWhitespaceFromBytes(bytes memory b) internal pure returns (bool) {
         if (b.length == 0) return false;
         return (b[0] == 0x20 || b[b.length - 1] == 0x20);
     }
 
+    // Token URI logic (on-chain metadata generation)
     function tokenURI(uint256 tokenId) public view virtual returns (string memory) {
         if (!_exists(tokenId)) revert NonexistentToken();
         Domain memory domain = domains[tokenId];
         string memory fullName = string(abi.encodePacked(domain.name, ".", domain.tld));
-
-        return string(
-            abi.encodePacked(
-                "data:application/json;base64,",
-                Base64.encode(
-                    bytes(
-                        _formatTokenJson(fullName, _getImageURIWithName(domain, fullName), _getAttributes(domain))
-                    )
-                )
-            )
-        );
+        string memory json = _formatTokenJson(fullName, _getImageURIWithName(domain, fullName), _getAttributes(domain));
+        return string(abi.encodePacked("data:application/json;base64,", bytes(json).encode()));
     }
 
     function _formatTokenJson(string memory name, string memory image, string memory attributes) internal pure returns (string memory) {
-        return string(
-            abi.encodePacked(
-                '{"name":"', _escapeJson(name),
-                '","description":"Alsania Enhanced Domain",',
-                '"image":"', _escapeJson(image),
-                '","attributes":', attributes, '}'
-            )
-        );
+        return string(abi.encodePacked(
+            '{"name":"', _escapeJson(name),
+            '","description":"Alsania Enhanced Domain",',
+            '"image":"', _escapeJson(image),
+            '","attributes":', attributes, '}'
+        ));
     }
 
     function _escapeJson(string memory value) internal pure returns (string memory) {
         bytes memory input = bytes(value);
-        bytes memory output = new bytes(input.length * 2); // worst case: every char needs escaping
+        bytes memory output = new bytes(input.length * 2); // worst case each char needs escaping
         uint256 j = 0;
         for (uint256 i = 0; i < input.length; i++) {
             bytes1 char = input[i];
             if (char == '"') {
-                output[j++] = '\\';
-                output[j++] = '"';
+                output[j++] = '\\'; output[j++] = '"';
             } else if (char == '\\') {
-                output[j++] = '\\';
-                output[j++] = '\\';
+                output[j++] = '\\'; output[j++] = '\\';
             } else if (char == 0x08) { // \b
-                output[j++] = '\\';
-                output[j++] = 'b';
+                output[j++] = '\\'; output[j++] = 'b';
             } else if (char == 0x0C) { // \f
-                output[j++] = '\\';
-                output[j++] = 'f';
+                output[j++] = '\\'; output[j++] = 'f';
             } else if (char == 0x0A) { // \n
-                output[j++] = '\\';
-                output[j++] = 'n';
+                output[j++] = '\\'; output[j++] = 'n';
             } else if (char == 0x0D) { // \r
-                output[j++] = '\\';
-                output[j++] = 'r';
+                output[j++] = '\\'; output[j++] = 'r';
             } else if (char == 0x09) { // \t
-                output[j++] = '\\';
-                output[j++] = 't';
+                output[j++] = '\\'; output[j++] = 't';
             } else {
                 output[j++] = char;
             }
@@ -200,10 +175,7 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
     }
 
     function royaltyInfo(uint256 tokenId, uint256 salePrice)
-        external
-        view
-        virtual
-        returns (address receiver, uint256 royaltyAmount)
+        external view returns (address receiver, uint256 royaltyAmount) 
     {
         if (!_exists(tokenId)) revert NonexistentToken();
         receiver = feeCollector;
@@ -211,20 +183,8 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
         return (receiver, royaltyAmount);
     }
 
-    // Internal functions
-    function _getImageURI(Domain memory domain, string memory fullName)
-        internal
-        pure
-        returns (string memory)
-    {
-        return _getImageURIWithName(domain, fullName);
-    }
-
-    function _getImageURIWithName(Domain memory domain, string memory fullName)
-        internal
-        pure
-        returns (string memory)
-    {
+    // Internal image/attribute generation
+    function _getImageURIWithName(Domain memory domain, string memory fullName) internal pure returns (string memory) {
         if (bytes(domain.imageURI).length > 0) {
             return domain.imageURI;
         }
@@ -233,74 +193,35 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
 
     function _generateSVG(Domain memory domain, string memory fullName) internal pure returns (string memory) {
         string memory bgImage = domain.isSubdomain ? SUB_BG : DOMAIN_BG;
-
-        return string(
-            abi.encodePacked(
-                "data:image/svg+xml;base64,",
-                Base64.encode(
-                    bytes(
-                        _formatSVG(fullName, bgImage)
-                    )
-                )
-            )
-        );
+        return string(abi.encodePacked(
+            "data:image/svg+xml;base64,",
+            bytes(_formatSVG(fullName, bgImage)).encode()
+        ));
     }
 
     function _formatSVG(string memory fullName, string memory bgImage) internal pure returns (string memory) {
-        return string(
-            abi.encodePacked(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">',
-                '<defs>',
-                '<style>@import url(\'https://fonts.googleapis.com/css2?family=Permanent+Marker\');</style>',
-                '<filter id="glow" x="-50%" y="-50%" width="200%" height="200%">',
-                '<feGaussianBlur stdDeviation="2.5" result="blur"/>',
-                '<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>',
-                '</filter>',
-                '</defs>',
-                '<image href="',
-                bgImage,
-                '" width="400" height="400"/>',
-                '<text x="50%" y="92%" text-anchor="middle" dominant-baseline="middle" ',
-                'font-family="Permanent Marker" font-size="24" fill="',
-                NEON_GREEN,
-                '" filter="url(#glow)">',
-                _escapeJson(fullName),
-                '</text></svg>'
-            )
-        );
+        return string(abi.encodePacked(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400">',
+            '<defs><style>@import url(\'https://fonts.googleapis.com/css2?family=Permanent+Marker\');</style>',
+            '<filter id="glow" x="-50%" y="-50%" width="200%" height="200%">',
+            '<feGaussianBlur stdDeviation="2.5" result="blur"/>',
+            '<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>',
+            '</filter></defs>',
+            '<image href="', bgImage, '" width="400" height="400"/>',
+            '<text x="50%" y="92%" text-anchor="middle" dominant-baseline="middle" ',
+            'font-family="Permanent Marker" font-size="24" fill="', NEON_GREEN, '" filter="url(#glow)">',
+            _escapeJson(fullName),
+            '</text></svg>'
+        ));
     }
 
-    function _getAttributes(Domain memory domain) 
-        internal
-        pure
-        returns (string memory)
-    {
-        return string(
-            abi.encodePacked(
-                '[{"trait_type":"TLD","value":"',
-                domain.tld,
-                '"},',
-                '{"trait_type":"Type","value":"',
-                domain.isSubdomain ? "Subdomain" : "Domain",
-                '"},',
-                '{"trait_type":"Subdomains","value":"',
-                domain.subdomainCount.toString(),
-                '"}]'
-            )
-        );
+    function _getAttributes(Domain memory domain) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '[{"trait_type":"TLD","value":"', domain.tld,
+            '"},{"trait_type":"Type","value":"', domain.isSubdomain ? "Subdomain" : "Domain",
+            '"},{"trait_type":"Subdomains","value":"', domain.subdomainCount.toString(), '"}]'
+        ));
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        returns (bool)
-    {
-        // Note: 0xffffffff is an invalid interface id
-        if (interfaceId == 0xffffffff) return false;
-
-        return supportsInterface(interfaceId);
-    }
-
-    // Storage gap for future upgrades
-    uint256[50] private __gap;
+    // Note: supportsInterface for ERC2981 is handled in main contract override.
 }

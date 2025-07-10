@@ -2,10 +2,13 @@
 pragma solidity ^0.8.30;
 
 import "../core/CoreState.sol";
-import "../core/AEDConstants.sol";
 
+/**
+ * @title AEDRecovery
+ * @dev Module for account recovery via guardians. Domain owners can appoint guardians who can collectively 
+ * transfer a domain to a new owner if the original owner loses access.
+ */
 abstract contract AEDRecovery is CoreState {
-
     event GuardianAdded(uint256 indexed tokenId, address indexed guardian);
     event GuardianRemoved(uint256 indexed tokenId, address indexed guardian);
     event RecoveryInitiated(uint256 indexed tokenId, uint256 unlockTime);
@@ -14,6 +17,8 @@ abstract contract AEDRecovery is CoreState {
     event RecoveryApproved(uint256 indexed tokenId, address indexed guardian);
     event RecoveryApprovalThresholdChanged(uint256 oldThreshold, uint256 newThreshold);
 
+    uint256 public MAX_GUARDIANS;
+    uint256 public constant RECOVERY_DELAY = 7 days;
     uint256 public recoveryApprovalThreshold;
     uint256 public recoveryLockDuration;
 
@@ -28,36 +33,39 @@ abstract contract AEDRecovery is CoreState {
         recoveryApprovalThreshold = approvalThreshold;
     }
 
-    function setRecoveryApprovalThreshold(uint256 newThreshold) external onlyOwner {
-        uint256 oldThreshold = recoveryApprovalThreshold;
-        recoveryApprovalThreshold = newThreshold;
-        emit RecoveryApprovalThresholdChanged(oldThreshold, newThreshold);
+    function __AEDRecovery_init() internal onlyInitializing {
+        // empty overload if no parameters provided (not used in this version)
     }
-
-    function __AEDRecovery_init() internal onlyInitializing {}
 
     modifier noActiveRecovery(uint256 tokenId) {
         require(recoveryTimestamps[tokenId] == 0, "Recovery pending");
         _;
     }
 
-    function addGuardian(uint256 tokenId, address guardian) external noActiveRecovery(tokenId) onlyInitializing {
+    function setRecoveryApprovalThreshold(uint256 newThreshold) external {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Not authorized");
+        uint256 oldThreshold = recoveryApprovalThreshold;
+        recoveryApprovalThreshold = newThreshold;
+        emit RecoveryApprovalThresholdChanged(oldThreshold, newThreshold);
+    }
+
+    // Guardian management
+    function addGuardian(uint256 tokenId, address guardian) external noActiveRecovery(tokenId) {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not authorized");
         require(guardian != address(0), "Invalid guardian");
         require(guardian != address(this), "Cannot add contract as guardian");
         require(!_guardians[tokenId].contains(guardian), "Guardian already exists");
         require(_guardians[tokenId].length() < MAX_GUARDIANS, "Max guardians exceeded");
-        require(_guardianToTokenId[guardian] == 0, "Guardian already assigned to another token");
+        require(_guardianToTokenId[guardian] == 0, "Guardian already for another token");
         _guardians[tokenId].add(guardian);
         _guardianToTokenId[guardian] = tokenId;
         emit GuardianAdded(tokenId, guardian);
     }
 
-    function removeGuardian(uint256 tokenId, address guardian) external noActiveRecovery(tokenId) onlyInitializing {
+    function removeGuardian(uint256 tokenId, address guardian) external noActiveRecovery(tokenId) {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not authorized");
         require(_guardians[tokenId].length() > 1, "Cannot remove last guardian");
-        if (_guardians[tokenId].remove(guardian)) onlyInitializing; {
-            // If guardian had approved, decrement approval count
+        if (_guardians[tokenId].remove(guardian)) {
             if (recoveryApprovals[tokenId][guardian]) {
                 recoveryApprovalCounts[tokenId] -= 1;
                 delete recoveryApprovals[tokenId][guardian];
@@ -66,6 +74,7 @@ abstract contract AEDRecovery is CoreState {
         }
     }
 
+    // Recovery process
     function initiateRecovery(uint256 tokenId) external {
         require(_guardians[tokenId].contains(msg.sender), "Not guardian");
         require(recoveryTimestamps[tokenId] == 0, "Recovery pending");
@@ -82,22 +91,12 @@ abstract contract AEDRecovery is CoreState {
         emit RecoveryApproved(tokenId, msg.sender);
     }
 
-    /// @notice Finalizes the recovery process for a token if approval threshold is met.
-    /// @param tokenId The unique identifier of the token to recover.
-    /// @param newOwner The address to transfer ownership to.
-    function completeRecovery(uint256 tokenId, address newOwner) 
-        external 
-        nonReentrant 
-    {
+    function completeRecovery(uint256 tokenId, address newOwner) external nonReentrant {
         require(recoveryTimestamps[tokenId] != 0, "No recovery pending");
         require(_guardians[tokenId].contains(msg.sender), "Not guardian");
-        require(
-            recoveryApprovalCounts[tokenId] >= recoveryApprovalThreshold,
-            "Not enough approvals"
-        );
-        // Prevent assigning ownership to a guardian
+        require(recoveryApprovalCounts[tokenId] >= recoveryApprovalThreshold, "Not enough approvals");
         require(!_guardians[tokenId].contains(newOwner), "New owner cannot be a guardian");
-        // Clear all approvals for this tokenId
+        // Clear all approvals for this tokenId (one-time use)
         address[] memory guardians = _guardians[tokenId].values();
         for (uint256 i = 0; i < guardians.length; i++) {
             recoveryApprovals[tokenId][guardians[i]] = false;
@@ -114,7 +113,7 @@ abstract contract AEDRecovery is CoreState {
     function cancelRecovery(uint256 tokenId) external {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner");
         require(recoveryTimestamps[tokenId] != 0, "No recovery pending");
-        // Clear all approvals for this tokenId
+        // Clear all approvals
         address[] memory guardians = _guardians[tokenId].values();
         for (uint256 i = 0; i < guardians.length; i++) {
             recoveryApprovals[tokenId][guardians[i]] = false;
@@ -124,18 +123,20 @@ abstract contract AEDRecovery is CoreState {
         emit RecoveryCanceled(tokenId);
     }
 
+    // Views
     function getGuardians(uint256 tokenId) public view returns (address[] memory) {
         return _guardians[tokenId].values();
     }
 
-    function setRecoveryLockDuration(uint256 duration) external onlyRole(ADMIN_ROLE) {
+    function setRecoveryLockDuration(uint256 duration) external {
+        require(hasRole(ADMIN_ROLE, msg.sender), "Not authorized");
         recoveryLockDuration = duration;
     }
 
     function canCompleteRecovery(uint256 tokenId) public view returns (bool) {
-        return block.timestamp >= recoveryTimestamps[tokenId] + recoveryLockDuration;
+        // True if the recovery delay + additional lock duration has passed
+        return block.timestamp >= (recoveryTimestamps[tokenId] + recoveryLockDuration);
     }
 
-    // Storage gap for future upgrades
     uint256[50] private __gap;
 }

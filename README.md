@@ -1,5 +1,7 @@
 # 🧠 Alsania Enhanced Domains (AED)
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dfd8442145c4453c9840576e33d105e9)](https://app.codacy.com/gh/SigmaSauer07/aed?utm_source=github.com&utm_medium=referral&utm_content=SigmaSauer07/aed&utm_campaign=Badge_Grade)
+
 **AED** is the official on-chain domain system of the [Alsania](https://alsania.xyz) ecosystem. It provides sovereign, NFT-based domain ownership with programmable enhancements, subdomain minting, reverse resolution, customizable profiles, and native Web3 integrations.
 
 Built to run lean, modular, and verifiable — AED is creator-first infrastructure on the Alsania chain (Polygon CDK).

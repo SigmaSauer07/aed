@@ -1,14 +1,14 @@
-// scripts/checkState.js
 const hre = require("hardhat");
 
 async function main() {
-  const CONTRACT_ADDRESS = "0xD34DA46f15a44B9475877db8dd7daCd9dA534896";
-  const domainName = "ss.aed"; // replace with your actual domain
+  const CONTRACT_ADDRESS = "<DEPLOYED_PROXY_ADDRESS>";
+  const domainName = "ss.aed"; // example domain
 
   const AED = await hre.ethers.getContractAt("AED", CONTRACT_ADDRESS);
 
-  const nextId = await AED.nextTokenId();
-  const isRegistered = await AED.registered(domainName);
+  const nextId = await AED.getNextTokenId();
+  const [name, tld] = domainName.split('.');
+  const isRegistered = await AED.isRegistered(name, tld);
 
   console.log("➡️  Next Token ID:", nextId.toString());
   console.log(`➡️  Registered: ${domainName} =>`, isRegistered);

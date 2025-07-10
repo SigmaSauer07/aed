@@ -22,11 +22,9 @@ abstract contract AEDRegistry is CoreState, AEDConstants {
     // State
     mapping(string => uint256) internal tldPrices;
     mapping(string => bool) internal byoDomains;
-    mapping(uint256 => uint8) internal domainFeatures;
-    mapping(uint256 => mapping(uint8 => bool)) internal activeModules;  // tracks active modules per domain
 
     /** @dev Initialize the registry module (sets up default TLDs). */
-    function __AEDRegistry_init() internal onlyInitializing {
+    function __AEDRegistry_init() internal {
         _setInitialTLDs();
     }
 
@@ -67,6 +65,12 @@ abstract contract AEDRegistry is CoreState, AEDConstants {
         emit FeatureRemoved(tokenId, feature);
     }
 
+    function _setFeature(uint256 tokenId, uint8 feature) internal {
+        require(_exists(tokenId), "Token does not exist");
+        require(_isValidFeature(feature), "Invalid feature");
+        domainFeatures[tokenId] |= feature;
+        emit FeatureSet(tokenId, feature);
+    }
     // View functions
     function getTLDPrice(string memory tld) external view returns (uint256) {
         return tldPrices[tld];

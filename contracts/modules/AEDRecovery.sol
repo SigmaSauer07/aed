@@ -2,6 +2,8 @@
 pragma solidity ^0.8.30;
 
 import "../core/CoreState.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+
 
 /**
  * @title AEDRecovery
@@ -9,6 +11,8 @@ import "../core/CoreState.sol";
  * transfer a domain to a new owner if the original owner loses access.
  */
 abstract contract AEDRecovery is CoreState {
+    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+
     event GuardianAdded(uint256 indexed tokenId, address indexed guardian);
     event GuardianRemoved(uint256 indexed tokenId, address indexed guardian);
     event RecoveryInitiated(uint256 indexed tokenId, uint256 unlockTime);
@@ -18,7 +22,7 @@ abstract contract AEDRecovery is CoreState {
     event RecoveryApprovalThresholdChanged(uint256 oldThreshold, uint256 newThreshold);
 
     uint256 public MAX_GUARDIANS;
-    uint256 public constant RECOVERY_DELAY = 7 days;
+    uint256 public RECOVERY_DELAY = 3 days;
     uint256 public recoveryApprovalThreshold;
     uint256 public recoveryLockDuration;
 
@@ -56,7 +60,6 @@ abstract contract AEDRecovery is CoreState {
         require(guardian != address(this), "Cannot add contract as guardian");
         require(!_guardians[tokenId].contains(guardian), "Guardian already exists");
         require(_guardians[tokenId].length() < MAX_GUARDIANS, "Max guardians exceeded");
-        require(_guardianToTokenId[guardian] == 0, "Guardian already for another token");
         _guardians[tokenId].add(guardian);
         _guardianToTokenId[guardian] = tokenId;
         emit GuardianAdded(tokenId, guardian);

@@ -126,7 +126,7 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
     }
 
     // Token URI logic (on-chain metadata generation)
-    function tokenURI(uint256 tokenId) public view virtual returns (string memory) {
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         if (!_exists(tokenId)) revert NonexistentToken();
         Domain memory domain = domains[tokenId];
         string memory fullName = string(abi.encodePacked(domain.name, ".", domain.tld));

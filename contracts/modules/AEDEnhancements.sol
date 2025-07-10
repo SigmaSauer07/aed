@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "../core/AEDConstants.sol";
 import "../core/CoreState.sol";
@@ -11,7 +10,7 @@ import "../core/CoreState.sol";
  * @dev Module for purchasing and enabling enhancement features on domains (e.g., enabling certain flags for a fee).
  * (NOTE: This module is not integrated in the main AED contract yet; potential future use.)
  */
-abstract contract AEDEnhancements is CoreState, ReentrancyGuardUpgradeable, AEDConstants {
+abstract contract AEDEnhancements is CoreState, AEDConstants {
     // Events
     event FeatureEnabled(uint256 indexed tokenId, uint8 feature);
     event FeatureRemoved(uint256 indexed tokenId, uint8 feature);
@@ -27,7 +26,6 @@ abstract contract AEDEnhancements is CoreState, ReentrancyGuardUpgradeable, AEDC
 
     // State
     mapping(uint8 => uint256) public enhancementPrices;
-    mapping(uint256 => uint256) public domainFeatures;
 
     function __AEDEnhancements_init() internal onlyInitializing {
         __ReentrancyGuard_init();

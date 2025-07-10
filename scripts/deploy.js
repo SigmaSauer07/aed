@@ -5,9 +5,11 @@ require("dotenv").config();
 async function main() {
   const AED = await ethers.getContractFactory("AED");
 
-  // Load from .env file
+  // Load from .env
   const initialAdmin = process.env.ALSANIA_ADMIN;
   const paymentWallet = process.env.ALSANIA_WALLET;
+  const name = "Alsania Enhanced Domains";
+  const symbol = "AED";
 
   if (!initialAdmin || !paymentWallet) {
     throw new Error("🚨 Missing ALSANIA_ADMIN or ALSANIA_WALLET in .env");
@@ -15,7 +17,7 @@ async function main() {
 
   const aed = await upgrades.deployProxy(
     AED,
-    [initialAdmin, paymentWallet], // initializer arguments
+    [name, symbol, paymentWallet, initialAdmin], // initializer arguments
     {
       initializer: "initialize",
       kind: "uups",
@@ -29,9 +31,9 @@ async function main() {
   const proxyAddress = await aed.getAddress();
   const implementationAddress = await upgrades.erc1967.getImplementationAddress(proxyAddress);
 
+  // Log deployment info
   const timestamp = new Date().toISOString();
   const networkName = network.name;
-
   const output = `${networkName} - ${timestamp}\nProxy: ${proxyAddress}\nImplementation: ${implementationAddress}\n\n`;
   fs.appendFileSync("./deployedAddress.txt", output, "utf8");
 

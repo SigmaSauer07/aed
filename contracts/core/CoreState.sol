@@ -20,6 +20,7 @@ abstract contract CoreState {
     uint256 internal nextTokenId;
     uint256 internal royaltyBps;
     address internal feeCollector;
+    mapping(uint256 => uint256) internal domainFeatures;  // New mapping for feature flags
 
     // Abstract functions to be implemented by core logic
     function _exists(uint256 tokenId) internal view virtual returns (bool);
@@ -30,5 +31,5 @@ abstract contract CoreState {
     function ownerOf(uint256 tokenId) public view virtual returns (address);
     function paused() public view virtual returns (bool);
 
-    uint256[50] private __gap;  // storage gap for upgradeability
+    uint256[49] private __gap;  // Adjusted storage gap (was 50)
 }

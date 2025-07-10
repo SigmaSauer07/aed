@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -20,14 +20,16 @@ event AEDCoreInitialized(address indexed initializer, string name, string symbol
  * Inherits OpenZeppelin upgradeable contracts for proxy support.
  */
 abstract contract AEDCore is 
-    ERC721Upgradeable, 
+    ERC721EnumerableUpgradeable, 
     AccessControlUpgradeable, 
     PausableUpgradeable, 
     UUPSUpgradeable, 
     ReentrancyGuardUpgradeable, 
     AEDConstants, 
-    CoreState {
-        
+    CoreState
+{    
+
+
     /**
      * @dev Initializes the core contract. Must be called only once (by the main initialize).
      */
@@ -37,6 +39,7 @@ abstract contract AEDCore is
         address admin
     ) external initializer {
         __ERC721_init(name_, symbol_);
+        __ERC721Enumerable_init();
         __AccessControl_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
@@ -54,14 +57,12 @@ abstract contract AEDCore is
         _grantRole(TLD_MANAGER_ROLE, admin);
 
         nextTokenId = 1;
-        royaltyBps = 500;       // 5% default royalty (can be changed via setRoyaltyBps)
+        royaltyBps = 100;       // 1% default royalty (can be changed via setRoyaltyBps)
         feeCollector = admin;   // initial fee collector (can be changed via setFeeCollector)
-
-        emit AEDCoreInitialized(msg.sender, name_, symbol_);
     }
 
     /** @dev Authorization hook for UUPS proxy upgrades. Only accounts with UPGRADER_ROLE can upgrade. */
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
+    function _authorizeUpgrade(address newImplementation) internal view override onlyRole(UPGRADER_ROLE) {
         require(newImplementation != address(0), "Invalid implementation");
         // (Versioning handled in main AED contract)
     }
@@ -69,15 +70,21 @@ abstract contract AEDCore is
     function supportsInterface(bytes4 interfaceId)
         public view 
         virtual 
-        override(ERC721Upgradeable, AccessControlUpgradeable) 
+        override(ERC721EnumerableUpgradeable, AccessControlUpgradeable) 
         returns (bool) 
     {
-        // Combine ERC721 and AccessControl interface support
+        if (interfaceId == 0x2a55205a) { // IERC721Enumerable interface ID
+            return true;
+        }
         return super.supportsInterface(interfaceId);
     }
 
+    function paused() public view virtual override(PausableUpgradeable, CoreState) returns (bool) {
+        return PausableUpgradeable.paused();
+    }
+
     // Override CoreState’s abstract functions using OpenZeppelin library logic
-    function ownerOf(uint256 tokenId) public view virtual override(CoreState, ERC721Upgradeable) returns (address) {
+    function ownerOf(uint256 tokenId) public view virtual override(CoreState, ERC721Upgradeable, IERC721Upgradeable) returns (address) {
         return ERC721Upgradeable.ownerOf(tokenId);
     }
 
@@ -145,3 +152,4 @@ abstract contract AEDCore is
     // (Additional core logic like domain transfer hooks, etc., can be added as needed)
 
     uint256[50] private __gap;
+}

@@ -33,13 +33,6 @@ abstract contract AEDMinting is CoreState, AEDRegistry {
     error BYODomainNotAllowed();
     error RefundFailed();
 
-    // Constants for pricing
-    uint256 public constant SUBDOMAIN_UNLOCK_PRICE = 0.002 ether;
-    uint256 public constant SUBDOMAIN_UNLOCK_PRICE_BYO = 0.005 ether;
-    uint256 public constant MAX_SUBDOMAINS = 100;  // absolute cap per domain (could use)
-    uint256 public constant MIN_NAME_LENGTH = 3;
-    uint256 public constant MAX_NAME_LENGTH = 64;
-
     // State
     mapping(uint256 => mapping(string => bool)) public mintedSubdomain;
     uint256 public subdomainMaxLimit;

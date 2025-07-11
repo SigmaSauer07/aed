@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "../core/CoreState.sol";
-import "./AEDRegistry.sol";
+import "../core/AEDConstants.sol";
 
 /**
  * @title AEDMinting
  * @dev Module for domain registration and subdomain minting, including fee calculations and payments.
  */
-abstract contract AEDMinting is CoreState, AEDRegistry {
-    using Strings for uint256;
+
+abstract contract AEDMinting is Initializable, PausableUpgradeable, ReentrancyGuardUpgradeable, CoreState, AEDConstants {
 
     // Events
     event SubdomainMinted(address indexed minter, uint256 indexed parentId, uint256 indexed subId, string label, string fullName);
@@ -40,6 +42,8 @@ abstract contract AEDMinting is CoreState, AEDRegistry {
     uint256 public subdomainPriceMultiplier;
 
     function __AEDMinting_init() internal onlyInitializing {
+        __ReentrancyGuard_init();
+        __Pausable_init();
         // Initialize default subdomain pricing limits
         subdomainMaxLimit = 20;
         subdomainBasePrice = 0.001 ether;

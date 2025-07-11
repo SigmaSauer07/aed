@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "../core/CoreState.sol";
-import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
-
+import "../core/AEDConstants.sol";
 
 /**
  * @title AEDRecovery
  * @dev Module for account recovery via guardians. Domain owners can appoint guardians who can collectively 
  * transfer a domain to a new owner if the original owner loses access.
  */
-abstract contract AEDRecovery is CoreState {
-    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
+abstract contract AEDRecovery is Initializable, ReentrancyGuardUpgradeable, CoreState, AEDConstants {
 
     event GuardianAdded(uint256 indexed tokenId, address indexed guardian);
     event GuardianRemoved(uint256 indexed tokenId, address indexed guardian);
@@ -26,20 +26,18 @@ abstract contract AEDRecovery is CoreState {
     uint256 public recoveryApprovalThreshold;
     uint256 public recoveryLockDuration;
 
-    mapping(uint256 => EnumerableSetUpgradeable.AddressSet) private _guardians;
+    mapping(uint256 => address[]) public _guardians;
     mapping(uint256 => uint256) public recoveryTimestamps;
     mapping(uint256 => mapping(address => bool)) public recoveryApprovals;
     mapping(uint256 => uint256) public recoveryApprovalCounts;
     mapping(address => uint256) private _guardianToTokenId;
-
+    
     function __AEDRecovery_init(uint256 maxGuardians, uint256 approvalThreshold) internal onlyInitializing {
+        __ReentrancyGuard_init();
         MAX_GUARDIANS = maxGuardians;
-        recoveryApprovalThreshold = approvalThreshold;
+        recoveryApprovalThreshold = approvalThreshold; 
     }
 
-    function __AEDRecovery_init() internal onlyInitializing {
-        // empty overload if no parameters provided (not used in this version)
-    }
 
     modifier noActiveRecovery(uint256 tokenId) {
         require(recoveryTimestamps[tokenId] == 0, "Recovery pending");
@@ -94,7 +92,15 @@ abstract contract AEDRecovery is CoreState {
         emit RecoveryApproved(tokenId, msg.sender);
     }
 
-    function completeRecovery(uint256 tokenId, address newOwner) external nonReentrant {
+    function getRecoveryStatus(uint256 tokenId) public view returns (bool, uint256, uint256) {}
+
+    function recoverDomain(uint256 tokenId) external {
+        require(canCompleteRecovery(tokenId), "Recovery not completed");
+    }
+
+    function completeRecovery(uint256 tokenId, address newOwner) external payable nonReentrant {
+        require(_guardians[tokenId].contains(msg.sender), "Not guardian");
+
         require(recoveryTimestamps[tokenId] != 0, "No recovery pending");
         require(_guardians[tokenId].contains(msg.sender), "Not guardian");
         require(recoveryApprovalCounts[tokenId] >= recoveryApprovalThreshold, "Not enough approvals");
@@ -142,4 +148,9 @@ abstract contract AEDRecovery is CoreState {
     }
 
     uint256[50] private __gap;
+
+    function initializeModule_Recovery() public virtual onlyInitializing {
+        // Initialization logic for Recovery module (optional)
+    }
+
 }

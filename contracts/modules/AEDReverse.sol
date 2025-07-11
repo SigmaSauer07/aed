@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../core/CoreState.sol";
 
 /**
  * @title AEDReverse
  * @dev Module for reverse resolution (address -> domain). Users can set one of their domains as the reverse record for their address.
  */
-abstract contract AEDReverse is CoreState {
+abstract contract AEDReverse is Initializable, CoreState {
     event ReverseRecordSet(address indexed wallet, uint256 indexed tokenId);
     event ReverseRecordCleared(address indexed wallet);
 
@@ -40,4 +41,9 @@ abstract contract AEDReverse is CoreState {
     }
 
     uint256[50] private __gap;
+
+    function initializeModule_Reverse() public virtual onlyInitializing {
+        // Initialization logic for Reverse module (optional)
+    }
+
 }

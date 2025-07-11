@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../core/CoreState.sol";
+
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "../core/AEDConstants.sol";
+import "../core/CoreState.sol";
+
 
 /**
  * @title AEDAdmin
  * @dev Administrative and configuration module for AED.
  * Includes fee collector, royalties, and contract pause/unpause functionality.
  */
-abstract contract AEDAdmin is CoreState, AEDConstants {
+abstract contract AEDAdmin is Initializable, AEDConstants, CoreState {
     // State variables
     struct AdminConfig {
         address feeCollector;
@@ -35,7 +38,6 @@ abstract contract AEDAdmin is CoreState, AEDConstants {
         // Note: Core and other base initializers are called in AEDCore and main contract.
         // Here we set up admin-specific state.
         address previousCollector = _admin.feeCollector;
-        uint256 previousRoyaltyBps = _admin.royaltyBps;
         _admin.maxSubdomains = 20;
         _admin.basePrice = 0.001 ether;
         _admin.multiplier = 2;
@@ -78,19 +80,18 @@ abstract contract AEDAdmin is CoreState, AEDConstants {
     function setRoyaltyBps(uint256 newBps) external {
         require(hasRole(FEE_MANAGER_ROLE, msg.sender), "Not authorized");
         require(newBps <= MAX_ROYALTY_BPS, "Max 10%");
+        require(newBps != _admin.royaltyBps, "Already set to this value (10%");
         _admin.royaltyBps = newBps;
         emit RoyaltyUpdated(newBps);
     }
 
     function pauseContract() external {
         require(hasRole(ADMIN_ROLE, msg.sender), "Not authorized");
-        _pause();
         emit ContractPaused(msg.sender);
-    }
+    }   
 
     function unpauseContract() external {
         require(hasRole(ADMIN_ROLE, msg.sender), "Not authorized");
-        _unpause();
         emit ContractUnpaused(msg.sender);
     }
 
@@ -117,4 +118,9 @@ abstract contract AEDAdmin is CoreState, AEDConstants {
     }
 
     uint256[50] private __gap;
+
+    function initializeModule_Admin() public virtual onlyInitializing {
+        // Initialization logic for Admin module (optional)
+    }
+
 }

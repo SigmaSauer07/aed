@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 import "../core/CoreState.sol";
 import "../core/AEDConstants.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -10,7 +12,7 @@ import "@openzeppelin/contracts/utils/Base64.sol";
  * @title AEDMetadata
  * @dev Module for managing on-chain metadata (profile URI, image URI) and generating token URI JSON.
  */
-abstract contract AEDMetadata is CoreState, AEDConstants {
+abstract contract AEDMetadata is Initializable, CoreState, AEDConstants {
     using Strings for uint256;
     using Base64 for bytes;
 
@@ -126,7 +128,7 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
     }
 
     // Token URI logic (on-chain metadata generation)
-    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+    function tokenURI(uint256 tokenId) public view virtual returns (string memory) {
         if (!_exists(tokenId)) revert NonexistentToken();
         Domain memory domain = domains[tokenId];
         string memory fullName = string(abi.encodePacked(domain.name, ".", domain.tld));
@@ -224,4 +226,9 @@ abstract contract AEDMetadata is CoreState, AEDConstants {
     }
 
     // Note: supportsInterface for ERC2981 is handled in main contract override.
+
+    function initializeModule_Metadata() public virtual onlyInitializing {
+        // Initialization logic for Metadata module (optional)
+    }
+
 }

@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/common/ERC2981Upgradeable.sol";
 import "./AEDConstants.sol";
 import "./CoreState.sol";
 
@@ -20,15 +23,17 @@ event AEDCoreInitialized(address indexed initializer, string name, string symbol
  * Inherits OpenZeppelin upgradeable contracts for proxy support.
  */
 abstract contract AEDCore is 
-    ERC721EnumerableUpgradeable, 
+    
+    ERC721Upgradeable,
     AccessControlUpgradeable, 
+    ERC721URIStorageUpgradeable,
+    ERC721EnumerableUpgradeable,
+    ERC2981Upgradeable,
     PausableUpgradeable, 
-    UUPSUpgradeable, 
-    ReentrancyGuardUpgradeable, 
+    UUPSUpgradeable,
+    ReentrancyGuardUpgradeable,
     AEDConstants, 
-    CoreState
-{    
-
+    CoreState {
 
     /**
      * @dev Initializes the core contract. Must be called only once (by the main initialize).
@@ -37,16 +42,19 @@ abstract contract AEDCore is
         string memory name_,
         string memory symbol_,
         address admin
-    ) external initializer {
+    ) internal onlyInitializing {
         __ERC721_init(name_, symbol_);
+        __ERC721URIStorage_init();
         __ERC721Enumerable_init();
+        __ERC2981_init();
         __AccessControl_init();
         __Pausable_init();
         __UUPSUpgradeable_init();
-        __ReentrancyGuard_init();  // Ensure reentrancy guard is initialized
+        __ReentrancyGuard_init();
 
         require(bytes(name_).length > 0, "Name cannot be empty");
         require(bytes(symbol_).length > 0, "Symbol cannot be empty");
+        require(admin != address(0), "Admin cannot be zero address");
 
         // Grant all essential roles to the provided admin address
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
@@ -59,6 +67,8 @@ abstract contract AEDCore is
         nextTokenId = 1;
         royaltyBps = 100;       // 1% default royalty (can be changed via setRoyaltyBps)
         feeCollector = admin;   // initial fee collector (can be changed via setFeeCollector)
+
+        emit AEDCoreInitialized(admin, name_, symbol_);
     }
 
     /** @dev Authorization hook for UUPS proxy upgrades. Only accounts with UPGRADER_ROLE can upgrade. */
@@ -70,12 +80,9 @@ abstract contract AEDCore is
     function supportsInterface(bytes4 interfaceId)
         public view 
         virtual 
-        override(ERC721EnumerableUpgradeable, AccessControlUpgradeable) 
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, ERC2981Upgradeable, AccessControlUpgradeable)
         returns (bool) 
     {
-        if (interfaceId == 0x2a55205a) { // IERC721Enumerable interface ID
-            return true;
-        }
         return super.supportsInterface(interfaceId);
     }
 
@@ -83,8 +90,8 @@ abstract contract AEDCore is
         return PausableUpgradeable.paused();
     }
 
-    // Override CoreState’s abstract functions using OpenZeppelin library logic
-    function ownerOf(uint256 tokenId) public view virtual override(CoreState, ERC721Upgradeable, IERC721Upgradeable) returns (address) {
+    // Override CoreState's abstract functions using OpenZeppelin library logic
+    function ownerOf(uint256 tokenId) public view virtual override(CoreState, ERC721Upgradeable, IERC721) returns (address) {
         return ERC721Upgradeable.ownerOf(tokenId);
     }
 
@@ -95,15 +102,16 @@ abstract contract AEDCore is
         return AccessControlUpgradeable.hasRole(role, account);
     }
 
-    function _exists(uint256 tokenId) internal view virtual override(ERC721Upgradeable, CoreState) returns (bool) {
-        return ERC721Upgradeable._exists(tokenId);
+    function exists(uint256 tokenId) internal view virtual returns (bool) {
+        return _ownerOf(tokenId) != address(0);
     }
 
     function _isApprovedOrOwner(address spender, uint256 tokenId) 
-        internal view virtual override(CoreState, ERC721Upgradeable) 
+        internal view virtual override(CoreState) 
         returns (bool) 
     {
-        return ERC721Upgradeable._isApprovedOrOwner(spender, tokenId);
+        address owner = ERC721Upgradeable.ownerOf(tokenId);
+        return (spender == owner || getApproved(tokenId) == spender || isApprovedForAll(owner, spender));
     }
 
     // Implementations for abstract CoreState helpers
@@ -117,14 +125,25 @@ abstract contract AEDCore is
         return isApprovedForAll(owner, operator);
     }
 
-    function _pause() internal virtual override(PausableUpgradeable) {
-        // Only ADMIN_ROLE can pause/unpause (added security check)
-        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not admin");
-        super._pause();
+    function pause() external onlyRole(ADMIN_ROLE) {
+        _pause();
     }
-    function _unpause() internal virtual override(PausableUpgradeable) {
-        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not admin");
-        super._unpause();
+
+    function unpause() external onlyRole(ADMIN_ROLE) {
+        _unpause();
+    }
+
+    // Override functions with conflicts between parent contracts
+    function _increaseBalance(address account, uint128 value) internal virtual override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
+        super._increaseBalance(account, value);
+    }
+
+    function _update(address to, uint256 tokenId, address auth) internal virtual override(ERC721Upgradeable, ERC721EnumerableUpgradeable) returns (address) {
+        return super._update(to, tokenId, auth);
+    }
+
+    function tokenURI(uint256 tokenId) public view virtual override(ERC721Upgradeable, ERC721URIStorageUpgradeable) returns (string memory) {
+        return ERC721URIStorageUpgradeable.tokenURI(tokenId);
     }
 
     // ========== Core domain read functions ==========
@@ -147,6 +166,18 @@ abstract contract AEDCore is
 
     function getFeeCollector() external view returns (address) {
         return feeCollector;
+    }
+
+    // ========== Admin functions ==========
+
+    function setRoyaltyBps(uint256 _royaltyBps) external onlyRole(ADMIN_ROLE) {
+        require(_royaltyBps <= 10000, "Royalty cannot exceed 100%");
+        royaltyBps = _royaltyBps;
+    }
+
+    function setFeeCollector(address _feeCollector) external onlyRole(FEE_MANAGER_ROLE) {
+        require(_feeCollector != address(0), "Fee collector cannot be zero address");
+        feeCollector = _feeCollector;
     }
 
     // (Additional core logic like domain transfer hooks, etc., can be added as needed)

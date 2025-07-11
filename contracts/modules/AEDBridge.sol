@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "../core/CoreState.sol";
 import "../core/AEDConstants.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 /**
  * @title AEDBridge
  * @dev Module for bridging domains to other chains. Allows marking a domain as bridged (locked) and verifying 
  * its transfer to another chain via a Merkle proof.
  */
-abstract contract AEDBridge is CoreState, AEDConstants {
+abstract contract AEDBridge is Initializable, CoreState, AEDConstants {
     event DomainBridged(uint256 indexed tokenId, uint256 indexed destChainId, bytes32 merkleRoot);
     event DomainReceived(uint256 indexed tokenId, address indexed newOwner);
 
@@ -58,4 +59,9 @@ abstract contract AEDBridge is CoreState, AEDConstants {
     }
 
     uint256[50] private __gap;
+
+    function initializeModule_Bridge() public virtual onlyInitializing {
+        // Initialization logic for Bridge module (optional)
+    }
+
 }

@@ -1,0 +1,11 @@
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.hidden-mobile {
+  display: none;
+}
+@media (min-width: 600px) {
+  .hidden-desktop { display: none; }
+}

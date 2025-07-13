@@ -1,0 +1,49 @@
+.activity-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.tx-icon {
+  position: relative;
+}
+
+.tx-icon img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.tx-direction-icon {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.tx-details {
+  flex-grow: 1;
+  margin-left: 12px;
+}
+
+.tx-title {
+  font-weight: bold;
+}
+
+.tx-subtitle {
+  font-size: 0.8rem;
+  color: #999;
+}
+
+.tx-amount {
+  text-align: right;
+}
+
+.tx-value {
+  font-weight: bold;
+}

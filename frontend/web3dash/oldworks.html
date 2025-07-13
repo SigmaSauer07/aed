@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <title>Alsania Enhanced Domains</title>
-  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="css/style.css"/>
   <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/ethers@5.8.0/dist/ethers.umd.min.js"></script>
 </head>
@@ -11,7 +11,7 @@
 <div class="container">
 
   <div class="hero-logo">
-    <img src="img/AEDlogo.png" alt="Alsania Enhanced Domains Logo">
+    <img src="img/.png" alt="Alsania Enhanced Domains Logo">
   </div>
 
   <p id="wallet" class="wallet-button">
@@ -40,10 +40,10 @@
   <div class="panel">
     <h2>Extra Enhancements</h2>
     <div class="checkbox-group">
-      <label><input type="checkbox" class="enhance"/> <span>IPFS Profile Link ($1/mo)</span></label>
-      <label><input type="checkbox" class="enhance"/> <span>Verified Owner Badge ($1/mo)</span></label>
+      <label><input type="checkbox" class="enhance"/> <span>Link ($1/mo)</span></label>
+      <!--<label><input type="checkbox" class="enhance"/> <span>Verified Owner Badge ($1/mo)</span></label>
       <label><input type="checkbox" class="enhance"/> <span>Featured Domain Listing ($1/mo)</span></label>
-      <label><input type="checkbox" class="enhance"/> <span>Custom Metadata Fields ($1/mo)</span></label>
+      <label><input type="checkbox" class="enhance"/> <span>Custom Metadata Fields ($1/mo)</span></label>-->
     </div>
     <p>Total Monthly Fee: <span id="enhanceTotal">$0</span></p>
   </div>
@@ -56,11 +56,11 @@
       <a href="#" onclick="alert('Fee doubles each subdomain after 2: 3rd=$0.10, 4th=$0.20, 5th=$0.40...')">Subdomain linear fee explained</a>
     </p>
     <div class="checkbox-group">
-      <label class="disabled-option"><input type="checkbox" disabled/> <span>One-time fee: $5 to mint subdomains</span></label>
+      <!--<label class="disabled-option"><input type="checkbox" disabled/> <span>One-time fee: $5 to mint subdomains</span></label>
       <label><input type="checkbox" class="enhanceUpgrade"/> <span>IPFS Profile Link ($1/mo)</span></label>
       <label><input type="checkbox" class="enhanceUpgrade"/> <span>Verified Owner Badge ($1/mo)</span></label>
       <label><input type="checkbox" class="enhanceUpgrade"/> <span>Featured Domain Listing ($1/mo)</span></label>
-      <label><input type="checkbox" class="enhanceUpgrade"/> <span>Custom Metadata Fields ($1/mo)</span></label>
+      <label><input type="checkbox" class="enhanceUpgrade"/> <span>Custom Metadata Fields ($1/mo)</span></label>---->
     </div>
     <p>Total Monthly Fee: <span id="upgradeTotal">$5 (first month), $0 after</span></p>
     <button onclick="upgrade()">Upgrade</button>
@@ -68,7 +68,7 @@
   </div>
 </div>
 
-<script src="js/client.js"></script>
+<script src="script.js"></script>
 <script>
 function connect() {
   if (!window.ethereum) return alert("Install MetaMask");

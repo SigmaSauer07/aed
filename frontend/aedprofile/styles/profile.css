@@ -1,0 +1,74 @@
+.profileWrapper {
+  display: flex;
+  justify-content: center;
+  height: 132px;
+  z-index: 100;
+}
+@media (min-width: 600px) {
+  .profileWrapper { height: 172px; }
+}
+@media (min-width: 960px) {
+  .profileWrapper { justify-content: flex-start; }
+}
+
+.profilePicture {
+  position: relative;
+  width: 132px;
+  height: 132px;
+}
+@media (min-width: 600px) {
+  .profilePicture { width: 172px; height: 172px; }
+}
+
+.cardHover {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: all .2s ease;
+}
+.cardHover:hover {
+  transform: rotateY(180deg);
+}
+.theFront, .theBack {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.theBack { transform: rotateY(180deg); }
+
+.placeholderContainer,
+.qrCodeContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  border: 6px solid var(--color-bg);
+  background: var(--color-bg);
+  z-index: 1;
+}
+@media (min-width: 600px) {
+  .placeholderContainer,
+  .qrCodeContainer {
+    width: 172px;
+    height: 172px;
+  }
+}
+
+.profilePlaceholder {
+  user-select: none;
+  font-size: 132px;
+  transition: fill 200ms ease;
+}
+@media (min-width: 960px) {
+  .profilePlaceholder {
+    font-size: calc(172px + 4px);
+  }
+}

@@ -1,0 +1,21 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: var(--color-bg);
+}
+.contentGrid {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 auto;
+  padding: 0 16px;
+  max-width: 1256px;
+}
+.gridItem {
+  box-sizing: border-box;
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+@media (min-width: 960px) {
+  .gridItem { flex: 0 0 33.333%; max-width: 33.333%; }
+}

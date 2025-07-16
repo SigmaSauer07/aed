@@ -1,0 +1,134 @@
+/*==================================
+=            FONTS                 =
+==================================*/
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;600&display=swap');
+
+/*==================================
+=            BASE RESET            =
+==================================*/
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Orbitron', sans-serif;
+  color: #39FF14;
+  background: url('../img/bg.png') no-repeat center center fixed;
+  background-size: cover;
+  overflow-x: hidden;
+}
+
+/*==================================
+=            TYPOGRAPHY           =
+==================================*/
+h1, h2 {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+}
+
+p, span {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.small-text {
+  font-size: 12px;
+  color: #bbb;
+}
+
+a {
+  color: #39FF14;
+  text-decoration: none;
+}
+
+a:hover {
+  text-shadow: 0 0 5px #39FF14;
+}
+
+/*==================================
+=           CONTAINERS            =
+==================================*/
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.panel {
+  background-color: rgba(0, 0, 0, 0.7);
+  border: 2px solid #39FF14;
+  border-radius: 8px;
+  padding: 20px;
+  max-width: 700px;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.hero-logo {
+  width: 120px;
+  margin-bottom: 30px;
+}
+
+/*==================================
+=         BUTTON STYLES           =
+==================================*/
+button, .wallet-button {
+  background-color: transparent;
+  border: 2px solid #39FF14;
+  color: #39FF14;
+  padding: 10px 20px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:hover, .wallet-button:hover {
+  background-color: #39FF14;
+  color: #000;
+  box-shadow: 0 0 10px #39FF14;
+}
+
+button:disabled, .disabled-option {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/*==================================
+=        ANIMATIONS / FX          =
+==================================*/
+@keyframes pulse {
+  0% { box-shadow: 0 0 0px #39FF14; }
+  50% { box-shadow: 0 0 20px #39FF14; }
+  100% { box-shadow: 0 0 0px #39FF14; }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+/*==================================
+=       RESPONSIVE RULES          =
+==================================*/
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 10px;
+  }
+
+  .panel {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .wallet-button {
+    font-size: 14px;
+  }
+}

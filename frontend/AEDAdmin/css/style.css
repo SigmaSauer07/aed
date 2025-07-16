@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&family=Orbitron:wght@600&family=Rajdhani:wght@500&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Open Sans', sans-serif;
+  background: url('../img/bg.png') no-repeat center center fixed;
+  background-size: cover;
+  color: #39FF14;
+}
+.container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 30px;
+  background: rgba(0,0,0,0.8);
+  border-radius: 12px;
+  box-shadow: 0 0 20px #39FF14;
+}
+h1 {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2.5em;
+  margin-bottom: 10px;
+  text-align: center;
+  color: #39FF14;
+}
+.panel {
+  border: 2px solid #39FF14;
+  background: rgba(0,0,0,0.3);
+  padding: 20px;
+  border-radius: 8px;
+}
+h3 {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.4em;
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #39FF14;
+}
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 30px;
+  margin-top: 30px;
+}
+.form-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+input, select, button {
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+input, select {
+  flex: 1;
+  background: #000;
+  color: #39FF14;
+  border: 1px solid #39FF14;
+}
+button {
+  background-color: #001f2e;
+  border: 2px solid #39FF14;
+  color: #39FF14;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform .25s, box-shadow .25s;
+}
+button:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 12px #39FF14, inset 0 0 5px #39FF14;
+}
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+.button-group button {
+  flex: 1;
+}
+.grant-btn { background-color: #003d00; border-color: #00ff00; color: #00ff00; }
+.revoke-btn { background-color: #3d0000; border-color: #ff0000; color: #ff0000; }
+.pause-btn { background-color: #3d3d00; border-color: #ffff00; color: #ffff00; }
+.unpause-btn { background-color: #003d00; border-color: #00ff00; color: #00ff00; }
+.wallet-info {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 15px;
+  background: rgba(57,255,20,0.1);
+  border: 1px solid #39FF14;
+  border-radius: 8px;
+}
+.multiplier-selector {
+  position: relative;
+  display: inline-block;
+}
+
+.small-input {
+  cursor: pointer;
+  text-align: center;
+  width: 60px;
+}
+
+.multiplier-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid #39FF14;
+  border-radius: 6px;
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 80px;
+}
+
+.multiplier-option {
+  padding: 0.5rem;
+  text-align: center;
+  color: #39FF14;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.multiplier-option:hover {
+  background: #39FF14;
+  color: #000;
+}
+
+.multiplier-option.selected {
+  background: #39FF14;
+  color: #000;
+  font-weight: bold;
+}
+
+.preview-row {
+  margin-top: 1rem;
+  font-size: 1.1rem;
+  color: #39FF14;
+  text-align: center;
+}
+
+.status-display {
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+}
+.balance-display {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-top: 10px;
+  text-align: center;
+}
+@media (max-width: 800px) {
+  .admin-grid { grid-template-columns: 1fr; }
+  .form-row { flex-direction: column; }
+}

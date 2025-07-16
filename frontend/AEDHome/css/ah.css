@@ -1,0 +1,220 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&family=Orbitron:wght@600;700&family=Rajdhani:wght@400;500;600&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Open Sans', sans-serif;
+  background: url('../img/bg.png') no-repeat center center fixed;
+  background-size: cover;
+  color: #39FF14;
+}
+
+a {
+  color: #39FF14;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.header {
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.9);
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 24px;
+}
+.nav-menu {
+  display: flex;
+  gap: 20px;
+}
+.nav-link {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 18px;
+}
+.wallet-btn {
+  background-color: #001f2e;
+  border: 2px solid #39FF14;
+  color: #39FF14;
+  padding: 10px 16px;
+  font-family: 'Rajdhani', sans-serif;
+  cursor: pointer;
+}
+
+.hero {
+  text-align: center;
+  padding: 60px 20px;
+}
+.hero-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 36px;
+  text-shadow: 0 0 8px #39FF14;
+}
+.hero-subtitle {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 24px;
+  margin-top: 10px;
+}
+.hero-description {
+  max-width: 600px;
+  margin: 20px auto;
+}
+.cta-buttons {
+  margin-top: 30px;
+}
+.cta-primary, .cta-secondary {
+  margin: 5px;
+  padding: 10px 20px;
+  border: 2px solid #39FF14;
+  border-radius: 6px;
+  background: #39FF14;
+  color: #001f2e;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: bold;
+}
+.cta-secondary {
+  background: transparent;
+  color: #39FF14;
+  font-weight: bold;
+}
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 12px;
+  box-shadow: 0 0 20px #39FF14;
+}
+h2 {
+  font-family: 'Orbitron', sans-serif;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border: none;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    input, select {
+      background: #000;
+      color: #39FF14;
+      border: 1px solid #39FF14;
+    }
+
+    button {
+      background-color: #001f2e;
+      border: 2px solid #39ff14;
+      color: #39ff14;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.1em;
+      font-weight: 500;
+      letter-spacing: 1px;
+      padding: 0.75em 1.5em;
+      margin: 0.5em 0;
+      border-radius: 8px;
+      transition: all 0.25s ease-in-out;
+      box-shadow: 0 0 5px #39ff14 inset;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #001a22;
+      box-shadow: 0 0 12px #39ff14, 0 0 25px #39ff14 inset;
+      transform: scale(1.03);
+    }
+
+    .panel {
+      border: 2px solid #39FF14;
+      padding: 25px;
+      margin: 25px 0;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+    
+.tld-container {
+  display: flex;
+  gap: 20px;
+}
+
+.free-badge, .featured-badge {
+  font-size: 12px;
+  background: #003f00;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.total-display {
+  margin: 10px 0;
+  font-weight: bold;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+.features-grid, .pricing-grid, .footer-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+.feature-card, .pricing-card {
+  background: rgba(0,0,0,0.6);
+  border: 1px solid #39FF14;
+  padding: 20px;
+  border-radius: 10px;
+}
+.feature-icon {
+  font-size: 30px;
+  text-align: center;
+}
+.pricing-price {
+  font-size: 24px;
+  margin: 10px 0;
+}
+.pricing-btn {
+  background-color: #001f2e;
+  border: 2px solid #39FF14;
+  color: #39FF14;
+  padding: 8px;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.footer {
+  padding: 40px 20px;
+  background: rgba(0, 0, 0, 0.95);
+}
+.footer-section h3 {
+  font-family: 'Orbitron', sans-serif;
+}
+.footer-bottom {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+  .nav-menu {
+    display: none;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.9);
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    padding: 10px;
+    border-radius: 10px;
+  }
+}

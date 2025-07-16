@@ -1,0 +1,194 @@
+/* === Font Import === */
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&family=Orbitron:wght@600&family=Rajdhani:wght@500&display=swap');
+
+/* === Reset and Global === */
+body {
+  margin: 0;
+  font-family: 'Open Sans', sans-serif;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  color: #39FF14;
+  font-size: 17px;
+  min-height: 100vh;
+}
+
+/* === Typography === */
+.text-center { text-align: center; }
+.text-bold { font-weight: bold; }
+.text-glow { color: #39FF14; text-shadow: 0 0 8px #39FF14; }
+.text-sm { font-size: 0.9rem; }
+.text-lg { font-size: 1.4rem; }
+.text-xl { font-size: 2rem; }
+.text-2xl { font-size: 2.5rem; }
+
+.font-orbitron { font-family: 'Orbitron', sans-serif; }
+.font-rajdhani { font-family: 'Rajdhani', sans-serif; }
+
+/* === Layout === */
+.container {
+  max-width: 1200px;
+  margin: 40px auto;
+  background: rgba(0, 0, 0, .8);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px #39FF14;
+}
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-row { flex-direction: row; }
+.justify-center { justify-content: center; }
+.items-center { align-items: center; }
+.gap-1 { gap: 0.5rem; }
+.gap-2 { gap: 1rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+
+/* === Spacing === */
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.pt-2 { padding-top: 1rem; }
+.pb-2 { padding-bottom: 1rem; }
+
+/* === Sizing === */
+.w-full { width: 100%; }
+.w-auto { width: auto; }
+.w-sm { width: 80px; }
+
+/* === Colors and Backgrounds === */
+.bg-dark { background: rgba(0, 0, 0, 0.8); }
+.bg-glow { background: rgba(57,255,20,0.1); }
+.border { border: 1px solid #39FF14; }
+.border-glow { border: 2px solid #39FF14; border-radius: 8px; }
+
+/* === Components === */
+.panel {
+  border: 2px solid #39FF14;
+  padding: 20px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.wallet-info {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 15px;
+  background: rgba(57, 255, 20, 0.1);
+  border-radius: 8px;
+  border: 1px solid #39FF14;
+}
+
+.status-display {
+  margin-top: 15px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1em;
+}
+
+/* === Form Controls === */
+input, select, button {
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+input, select {
+  background: #000;
+  color: #39FF14;
+  border: 1px solid #39FF14;
+  width: 100%;
+}
+
+button {
+  background-color: #001f2e;
+  border: 2px solid #39ff14;
+  color: #39ff14;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1em;
+  padding: 0.75em 1.5em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.25s all ease-in-out;
+  box-shadow: 0 0 5px #39ff14 inset;
+}
+
+button:hover {
+  background-color: #001a22;
+  box-shadow: 0 0 12px #39ff14, 0 0 25px #39ff14 inset;
+  transform: scale(1.03);
+}
+
+/* === Buttons Semantic === */
+.btn {
+  background-color: #001f2e;
+  border: 2px solid #39ff14;
+  color: #39ff14;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1em;
+  padding: 0.75em 1.5em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.25s all ease-in-out;
+  box-shadow: 0 0 5px #39ff14 inset;
+}
+.btn:hover {
+  background-color: #001a22;
+  box-shadow: 0 0 12px #39ff14, 0 0 25px #39ff14 inset;
+  transform: scale(1.03);
+}
+.btn-grant { background-color: #003d00; border-color: #00ff00; color: #00ff00; }
+.btn-revoke { background-color: #3d0000; border-color: #ff0000; color: #ff0000; }
+.btn-pause { background-color: #3d3d00; border-color: #ffff00; color: #ffff00; }
+.btn-unpause { background-color: #003d00; border-color: #00ff00; color: #00ff00; }
+
+/* === Multiplier Dropdown === */
+.multiplier-selector {
+  position: relative;
+  display: inline-block;
+}
+
+.small-input {
+  cursor: pointer;
+  text-align: center;
+  width: 60px;
+}
+
+.multiplier-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: rgba(0, 0, 0, 0.9);
+  border: 1px solid #39FF14;
+  border-radius: 6px;
+  z-index: 100;
+  max-height: 200px;
+  overflow-y: auto;
+  width: 80px;
+}
+
+.multiplier-option {
+  padding: 0.5rem;
+  text-align: center;
+  color: #39FF14;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.multiplier-option:hover,
+.multiplier-option.selected {
+  background: #39FF14;
+  color: #000;
+  font-weight: bold;
+}
+
+/* === Feedback Colors === */
+.success { color: #00ff00; }
+.error { color: #ff0000; }
+.warning { color: #ffff00; }

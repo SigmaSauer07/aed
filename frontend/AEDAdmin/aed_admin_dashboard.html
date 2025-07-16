@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AED Admin Dashboard</title>
+  <link rel="stylesheet" href="css/ad.css">
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Orbitron:wght@600&family=Rajdhani:wght@500&display=swap" rel="stylesheet">
+  <style>
+    
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>AED Admin Dashboard</h1>
+
+    <div class="wallet-info">
+      <div class="wallet-status">
+        <div class="status-indicator" id="connectionStatus"></div>
+        <span id="walletAddress">Wallet: Not connected</span>
+      </div>
+      <button id="connectBtn">Connect Wallet</button>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <div class="nav-tab active" data-tab="overview">📊 Overview</div>
+      <div class="nav-tab" data-tab="roles">👥 Roles</div>
+      <div class="nav-tab" data-tab="tlds">🌐 TLDs</div>
+      <div class="nav-tab" data-tab="fees">💰 Fees</div>
+      <div class="nav-tab" data-tab="system">⚙️ System</div>
+      <div class="nav-tab" data-tab="emergency">🚨 Emergency</div>
+      <div class="nav-tab" data-tab="revenue">📈 Revenue</div>
+      <div class="nav-tab" data-tab="analytics">📊 Analytics</div>
+    </div>
+
+    <!-- Overview Tab -->
+    <div class="tab-content active" id="overview">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="totalDomains">0</div>
+          <div class="stat-label">Total Domains</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="totalRevenue">0</div>
+          <div class="stat-label">Total Revenue (MATIC)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="activeTLDs">0</div>
+          <div class="stat-label">Active TLDs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="systemStatus">🟢</div>
+          <div class="stat-label">System Status</div>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="panel">
+          <h3><span class="panel-icon">💼</span>Contract Balance</h3>
+          <div class="form-row">
+            <input type="text" id="contractAddress" placeholder="Contract Address" value="0x3Bf795D47f7B32f36cbB1222805b0E0c5EF066f1">
+            <button id="checkBalanceBtn">Check Balance</button>
+          </div>
+          <div id="balanceResult" class="balance-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">⏸️</span>Contract Control</h3>
+          <div class="form-group">
+            <label for="contractSelect">Select Contract:</label>
+            <select id="contractSelect">
+              <option value="domain">Domain Minting</option>
+              <option value="subdomain">Subdomain Minting</option>
+              <option value="all">All Contracts</option>
+            </select>
+          </div>
+          <div class="button-group">
+            <button id="pauseBtn" class="btn-warning">Pause</button>
+            <button id="unpauseBtn" class="btn-success">Unpause</button>
+          </div>
+          <div id="contractStatus" class="status-display"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Roles Tab -->
+    <div class="tab-content" id="roles">
+      <div class="admin-grid">
+        <div class="panel">
+          <h3><span class="panel-icon">👥</span>Role Management</h3>
+          <div class="form-group">
+            <label for="roleAddress">Wallet Address:</label>
+            <input type="text" id="roleAddress" placeholder="0x...">
+          </div>
+          <div class="form-group">
+            <label for="roleSelect">Role:</label>
+            <select id="roleSelect">
+              <option value="">Select Role</option>
+              <option value="ADMIN_ROLE">Admin Role</option>
+              <option value="UPGRADER_ROLE">Upgrader Role</option>
+              <option value="BRIDGE_MANAGER">Bridge Manager</option>
+              <option value="FEE_MANAGER_ROLE">Fee Manager Role</option>
+              <option value="TLD_MANAGER_ROLE">TLD Manager Role</option>
+              <option value="DOMAIN_MANAGER">Domain Manager</option>
+              <option value="PROFILE_MANAGER">Profile Manager</option>
+              <option value="RECOVERY_MANAGER">Recovery Manager</option>
+              <option value="ENHANCEMENT_MANAGER">Enhancement Manager</option>
+              <option value="FEE_COLLECTOR_ROLE">Fee Collector Role</option>
+            </select>
+          </div>
+          <div class="button-group">
+            <button id="grantRoleBtn" class="btn-success">Grant Role</button>
+            <button id="revokeRoleBtn" class="btn-danger">Revoke Role</button>
+            <button id="checkRoleBtn" class="btn-info">Check Role</button>
+          </div>
+          <div id="roleStatus" class="status-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">👤</span>Batch Role Operations</h3>
+          <div class="form-group">
+            <label for="batchRoleData">Batch Data (JSON):</label>
+            <textarea id="batchRoleData" rows="6" placeholder='[{"address": "0x...", "role": "ADMIN_ROLE", "grant": true}]'></textarea>
+          </div>
+          <button id="batchRoleBtn">Execute Batch</button>
+          <div id="batchRoleStatus" class="status-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">🔐</span>Emergency Operators</h3>
+          <div class="form-group">
+            <label for="emergencyAddress">Address:</label>
+            <input type="text" id="emergencyAddress" placeholder="0x...">
+          </div>
+          <div class="button-group">
+            <button id="addEmergencyBtn" class="btn-success">Add Emergency Operator</button>
+            <button id="removeEmergencyBtn" class="btn-danger">Remove Emergency Operator</button>
+          </div>
+          <div id="emergencyStatus" class="status-display"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TLDs Tab -->
+    <div class="tab-content" id="tlds">
+      <div class="admin-grid">
+        <div class="panel">
+          <h3><span class="panel-icon">🌐</span>TLD Configuration</h3>
+          <div class="form-group">
+            <label for="tldName">TLD Name:</label>
+            <input type="text" id="tldName" placeholder="alsania">
+          </div>
+          <div class="form-row">
+            <input type="number" id="tldRegFee" placeholder="Registration Fee" step="0.01">
+            <input type="number" id="tldRenewFee" placeholder="Renewal Fee" step="0.01">
+          </div>
+          <div class="form-row">
+            <input type="number" id="tldMinLength" placeholder="Min Length" min="1">
+            <input type="number" id="tldMaxLength" placeholder="Max Length" min="1">
+          </div>
+          <div class="form-group">
+            <label for="tldController">Controller Address:</label>
+            <input type="text" id="tldController" placeholder="0x...">
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="tldWhitelist"> Requires Whitelist
+            </label>
+          </div>
+          <div class="button-group">
+            <button id="configureTldBtn" class="btn-success">Configure TLD</button>
+            <button id="deactivateTldBtn" class="btn-danger">Deactivate TLD</button>
+          </div>
+          <div id="tldConfigStatus" class="status-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">📋</span>TLD Pricing</h3>
+          <div class="form-group">
+            <label for="tldPriceSelect">Select TLD:</label>
+            <select id="tldPriceSelect">
+              <option value="alsania">.alsania</option>
+              <option value="aed">.aed</option>
+              <option value="07">.07</option>
+              <option value="fx">.fx</option>
+              <option value="crypto">.crypto</option>
+              <option value="web3">.web3</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <input type="number" id="tldPrice" placeholder="Price in MATIC" step="0.01">
+            <button id="updateTldPriceBtn">Update Price</button>
+          </div>
+          <div id="currentTldPrices" class="status-display">
+            <div><strong>Current Prices:</strong></div>
+            <div id="tldPricesList"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">📃</span>Active TLDs</h3>
+          <button id="loadTldsBtn">Load Active TLDs</button>
+          <div id="tldsList" class="status-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">✅</span>Whitelist Management</h3>
+          <div class="form-group">
+            <label for="whitelistTld">TLD:</label>
+            <input type="text" id="whitelistTld" placeholder="alsania">
+          </div>
+          <div class="form-group">
+            <label for="whitelistAddress">Address:</label>
+            <input type="text" id="whitelistAddress" placeholder="0x...">
+          </div>
+          <div class="button-group">
+            <button id="addWhitelistBtn" class="btn-success">Add to Whitelist</button>
+            <button id="removeWhitelistBtn" class="btn-danger">Remove from Whitelist</button>
+          </div>
+          <div id="whitelistStatus" class="status-display"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fees Tab -->
+    <div class="tab-content" id="fees">
+      <div class="admin-grid">
+        <div class="panel">
+          <h3><span class="panel-icon">💰</span>Fee Management</h3>
+          <div class="form-group">
+            <label for="feeType">Fee Type:</label>
+            <select id="feeType">
+              <option value="REGISTRATION_FEE">Registration Fee</option>
+              <option value="RENEWAL_FEE">Renewal Fee</option>
+              <option value="SUBDOMAIN_FEE">Subdomain Fee</option>
+              <option value="ENHANCEMENT_FEE">Enhancement Fee</option>
+              <option value="BRIDGE_FEE">Bridge Fee</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <input type="number" id="feeAmount" placeholder="Amount in MATIC" step="0.01">
+            <button id="setFeeBtn">Set Fee</button>
+          </div>
+          <div id="feeStatus" class="status-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">📨</span>Fee Recipients</h3>
+          <div class="form-group">
+            <label for="recipientFeeType">Fee Type:</label>
+            <select id="recipientFeeType">
+              <option value="REGISTRATION_FEE">Registration Fee</option>
+              <option value="RENEWAL_FEE">Renewal Fee</option>
+              <option value="SUBDOMAIN_FEE">Subdomain Fee</option>
+              <option value="ENHANCEMENT_FEE">Enhancement Fee</option>
+              <option value="BRIDGE_FEE">Bridge Fee</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="recipientAddress">Recipient Address:</label>
+            <input type="text" id="recipientAddress" placeholder="0x...">
+          </div>
+          <button id="setRecipientBtn">Set Recipient</button>
+          <div id="recipientStatus" class="status-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">📊</span>Platform Fee</h3>
+          <div class="form-group">
+            <label for="platformFee">Platform Fee Percentage (basis points):</label>
+            <input type="number" id="platformFee" placeholder="500" min="0" max="10000">
+            <small>500 = 5%, 1000 = 10%</small>
+          </div>
+          <button id="setPlatformFeeBtn">Set Platform Fee</button>
+          <div id="platformFeeStatus" class="status-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">🔄</span>Enhancement Pricing</h3>
+          <div class="form-group">
+            <label for="enhancementSelect">Enhancement Type:</label>
+            <select id="enhancementSelect">
+              <option value="subdomain">Subdomain Minting</option>
+              <option value="profile">Profile Enhancement</option>
+              <option value="metadata">Metadata Enhancement</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <input type="number" id="enhancementPrice" placeholder="Base Price in MATIC" step="0.01">
+            <button id="updateEnhancementBtn">Update Price</button>
+          </div>
+          <div id="enhancementStatus" class="status-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">📈</span>Subdomain Tiered Pricing</h3>
+          <div class="form-group">
+            <label for="subdomainBaseFee">Base Fee (MATIC):</label>
+            <input type="number" id="subdomainBaseFee" placeholder="0.10" step="0.01" value="0.10">
+          </div>
+          <div class="form-group">
+            <label for="subdomainMultiplier">Multiplier:</label>
+            <select id="subdomainMultiplier">
+              <option value="0">x0</option>
+              <option value="1">x1</option>
+              <option value="2" selected>x2</option>
+              <option value="3">x3</option>
+              <option value="4">x4</option>
+              <option value="5">x5</option>
+            </select>
+          </div>
+          <button id="updateSubdomainTieredBtn">Update Tiered Pricing</button>
+          <div id="subdomainTieredStatus" class="status-display"></div>
+        </div>
+
+        <div class="panel">
+          <h3><span class="panel-icon">📋</span>Current Fees</h3>
+          <button id="loadFeesBtn">Load Current Fees</button>
+          <div id="currentFees" class="status-display"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Tab -->
+    <div class="tab-content" id="system">
+      <div class="admin-grid">
+        <div class="panel">
+          <h3><span class="panel-icon">⚙️</span>Upgrade System</h3>
+          <div class="form-group">
+            <label for="upgradeTo">New Implementation Address:</label>
+            <input type="text" id="upgradeTo" placeholder="0x...">
+          </div>
+          <button id="upgradeBtn">Upgrade System</button>
+          <div id="upgradeStatus" class="status-display"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emergency Tab -->
+    <div class="tab-content" id="emergency">
+      <div class="admin-grid">
+        <div class="panel">
+          <h3><span class="panel-icon">🚨</span>Emergency Operators</h3>
+          <div id="emergencyOperators" class="status-display"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="aed_admin_dashboard.js"></script>
+</body>
+</html>

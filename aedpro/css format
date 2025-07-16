@@ -1,0 +1,75 @@
+/*==============================
+=            BASE             =
+==============================*/
+body, h1, h2, p, a { ... }
+
+/*==============================
+=         COMPONENTS          =
+==============================*/
+.container { ... }
+.panel { ... }
+.wallet-button { ... }
+
+/*==============================
+=        INTERACTIONS         =
+==============================*/
+button { ... }
+button:hover { ... }
+
+/*==============================
+=     UTILITY CLASSES         =
+==============================*/
+.small-text { ... }
+.disabled-option { ... }
+
+/*==============================
+=     RESPONSIVE RULES        =
+==============================*/
+@media (max-width: 600px) { ... }
+
+
+Example Components
+📄 components/HeaderComponent.html
+html
+Copy code
+<header class="css-njz7q6-headWrapper-headWrapperWithCover" style="background-image: url('https://.../a426b733-a9cd-4dbf-abe8-c9d4f1ad10b5.jpeg')">
+  <a href="https://ud.me/" class="css-tnshlm-link-homeLink" aria-label="home page">
+    <!-- SVG logo here -->
+  </a>
+  <div class="css-rc5q3v-head">
+    <!-- Search and Profile Button Containers -->
+  </div>
+</header>
+📄 components/ProfileCardComponent.html
+html
+Copy code
+<div class="css-3idyoo-profilePicture">
+  <div class="css-14j93uk-mainContainer">
+    <div class="css-1q25x86-theCardHover">
+      <div class="css-iamb74-theBack">
+        <!-- QR Code -->
+      </div>
+      <div class="css-1c808z1-theFront">
+        <div class="pfp css-8efa9w-round">
+          <div class="MuiAvatar-root">D</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+📄 components/UserInfoComponent.html
+html
+Copy code
+<div class="css-h5fkc8">
+  <h4 class="css-1o8oltz-displayName">SigmaSauer07</h4>
+</div>
+<div class="css-1r8vbna-domainNameBox">
+  <h5 class="css-1ct0z7l-domainName">sigmasauer07.hub</h5>
+  <!-- Verified Icons SVGs -->
+</div>
+📄 components/ActionsComponent.html
+html
+Copy code
+<div class="css-1iq8pmd-menuButtonContainer">
+  <!-- Manage and Buy Crypto Chips -->
+</div>

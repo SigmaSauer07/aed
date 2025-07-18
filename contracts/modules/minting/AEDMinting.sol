@@ -1,81 +1,83 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import "../libraries/LibMinting.sol";
 import "../base/ModuleBase.sol";
 import "../../interfaces/modules/IAEDMinting.sol";
-import "../../libraries/LibValidation.sol";
-import "../../libraries/LibMinting.sol";
 
-/**
- * @title AEDMinting
- * @dev Stateless module: delegates all business logic to LibMinting
- */
 abstract contract AEDMinting is ModuleBase, IAEDMinting {
-    using LibValidation for string;
-
-    // using LibMinting for LibMinting.domainData; // Removed: not needed for current usage
-
+    using LibMinting for AppStorage;
+    
     function registerDomain(
         string calldata name,
         string calldata tld,
         bool enableSubdomains
-    ) external payable returns (uint256) {
-        return _registerDomainInternal(name, tld, enableSubdomains);
+    ) external payable override whenNotPaused returns (uint256) {
+        uint256 tokenId = LibMinting.registerDomain(name, tld, enableSubdomains);
+        _processDomainPayment(tld, enableSubdomains);
+        return tokenId;
     }
-
-    function _registerDomainInternal(
-        string calldata name,
-        string calldata tld,
-        bool enableSubdomains
-    ) internal returns (uint256) {
-        // Validation and normalization
-        name.validateDomainName();
-        string memory normalizedName = name.normalizeName();
-        // Register domain using LibMinting (withEnhancements = enableSubdomains for now)
-        LibMinting.registerDomain(normalizedName, tld, enableSubdomains);
-
-        // Compose full domain for lookup
-        string memory fullName = string(abi.encodePacked(normalizedName, ".", tld));
-
-        // Return tokenId (from storage)
-        address owner = LibMinting.getDomainOwner(fullName);
-        return owner == msg.sender
-            ? LibAppStorage.getStorage().domainToTokenId[fullName]
-            : 0;
+    
+    function mintSubdomain(
+        uint256 parentId,
+        string calldata label
+    ) external payable override returns (uint256) {
+        string memory parentDomain = s().tokenIdToDomain[parentId];
+        require(bytes(parentDomain).length > 0, "Parent not found");
+        
+        uint256 tokenId = LibMinting.createSubdomain(label, parentDomain);
+        _processSubdomainPayment(parentId);
+        return tokenId;
     }
-
+    
+    function calculateSubdomainFee(uint256 parentId) external view override returns (uint256) {
+        string memory parentDomain = s().tokenIdToDomain[parentId];
+        uint256 subdomainCount = s().subdomainCounts[parentDomain];
+        return subdomainCount * 0.1 ether; // Linear pricing
+    }
+    
     function getDomainOwner(string calldata domain) external view returns (address) {
         return LibMinting.getDomainOwner(domain);
     }
-
-    // Add other functions as thin wrappers delegating to LibMinting as needed
-
-    /**
-     * @notice Batch register multiple domains in a single transaction.
-     * @param names Array of domain names.
-     * @param tlds Array of TLDs.
-     * @param enableSubdomains Array of booleans for subdomain enablement.
-     * @return tokenIds Array of minted token IDs.
-     * @dev Emits DomainRegistered events for each domain (if implemented in LibMinting).
-     */
-    function batchRegisterDomains(
-        string[] calldata names,
-        string[] calldata tlds,
-        bool[] calldata enableSubdomains
-    ) external payable returns (uint256[] memory tokenIds) {
-        require(
-            names.length == tlds.length && names.length == enableSubdomains.length,
-            "Input array length mismatch"
-        );
-        tokenIds = new uint256[](names.length);
-        uint256 totalValue = 0;
-        for (uint256 i = 0; i < names.length; ) {
-            // Could use unchecked for increment
-            tokenIds[i] = _registerDomainInternal(names[i], tlds[i], enableSubdomains[i]);
-            // If registerDomain is payable, sum up required value
-            // totalValue += ...;
-            unchecked { ++i; }
+    
+    function _processDomainPayment(string calldata tld, bool withEnhancements) internal {
+        AppStorage storage store = s();
+        
+        uint256 totalCost = 0;
+        if (!store.freeTlds[tld]) {
+            totalCost += store.tldPrices[tld];
         }
-        // If needed, check msg.value == totalValue;
+        if (withEnhancements) {
+            totalCost += store.enhancementPrices["subdomain"];
+        }
+        
+        require(msg.value >= totalCost, "Insufficient payment");
+        store.totalRevenue += totalCost;
+        
+        // Send excess back
+        if (msg.value > totalCost) {
+            payable(msg.sender).transfer(msg.value - totalCost);
+        }
+    }
+    
+    function _processSubdomainPayment(uint256 parentId) internal {
+        uint256 cost = calculateSubdomainFee(parentId);
+        require(msg.value >= cost, "Insufficient payment");
+        
+        s().totalRevenue += cost;
+        
+        // Send excess back
+        if (msg.value > cost) {
+            payable(msg.sender).transfer(msg.value - cost);
+        }
+    }
+    
+    // Module interface overrides
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AEDMinting");
+    }
+    
+    function moduleName() external pure override returns (string memory) {
+        return "AEDMinting";
     }
 }

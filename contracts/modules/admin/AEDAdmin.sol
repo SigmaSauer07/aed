@@ -1,66 +1,63 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import "../../libraries/LibAdmin.sol";
 import "../base/ModuleBase.sol";
 import "../../interfaces/modules/IAEDAdmin.sol";
 
-/**
- * @title AEDAdmin
- * @dev Central administration module for fees, TLDs, roles, and emergency controls
- */
 abstract contract AEDAdmin is ModuleBase, IAEDAdmin {
-    event FeeUpdated(string indexed feeType, uint256 oldFee, uint256 newFee);
-    event TLDConfigured(string indexed tld, bool isActive, uint256 price);
-    event SubdomainSettingsUpdated(uint256 newMax, uint256 newBasePrice, uint256 newMultiplier);
-    function initializeModule() external override {
-        // Initialize admin defaults
-        s().maxSubdomains = 20;
-        s().basePrice = 0.001 ether;
-        s().futureUint256[0] = 2; // multiplier
+    using LibAdmin for AppStorage;
+
+    function updateFee(string calldata feeType, uint256 newAmount) external override onlyFeeManager {
+        LibAdmin.updateFee(feeType, newAmount);
     }
 
-    function updateFee(string calldata feeType, uint256 newAmount) external override {
-        require(_hasRole(FEE_MANAGER_ROLE, msg.sender), "Not authorized");
-        uint256 oldFee = s().fees[feeType];
-        s().fees[feeType] = newAmount;
-        emit FeeUpdated(feeType, oldFee, newAmount);
+    function updateFeeRecipient(address newRecipient) external override onlyAdmin {
+        LibAdmin.updateFeeRecipient(newRecipient);
     }
-
-    function updateFeeRecipient(address newRecipient) external override {
-        require(_hasRole(FEE_MANAGER_ROLE, msg.sender), "Not authorized");
-        require(newRecipient != address(0), "Invalid recipient");
-        s().feeCollector = newRecipient;
+    
+    function configureTLD(string calldata tld, bool isActive, uint256 price) external override onlyTLDManager {
+        LibAdmin.configureTLD(tld, isActive, price);
     }
-
-    function configureTLD(string calldata tld, bool isActive, uint256 price) external override {
-        require(_hasRole(TLD_MANAGER_ROLE, msg.sender), "Not authorized");
-        s().activeTLDs[tld] = isActive;
-        s().tldPrices[tld] = price;
-        emit TLDConfigured(tld, isActive, price);
+    
+    function updateSubdomainSettings(uint256 newMax, uint256 newBasePrice, uint256 newMultiplier) external override onlyAdmin {
+        // Implementation for subdomain settings
+        AppStorage storage store = s();
+        store.futureUint256[0] = newMax;
+        store.futureUint256[1] = newBasePrice;
+        store.futureUint256[2] = newMultiplier;
     }
-
-    function updateSubdomainSettings(
-        uint256 newMax,
-        uint256 newBasePrice,
-        uint256 newMultiplier
-    ) external override {
-        require(_hasRole(ADMIN_ROLE, msg.sender), "Not authorized");
-        require(newMax > 0, "Max subdomains must be > 0");
-        
-        s().maxSubdomains = newMax;
-        s().basePrice = newBasePrice;
-        s().multiplier = newMultiplier;
-        
-        emit SubdomainSettingsUpdated(newMax, newBasePrice, newMultiplier);
-    }
-
+    
     function getFee(string calldata feeType) external view override returns (uint256) {
         return s().fees[feeType];
     }
-
+    
     function isTLDActive(string calldata tld) external view override returns (bool) {
-        return s().activeTLDs[tld];
+        return s().validTlds[tld];
     }
-
-    uint256[50] private __gap;
+    
+    function grantRole(bytes32 role, address account) external onlyAdmin {
+        LibAdmin.grantRole(role, account);
+    }
+    
+    function revokeRole(bytes32 role, address account) external onlyAdmin {
+        LibAdmin.revokeRole(role, account);
+    }
+    
+    function pause() external onlyAdmin {
+        LibAdmin.pauseContract();
+    }
+    
+    function unpause() external onlyAdmin {
+        LibAdmin.unpauseContract();
+    }
+    
+    // Module interface overrides
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AEDAdmin");
+    }
+    
+    function moduleName() external pure override returns (string memory) {
+        return "AEDAdmin";
+    }
 }

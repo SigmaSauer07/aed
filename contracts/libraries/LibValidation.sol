@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import "../core/AEDConstants.sol";
+import "../libraries/LibAppStorage.sol"; 
+import "../libraries/LibMinting.sol";
+
 /**
  * @title ValidationLib
  * @dev Library for domain name and label validation
  */
 library LibValidation {
-    uint256 constant MIN_NAME_LENGTH = 3;
-    uint256 constant MAX_NAME_LENGTH = 63;
-
-    error InvalidNameLength();
-    error InvalidNameFormat();
-    error EmptyLabel();
-
+    using LibAppStorage for AppStorage;
+    
     function validateDomainName(string memory name) internal pure {
         bytes memory nameBytes = bytes(name);
         uint256 nameLength = nameBytes.length;
         
-        if (nameLength < MIN_NAME_LENGTH || nameLength > MAX_NAME_LENGTH) {
+        if (nameLength < AEDConstants.MIN_NAME_LENGTH || nameLength > AEDConstants.MAX_NAME_LENGTH) {
             revert InvalidNameLength();
         }
         

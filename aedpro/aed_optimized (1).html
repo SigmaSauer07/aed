@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alsania Enhanced Domains - Web3 Domain Names</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&family=Orbitron:wght@600;700&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <style>
+
+
+    /* Smooth scrolling */
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body>
+  <!-- Status message container -->
+  <div id="statusMessage" class="status-message"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="nav-container">
+      <a href="#" class="logo">Alsania Enhanced Domains</a>
+      <nav class="nav-menu">
+        <a href="#home" class="nav-link">Home</a>
+        <a href="#domains" class="nav-link">Domains</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+        <a href="#about" class="nav-link">About</a>
+        <a href="#contact" class="nav-link">Contact</a>
+      </nav>
+      <button class="wallet-btn" id="walletBtn">Connect Wallet</button>
+      <div class="mobile-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <h1 class="hero-title glow-animation">The Future of Web3 Domains</h1>
+      <p class="hero-subtitle">Secure, Decentralized, Enhanced</p>
+      <p class="hero-description">
+        Join the next generation of internet identity with Alsania Enhanced Domains.
+        Own your digital presence with blockchain-powered domain names that never expire and give you complete control.
+      </p>
+      <div class="cta-buttons">
+        <a href="#domains" class="cta-primary">Get Your Domain</a>
+        <a href="#features" class="cta-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Domain Registration Section -->
+  <section class="domains" id="domains">
+    <div class="container">
+      <h2>Register New Domain</h2>
+
+      <div class="domain-input-group">
+        <label for="domainName">Domain Name:</label>
+        <input type="text" id="domainName" placeholder="Enter your domain name">
+      </div>
+
+      <div class="tld-container">
+        <div class="tld-group">
+          <label for="freeTld">Free TLDs <span class="free-badge">FREE</span></label>
+          <select id="freeTld">
+            <option value="">Select Free TLD</option>
+            <option value="aed">.aed</option>
+            <option value="alsa">.alsa</option>
+            <option value="07">.07</option>
+          </select>
+        </div>
+
+        <div class="tld-group">
+          <label for="featuredTld">Featured TLDs <span class="featured-badge">PREMIUM</span></label>
+          <select id="featuredTld">
+            <option value="">Select Featured TLD</option>
+            <option value="alsania">.alsania</option>
+            <option value="fx">.fx</option>
+            <option value="echo">.echo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" id="enhSubdomain">
+          <span>Add Subdomain Minting Ability (+$2 MATIC)</span>
+        </label>
+      </div>
+
+      <div class="total-display">
+        <div>Registration Total: <span id="registerTotal">$0 MATIC</span></div>
+      </div>
+
+      <button id="registerBtn">Register Domain</button>
+    </div>
+  </section>
+
+  <!-- Domain Enhancement Section -->
+  <section class="enhancements" id="enhancements">
+    <div class="container">
+      <h2>Enhance Your Domain</h2>
+      <p class="info-text">Already own a domain? Add subdomain minting capability to unlock new possibilities.</p>
+
+      <div class="domain-input-group">
+        <label for="existingDomain">Domain Name or Token ID:</label>
+        <input type="text" id="existingDomain" placeholder="e.g., mydomain.alsania or Token ID: 123">
+      </div>
+
+      <div class="cost-info">
+        <div class="small-text">
+          <strong>Enhancement Pricing:</strong><br>
+          • Alsania Native TLDs (.aed, .alsa, .07, .alsania, .fx, .echo): $2 MATIC<br>
+          • Third-party/External Domains: $5 MATIC
+        </div>
+      </div>
+
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" id="enhanceSubdomain">
+          <span>Add Subdomain Minting Ability</span>
+        </label>
+      </div>
+
+      <div class="total-display">
+        <div>Enhancement Total: <span id="enhanceTotal">$0 MATIC</span></div>
+      </div>
+
+      <button id="enhanceBtn">Enhance Now</button>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="features-container">
+      <h2 class="section-title">Why Choose Alsania Enhanced Domains?</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3 class="feature-title">Blockchain Security</h3>
+          <p class="feature-description">Your domain is secured by blockchain technology, ensuring complete ownership and protection against censorship.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <h3 class="feature-title">Web3 Integration</h3>
+          <p class="feature-description">Seamlessly integrate with dApps, wallets, and the entire Web3 ecosystem for maximum functionality.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3 class="feature-title">Lightning Fast</h3>
+          <p class="feature-description">Built on high-performance blockchain infrastructure for instant resolution and minimal transaction fees.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3 class="feature-title">Easy Management</h3>
+          <p class="feature-description">Intuitive dashboard to manage all your domains, subdomains, and settings in one place.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3 class="feature-title">No Renewal Fees</h3>
+          <p class="feature-description">Pay once and own forever. No hidden fees or surprise renewal charges.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <h3 class="feature-title">Future-Ready</h3>
+          <p class="feature-description">Built for the decentralized web of tomorrow with continuous updates and new features.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing" id="pricing">
+    <div class="pricing-container">
+      <h2 class="section-title">Simple, Transparent Pricing</h2>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3 class="pricing-title">Basic Domain</h3>
+          <div class="pricing-price">FREE</div>
+          <ul class="pricing-features">
+            <li>Standard domain registration</li>
+            <li>Basic Web3 integration</li>
+            <li>Community support</li>
+            <li>Standard resolution speed</li>
+          </ul>
+          <button class="pricing-btn">Get Started</button>
+        </div>
+        <div class="pricing-card featured">
+          <h3 class="pricing-title">Enhanced Domain</h3>
+          <div class="pricing-price">$1 MATIC</div>
+          <ul class="pricing-features">
+            <li>Premium domain registration</li>
+            <li>Advanced Web3 features</li>
+            <li>Priority support</li>
+            <li>Fast resolution</li>
+            <li>Subdomain creation</li>
+          </ul>
+          <button class="pricing-btn">Choose Plan</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Configuration
+    const CONFIG = {
+      CONTRACT_ADDRESS: '0x3Bf795D47f7B32f36cbB1222805b0E0c5EF066f1',
+      ALSANIA_TLDS: ['aed', 'alsa', '07', 'alsania', 'fx', 'echo'],
+      PRICES: {
+        FREE_TLD: 0,
+        FEATURED_TLD: 1,
+        SUBDOMAIN_ENHANCEMENT: 2,
+        EXTERNAL_DOMAIN_ENHANCEMENT: 5
+      },
+      DURATION: 3153600000, // 100 years in seconds
+      GAS_MULTIPLIER: 1.2
+    };
+
+    // Global state
+    let provider = null;
+    let signer = null;
+    let contract = null;
+    let userAddress = null;
+    let isConnecting = false;
+
+    // Sample ABI (replace with your actual ABI)
+    const CONTRACT_ABI = [
+      "function registerDomain(string name, string tld, uint256 subFee, bool enhance, uint256 duration) external payable",
+      "function purchaseFeature(uint256 tokenId, uint256 featureCode) external payable",
+      "function getTLDPrice(string tld) external view returns (uint256)",
+      "function balanceOf(address owner) external view returns (uint256)",
+      "function ownerOf(uint256 tokenId) external view returns (address)"
+    ];
+
+    // Utility functions
+    function showStatus(message, type = 'success') {
+      const statusEl = document.getElementById('statusMessage');
+      statusEl.textContent = message;
+      statusEl.className = `status-message ${type} show`;
+
+      setTimeout(() => {
+        statusEl.classList.remove('show');
+      }, 5000);
+    }
+
+    function setButtonLoading(buttonId, isLoading) {
+      const button = document.getElementById(buttonId);
+      if (isLoading) {
+        button.innerHTML = '<div class="loading-spinner"></div>Processing...';
+        button.disabled = true;
+      } else {
+        button.disabled = false;
+        if (buttonId === 'registerBtn') {
+          button.innerHTML = 'Register Domain';
+        } else if (buttonId === 'enhanceBtn') {
+          button.innerHTML = 'Enhance Now';
+        } else if (buttonId === 'walletBtn') {
+          button.innerHTML = userAddress ?
+            `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` :
+            'Connect Wallet';
+        }
+      }
+    }
+
+    function validateDomainName(name) {
+      if (!name || name.length < 2) {
+        return { valid: false, message: 'Domain name must be at least 2 characters long' };
+      }
+      if (name.length > 63) {
+        return { valid: false, message: 'Domain name must be less than 64 characters' };
+      }
+      if (!/^[a-zA-Z0-9-]+$/.test(name)) {
+        return { valid: false, message: 'Domain name can only contain letters, numbers, and hyphens' };
+      }
+      if (name.startsWith('-') || name.endsWith('-')) {
+        return { valid: false, message: 'Domain name cannot start or end with a hyphen' };
+      }
+      return { valid: true };
+    }
+
+    function isAlsaniaNativeDomain(domain) {
+      return CONFIG.ALSANIA_TLDS.some(tld =>
+        domain.toLowerCase().includes(`.${tld}`)
+      );
+    }
+
+    function formatError(error) {
+      if (error.reason) return error.reason;
+      if (error.message) {
+        if (error.message.includes('user rejected')) {
+          return 'Transaction was rejected by user';
+        }
+        if (error.message.includes('insufficient funds')) {
+          return 'Insufficient funds for transaction';
+        }
+        if (error.message.includes('gas')) {
+          return 'Gas estimation failed. Please try again.';
+        }
+        return error.message;
+      }
+      return 'An unknown error occurred';
+    }
+
+    // Wallet connection
+    async function connectWallet() {
+      if (isConnecting) return;
+
+      try {
+        isConnecting = true;
+        setButtonLoading('walletBtn', true);
+
+        // Check if MetaMask is installed
+        if (!window.ethereum) {
+          throw new Error('MetaMask is not installed. Please install MetaMask to continue.');
+        }
+
+        // Request account access
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+
+        // Get signer and address
+        signer = provider.getSigner();
+        userAddress = await signer.getAddress();
+
+        // Create contract instance
+        contract = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+
+        // Check if we're on the correct network (Polygon)
+        const network = await provider.getNetwork();
+        if (network.chainId !== 137) {
+          showStatus('Please switch to Polygon network', 'warning');
+          try {
+            await window.ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x89' }], // Polygon mainnet
+            });
+          } catch (switchError) {
+            if (switchError.code === 4902) {
+              // Network not added to MetaMask
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: '0x89',
+                  chainName: 'Polygon',
+                  nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+                  rpcUrls: ['https://polygon-rpc.com/'],
+                  blockExplorerUrls: ['https://polygonscan.com/']
+                }]
+              });
+            }
+          }
+        }
+
+        setButtonLoading('walletBtn', false);
+        showStatus('Wallet connected successfully!', 'success');
+
+        // Update totals after connection
+        updateRegisterTotal();
+        updateEnhanceTotal();
+
+      } catch (error) {
+        console.error('Wallet connection error:', error);
+        showStatus(formatError(error), 'error');
+        setButtonLoading('walletBtn', false);
+      } finally {
+        isConnecting = false;
+      }
+    }
+
+    // Price calculation functions
+    async function updateRegisterTotal() {
+      try {
+        const domainName = document.getElementById('domainName').value.trim();
+        const freeTld = document.getElementById('freeTld').value;
+        const featuredTld = document.getElementById('featuredTld').value;
+        const subEnh = document.getElementById('enhSubdomain').checked;
+
+        let total = 0;
+        const selectedTld = freeTld || featuredTld;
+
+        if (selectedTld) {
+          if (featuredTld) {
+            total += CONFIG.PRICES.FEATURED_TLD;
+          }
+          // Free TLDs cost nothing
+        }
+
+        if (subEnh) {
+          total += CONFIG.PRICES.SUBDOMAIN_ENHANCEMENT;
+        }
+
+        document.getElementById('registerTotal').textContent = `${total} MATIC`;
+
+        // Enable/disable register button based on form completion
+        const registerBtn = document.getElementById('registerBtn');
+        const isFormValid = domainName && selectedTld && !registerBtn.disabled;
+        registerBtn.style.opacity = isFormValid ? '1' : '0.6';
+
+      } catch (error) {
+        console.error('Error updating register total:', error);
+      }
+    }
+
+    function updateEnhanceTotal() {
+      try {
+        const domain = document.getElementById('existingDomain').value.trim();
+        const enhance = document.getElementById('enhanceSubdomain').checked;
+
+        let total = 0;
+
+        if (enhance && domain) {
+          const isNative = isAlsaniaNativeDomain(domain);
+          total = isNative ? CONFIG.PRICES.SUBDOMAIN_ENHANCEMENT : CONFIG.PRICES.EXTERNAL_DOMAIN_ENHANCEMENT;
+        }
+
+        document.getElementById('enhanceTotal').textContent = `${total} MATIC`;
+
+        // Enable/disable enhance button based on form completion
+        const enhanceBtn = document.getElementById('enhanceBtn');
+        const isFormValid = domain && enhance && !enhanceBtn.disabled;
+        enhanceBtn.style.opacity = isFormValid ? '1' : '0.6';
+
+      } catch (error) {
+        console.error('Error updating enhance total:', error);
+      }
+    }
+
+    // Domain registration
+    async function registerDomain() {
+      if (!contract) {
+        showStatus('Please connect your wallet first', 'warning');
+        return;
+      }
+
+      try {
+        const domainName = document.getElementById('domainName').value.trim();
+        const freeTld = document.getElementById('freeTld').value;
+        const featuredTld = document.getElementById('featuredTld').value;
+        const selectedTld = freeTld || featuredTld;
+        const enhance = document.getElementById('enhSubdomain').checked;
+
+        // Validation
+        if (!domainName || !selectedTld) {
+          showStatus('Please enter a domain name and select a TLD', 'warning');
+          return;
+        }
+
+        const validation = validateDomainName(domainName);
+        if (!validation.valid) {
+          showStatus(validation.message, 'warning');
+          return;
+        }
+
+        setButtonLoading('registerBtn', true);
+
+        // Calculate fees
+        let tldPrice = ethers.BigNumber.from(0);
+        if (featuredTld) {
+          tldPrice = ethers.utils.parseEther(CONFIG.PRICES.FEATURED_TLD.toString());
+        }
+
+        const subFee = enhance ?
+          ethers.utils.parseEther(CONFIG.PRICES.SUBDOMAIN_ENHANCEMENT.toString()) :
+          ethers.BigNumber.from(0);
+
+        const totalFee = tldPrice.add(subFee);
+        const duration = ethers.BigNumber.from(CONFIG.DURATION);
+
+        // Estimate gas
+        let gasLimit;
+        try {
+          const gasEstimate = await contract.estimateGas.registerDomain(
+            domainName,
+            selectedTld,
+            subFee,
+            enhance,
+            duration,
+            { value: totalFee }
+          );
+          gasLimit = gasEstimate.mul(Math.floor(CONFIG.GAS_MULTIPLIER * 10)).div(10);
+        } catch (gasError) {
+          console.warn('Gas estimation failed, using default:', gasError);
+          gasLimit = ethers.BigNumber.from(500000);
+        }
+
+        // Execute transaction
+        const tx = await contract.registerDomain(
+          domainName,
+          selectedTld,
+          subFee,
+          enhance,
+          duration,
+          {
+            value: totalFee,
+            gasLimit: gasLimit
+          }
+        );
+
+        showStatus('Transaction submitted. Waiting for confirmation...', 'warning');
+
+        const receipt = await tx.wait();
+
+        if (receipt.status === 1) {
+          showStatus(`Domain registered successfully! Transaction: ${receipt.transactionHash}`, 'success');
+
+          // Clear form
+          document.getElementById('domainName').value = '';
+          document.getElementById('freeTld').value = '';
+          document.getElementById('featuredTld').value = '';
+          document.getElementById('enhSubdomain').checked = false;
+          updateRegisterTotal();
+        } else {
+          throw new Error('Transaction failed');
+        }
+
+      } catch (error) {
+        console.error('Registration error:', error);
+        showStatus(`Registration failed: ${formatError(error)}`, 'error');
+      } finally {
+        setButtonLoading('registerBtn', false);
+      }
+    }
+
+    // Domain enhancement
+    async function enhanceDomain() {
+      if (!contract) {
+        showStatus('Please connect your wallet first', 'warning');
+        return;
+      }
+
+      try {
+        const domain = document.getElementById('existingDomain').value.trim();
+        const enhance = document.getElementById('enhanceSubdomain').checked;
+
+        // Validation
+        if (!domain) {
+          showStatus('Please enter a domain name or token ID', 'warning');
+          return;
+        }
+
+        if (!enhance) {
+          showStatus('Please select an enhancement option', 'warning');
+          return;
+        }
+
+        setButtonLoading('enhanceBtn', true);
+
+        // Determine if input is token ID or domain name
+        const isTokenId = /^\d+$/.test(domain);
+        let tokenId;
+
+        if (isTokenId) {
+          tokenId = ethers.BigNumber.from(domain);
+
+          // Verify token exists and user owns it
+          try {
+            const owner = await contract.ownerOf(tokenId);
+            if (owner.toLowerCase() !== userAddress.toLowerCase()) {
+              throw new Error('You do not own this token');
+            }
+          } catch (ownerError) {
+            throw new Error('Token ID not found or you do not own it');
+          }
+        } else {
+          // For domain names, we need to implement domain to token ID lookup
+          // This would require additional contract methods
+          showStatus('Domain name lookup not implemented yet. Please use Token ID.', 'warning');
+          return;
+        }
+
+        // Calculate fee
+        const isNative = isAlsaniaNativeDomain(domain);
+        const fee = ethers.utils.parseEther(
+          isNative ?
+            CONFIG.PRICES.SUBDOMAIN_ENHANCEMENT.toString() :
+            CONFIG.PRICES.EXTERNAL_DOMAIN_ENHANCEMENT.toString()
+        );
+
+        // Estimate gas
+        let gasLimit;
+        try {
+          const gasEstimate = await contract.estimateGas.purchaseFeature(
+            tokenId,
+            1, // Feature code 1 for subdomain minting
+            { value: fee }
+          );
+          gasLimit = gasEstimate.mul(Math.floor(CONFIG.GAS_MULTIPLIER * 10)).div(10);
+        } catch (gasError) {
+          console.warn('Gas estimation failed, using default:', gasError);
+          gasLimit = ethers.BigNumber.from(300000);
+        }
+
+        // Execute transaction
+        const tx = await contract.purchaseFeature(tokenId, 1, {
+          value: fee,
+          gasLimit: gasLimit
+        });
+
+        showStatus('Transaction submitted. Waiting for confirmation...', 'warning');
+
+        const receipt = await tx.wait();
+
+        if (receipt.status === 1) {
+          showStatus(`Domain enhanced successfully! Transaction: ${receipt.transactionHash}`, 'success');
+
+          // Clear form
+          document.getElementById('existingDomain').value = '';
+          document.getElementById('enhanceSubdomain').checked = false;
+          updateEnhanceTotal();
+        } else {
+          throw new Error('Transaction failed');
+        }
+
+      } catch (error) {
+        console.error('Enhancement error:', error);
+        showStatus(`Enhancement failed: ${formatError(error)}`, 'error');
+      } finally {
+        setButtonLoading('enhanceBtn', false);
+      }
+    }
+
+    // Event listeners and initialization
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wallet connection
+      document.getElementById('walletBtn').addEventListener('click', connectWallet);
+
+      // Domain registration
+      document.getElementById('registerBtn').addEventListener('click', registerDomain);
+
+      // Domain enhancement
+      document.getElementById('enhanceBtn').addEventListener('click', enhanceDomain);
+
+      // TLD selection - ensure only one is selected at a time
+      document.getElementById('freeTld').addEventListener('change', function() {
+        if (this.value) {
+          document.getElementById('featuredTld').value = '';
+        }
+        updateRegisterTotal();
+      });
+
+      document.getElementById('featuredTld').addEventListener('change', function() {
+        if (this.value) {
+          document.getElementById('freeTld').value = '';
+        }
+        updateRegisterTotal();
+      });
+
+      // Update totals when form changes
+      document.getElementById('domainName').addEventListener('input', updateRegisterTotal);
+      document.getElementById('enhSubdomain').addEventListener('change', updateRegisterTotal);
+      document.getElementById('existingDomain').addEventListener('input', updateEnhanceTotal);
+      document.getElementById('enhanceSubdomain').addEventListener('change', updateEnhanceTotal);
+
+      // Smooth scrolling for navigation links
+      document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        });
+      });
+
+      // Auto-connect wallet if previously connected
+      if (window.ethereum && window.ethereum.selectedAddress) {
+        connectWallet();
+      }
+
+      // Listen for account changes
+      if (window.ethereum) {
+        window.ethereum.on('accountsChanged', function(accounts) {
+          if (accounts.length === 0) {
+            // User disconnected
+            provider = null;
+            signer = null;
+            contract = null;
+            userAddress = null;
+            setButtonLoading('walletBtn', false);
+            showStatus('Wallet disconnected', 'warning');
+          } else {
+            // User switched accounts
+            connectWallet();
+          }
+        });
+
+        window.ethereum.on('chainChanged', function(chainId) {
+          // Reload page when chain changes
+          window.location.reload();
+        });
+      }
+
+      // Initialize totals
+      updateRegisterTotal();
+      updateEnhanceTotal();
+    });
+
+    // Error handling for uncaught errors
+    window.addEventListener('error', function(event) {
+      console.error('Uncaught error:', event.error);
+      showStatus('An unexpected error occurred. Please refresh and try again.', 'error');
+    });
+
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('Unhandled promise rejection:', event.reason);
+      showStatus('An unexpected error occurred. Please refresh and try again.', 'error');
+    });
+  </script>
+</body>
+</html>

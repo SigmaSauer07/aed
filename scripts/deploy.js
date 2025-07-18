@@ -3,7 +3,7 @@ const fs = require("fs");
 require("dotenv").config();
 
 async function main() {
-  const AED = await ethers.getContractFactory("AED");
+  const AEDImplementation = await ethers.getContractFactory("AEDImplementation");
 
   // Load from .env
   const initialAdmin = process.env.ALSANIA_ADMIN;
@@ -15,9 +15,11 @@ async function main() {
     throw new Error("🚨 Missing ALSANIA_ADMIN or ALSANIA_WALLET in .env");
   }
 
+  console.log("🚀 Deploying AED with optimized UUPS structure...");
+
   const aed = await upgrades.deployProxy(
-    AED,
-    [name, symbol, paymentWallet, initialAdmin], // initializer arguments
+    AEDImplementation,
+    [name, symbol, paymentWallet, initialAdmin],
     {
       initializer: "initialize",
       kind: "uups",
@@ -39,6 +41,7 @@ async function main() {
 
   console.log("✅ AED deployed to:", proxyAddress);
   console.log("📦 Implementation address:", implementationAddress);
+  console.log("🏗️  Architecture: Optimized UUPS with AppStorage");
   console.log("📝 Logged to deployedAddress.txt");
 }
 

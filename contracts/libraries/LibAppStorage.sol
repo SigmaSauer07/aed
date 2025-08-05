@@ -3,217 +3,190 @@ pragma solidity ^0.8.30;
 
 import "../core/AppStorage.sol";
 
-/// @title Library to store and retrieve the AppStorage structure.
-/// @author SigmaSauer07 <https://github.com/SigmaSauer07>
-/// @notice This library provides a way to access and modify the AppStorage structure in a secure manner.
+/**
+ * @title LibAppStorage
+ * @dev Library to access the AppStorage structure using Diamond Storage pattern
+ * @author SigmaSauer07
+ */
 library LibAppStorage {
-    /// @dev Returns a reference to the AppStorage struct stored at address 0x1.
+    bytes32 constant STORAGE_POSITION = keccak256("aed.app.storage");
+    
+    /**
+     * @dev Returns a reference to the AppStorage struct
+     * @return s The AppStorage struct
+     */
     function appStorage() internal pure returns (AppStorage storage s) {
+        bytes32 position = STORAGE_POSITION;
         assembly {
-            s.slot := 0x1
+            s.slot := position
         }
     }
-    /// @dev Sets the value of an AppStorage variable using its name as a string.
-    /// @param _name The name of the variable to set.
-    /// @param _value The new value for the variable.
-    function set(string memory _name, uint256 _value) internal {
-        bytes32 slot = keccak256(abi.encodePacked(_name));
-        assembly {
-            sstore(slot, _value)
-        }
+    
+    /**
+     * @dev Checks if a token exists
+     * @param tokenId The token ID to check
+     * @return exists True if token exists
+     */
+    function tokenExists(uint256 tokenId) internal view returns (bool) {
+        return appStorage().owners[tokenId] != address(0);
     }
-    /// @dev Retrieves the value of an AppStorage variable using its name as a string.
-    /// @param _name The name of the variable to retrieve.
-    /// @return The value of the variable.
-    function get(string memory _name) internal view returns (uint256) {
-        bytes32 slot = keccak256(abi.encodePacked(_name));
-        uint256 value;
-        assembly {
-            value := sload(slot)
-        }
-        return value;
+    
+    /**
+     * @dev Gets the owner of a token
+     * @param tokenId The token ID
+     * @return owner The owner address
+     */
+    function getTokenOwner(uint256 tokenId) internal view returns (address) {
+        return appStorage().owners[tokenId];
     }
-    /// @dev Deletes the value of an AppStorage variable using its name as a string.
-    /// @param _name The name of the variable to delete.
-    function del(string memory _name) internal {
-        bytes32 slot = keccak256(abi.encodePacked(_name));
-        assembly {
-            sstore(slot, 0)
-        }
+    
+    /**
+     * @dev Gets the balance of an address
+     * @param owner The owner address
+     * @return balance The token balance
+     */
+    function getBalance(address owner) internal view returns (uint256) {
+        return appStorage().balances[owner];
     }
-
-    function getSlot(string memory _name) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_name));
+    
+    /**
+     * @dev Checks if an address has a specific role
+     * @param role The role to check
+     * @param account The account to check
+     * @return hasRole True if account has role
+     */
+    function hasRole(bytes32 role, address account) internal view returns (bool) {
+        return appStorage().roles[role][account];
     }
-    function getValue(bytes32 _slot) internal view returns (uint256) {
-        uint256 value;
-        assembly {
-            value := sload(_slot)
-        }
-        return value;
+    
+    /**
+     * @dev Checks if the contract is paused
+     * @return paused True if contract is paused
+     */
+    function isPaused() internal view returns (bool) {
+        return appStorage().paused;
     }
-    function setValue(bytes32 _slot, uint256 _value) internal {
-        assembly {
-            sstore(_slot, _value)
-        }
+    
+    /**
+     * @dev Gets the fee collector address
+     * @return collector The fee collector address
+     */
+    function getFeeCollector() internal view returns (address) {
+        return appStorage().feeCollector;
     }
-    function delValue(bytes32 _slot) internal {
-        assembly {
-            sstore(_slot, 0)
-        }
+    
+    /**
+     * @dev Gets the next available token ID
+     * @return tokenId The next token ID
+     */
+    function getNextTokenId() internal view returns (uint256) {
+        return appStorage().nextTokenId;
     }
-    function exists(bytes32 _slot) internal view returns (bool) {
-        uint256 value;
-        assembly {
-            value := sload(_slot)
-        }
-        return value != 0;
+    
+    /**
+     * @dev Increments and returns the next token ID
+     * @return tokenId The new token ID
+     */
+    function incrementTokenId() internal returns (uint256) {
+        AppStorage storage s = appStorage();
+        return ++s.nextTokenId;
     }
-
-    function getAllSlots() internal view returns (bytes32[] memory slots) {}
-
-    function getAllValues() internal view returns (uint256[] memory values) {}
-
-    function getAllKeys() internal view returns (string[] memory keys) {}
-
-    function getAllPairs()
-        internal
-        view
-        returns (
-            bytes32[] memory slots,
-            uint256[] memory values,
-            string[] memory keys
-        ) {}
-
-        function getAllPairsWithNames(
-        string[] memory names
-    )
-        internal
-        view
-        returns (
-            bytes32[] memory slots,
-            uint256[] memory values,
-            string[] memory keys
-        ) {}
-
-        function getAllPairsWithValue(uint256 value)
-        internal
-        view
-        returns (
-            bytes32[] memory slots,
-            uint256[] memory values,
-            string[] memory keys
-        ) {
-            for (uint i = 0; i < names.length; i++) {
-        function (string memory name, uint256 value)
-        internal
-        view
-        returns (
-            bytes32[] memory slots,
-            uint256[] memory values,
-            string[] memory keys,
-            bool[] memory matches
-        )
-            
-            i = 0;(i < names.length = i++); {
-        
-        // function getAllPairsWithNameAndValue(string memory name, uint256 value)
-        //     internal
-        //     view
-        //     returns (
-        //         bytes32[] memory slots,
-        //         uint256[] memory values,
-        //         string[] memory keys
-        //     )
-
-        //  function getAllPairsWithNameAndValue(string memory name, uint256 value)
-        //     internal
-        //     view
-        //     returns (
-        //         bytes32[] memory slots,
-        //         uint256[] memory values,
-        //         string[] memory keys
-        //     
-            }       
-            // storage for updates to be applied after all transactions are processed
-            mapping(bytes32 => uint256) updates; {
-
-            }
-            function()_addUpdate; (bytes32 _slot, uint256 _newValue) = 3; deployedAt; {
-                if (!exists(_slot)) {
-                    revert("Slot does not exist");
-                }
-                setValue(_slot, _newValue);
-            }
-            function() addUpdate; (bytes32 _slot, uint256 _newValue) = 4; deployedAt; {
-                updates[_slot] = _newValue;
-            }
-            function() removeUpdate; (bytes32 _slot) = 5; deployedAt; {
-                updates.remove(_slot);
-            }
-            
-              // apply any pending updates
-            function() applyUpdates = 6; deployedAt; {
-                for (uint i = 0; i < updates.length(); i++) {
-                    bytes32 slot = updates[i];
-                    uint256 newValue = getValue(slot);
-                    setValue(slot, newValue);
-                }
-                updates.clear();
-            }
-            function() clearUpdates = 7; deployedAt; { 
-                updates[_slot] = _newValue;
-            }
-                for (uint i = 0; i < updates.length(); i++) {
-                    bytes32 slot = updates[i];
-                    uint256 newValue = getValue(slot);
-                    setValue(slot, newValue);
-                }
-                updates.clear();
-            }
-            function() clearUpdates = 8; deployedAt; {
-                updates.clear(_slot);
-            }
-
-            // gap
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-```````````uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            }
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-``````````` uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            function() updateSlot; (bytes32 _slot, uint256 _newValue) = 9; deployedAt; {
-                if (!exists(_slot)) {
-                    revert("Slot does not exist");
-                }
-                setValue(_slot, _newValue);
-            }
-            function() addUpdate; (bytes32 _slot, uint256 _newValue) = 10; deployedAt; {
-                updates[_slot] = _newValue;
-            }
-            function() removeUpdate; (bytes32 _slot) = 11; deployedAt; {
-                updates.remove(_slot);
-            }
-        }
-
-
-
-
-
-
+    
+    /**
+     * @dev Checks if a domain exists
+     * @param domain The domain name
+     * @return exists True if domain exists
+     */
+    function domainExists(string memory domain) internal view returns (bool) {
+        return appStorage().domainExists[domain];
+    }
+    
+    /**
+     * @dev Gets the token ID for a domain
+     * @param domain The domain name
+     * @return tokenId The token ID (0 if not found)
+     */
+    function getDomainTokenId(string memory domain) internal view returns (uint256) {
+        return appStorage().domainToTokenId[domain];
+    }
+    
+    /**
+     * @dev Gets the domain name for a token ID
+     * @param tokenId The token ID
+     * @return domain The domain name
+     */
+    function getTokenDomain(uint256 tokenId) internal view returns (string memory) {
+        return appStorage().tokenIdToDomain[tokenId];
+    }
+    
+    /**
+     * @dev Checks if a TLD is valid
+     * @param tld The TLD to check
+     * @return valid True if TLD is valid
+     */
+    function isValidTLD(string memory tld) internal view returns (bool) {
+        return appStorage().validTlds[tld];
+    }
+    
+    /**
+     * @dev Checks if a TLD is free
+     * @param tld The TLD to check
+     * @return free True if TLD is free
+     */
+    function isFreeTLD(string memory tld) internal view returns (bool) {
+        return appStorage().freeTlds[tld];
+    }
+    
+    /**
+     * @dev Gets the price for a TLD
+     * @param tld The TLD
+     * @return price The TLD price
+     */
+    function getTLDPrice(string memory tld) internal view returns (uint256) {
+        return appStorage().tldPrices[tld];
+    }
+    
+    /**
+     * @dev Gets the enhancement price for a feature
+     * @param feature The feature name
+     * @return price The enhancement price
+     */
+    function getEnhancementPrice(string memory feature) internal view returns (uint256) {
+        return appStorage().enhancementPrices[feature];
+    }
+    
+    /**
+     * @dev Gets the features enabled for a domain
+     * @param tokenId The token ID
+     * @return features The enabled features bitmask
+     */
+    function getDomainFeatures(uint256 tokenId) internal view returns (uint256) {
+        return appStorage().domainFeatures[tokenId];
+    }
+    
+    /**
+     * @dev Gets the total revenue collected
+     * @return revenue The total revenue
+     */
+    function getTotalRevenue() internal view returns (uint256) {
+        return appStorage().totalRevenue;
+    }
+    
+    /**
+     * @dev Gets the reverse record for an address
+     * @param addr The address
+     * @return domain The primary domain
+     */
+    function getReverseRecord(address addr) internal view returns (string memory) {
+        return appStorage().reverseRecords[addr];
+    }
+    
+    /**
+     * @dev Gets the domains owned by an address
+     * @param owner The owner address
+     * @return domains Array of domain names
+     */
+    function getUserDomains(address owner) internal view returns (string[] memory) {
+        return appStorage().userDomains[owner];
+    }
+}

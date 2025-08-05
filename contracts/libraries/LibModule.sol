@@ -7,41 +7,56 @@ import "../core/AEDConstants.sol";
 library LibModule {
     using LibAppStorage for AppStorage;
 
+    event FeatureEnabled(uint256 indexed tokenId, uint256 feature);
+    event FeatureDisabled(uint256 indexed tokenId, uint256 feature);
 
     function computeModuleId(string memory name) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(name));
     }
 
-    function getStorage() internal view returns (AppStorage storage) {
+    function getStorage() internal pure returns (AppStorage storage) {
         return LibAppStorage.appStorage();
     }
 
-    modifier onlyTokenOwner(uint256 tokenId) {
-        require(getStorage().domains[tokenId].owner == msg.sender, "Not token owner");
-        _;
+    function isTokenOwner(uint256 tokenId, address account) internal view returns (bool) {
+        return getStorage().owners[tokenId] == account;
     }
 
-    modifier tokenExists(uint256 tokenId) {
-        require(getStorage().domains[tokenId].owner != address(0), "Token does not exist");
-        _;
+    function tokenExists(uint256 tokenId) internal view returns (bool) {
+        return getStorage().owners[tokenId] != address(0);
     }
 
-    modifier hasFeature(uint256 tokenId, uint256 feature) {
-        require(getStorage().domainFeatures[tokenId] & feature != 0, "Feature not enabled");
-        _;
+    function hasFeature(uint256 tokenId, uint256 feature) internal view returns (bool) {
+        return (getStorage().domainFeatures[tokenId] & feature) != 0;
     }
 
-    function _setFeature(uint256 tokenId, uint256 feature) internal {
-        getStorage().domainFeatures[tokenId] |= feature;
-        emit FeatureEnabled(uint32, true);
+    function setFeature(uint256 tokenId, uint256 feature) internal {
+        AppStorage storage s = getStorage();
+        s.domainFeatures[tokenId] |= feature;
+        emit FeatureEnabled(tokenId, feature);
     }
 
-    function _hasRole(bytes32 role, address account) internal view returns (bool) {
-        return Domain.IAEDCore(address(this)).hasRole(role, account);
+    function removeFeature(uint256 tokenId, uint256 feature) internal {
+        AppStorage storage s = getStorage();
+        s.domainFeatures[tokenId] &= ~feature;
+        emit FeatureDisabled(tokenId, feature);
     }
 
-    function moduleVersion() external pure virtual returns (uint256) {
+    function hasRole(bytes32 role, address account) internal view returns (bool) {
+        return getStorage().roles[role][account];
+    }
+
+    function moduleVersion() internal pure returns (uint256) {
         return 1;
+    }
+
+    function validateTokenOwnership(uint256 tokenId, address account) internal view {
+        require(tokenExists(tokenId), "Token does not exist");
+        require(isTokenOwner(tokenId, account), "Not token owner");
+    }
+
+    function validateFeature(uint256 tokenId, uint256 feature) internal view {
+        require(hasFeature(tokenId, feature), "Feature not enabled");
     }
 }
 

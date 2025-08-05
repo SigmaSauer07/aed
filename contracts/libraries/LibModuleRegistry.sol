@@ -4,11 +4,14 @@ pragma solidity ^0.8.30;
 
 import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
-
-
-
+import "../core/interfaces/IAEDModule.sol";
 
 abstract contract ModuleRegistry is IAEDModule, AEDConstants {
+    event ModuleRegistered(string modName, address moduleAddress, uint256 version);
+    event ModuleUpgraded(string modName, address oldAddress, address newAddress, uint256 oldVersion, uint256 newVersion);
+    event ModuleEnabled(string modName);
+    event ModuleDisabled(string modName);
+    
     modifier onlyAdmin() {
         AppStorage storage s = LibAppStorage.appStorage();
         require(s.admins[msg.sender], "Not admin");
@@ -103,19 +106,19 @@ abstract contract ModuleRegistry is IAEDModule, AEDConstants {
         module.deployedAt = block.timestamp;
         module.selectors = selectors;
 
-        // Register selectors
-        for (uint i = 0; i < selectors.length; i++) {
-            s.selectorToModule[selectors[i]] = modName;
-        }
+        // Register selectors (note: selectorToModule mapping not in AppStorage yet)
+        // for (uint i = 0; i < selectors.length; i++) {
+        //     s.selectorToModule[selectors[i]] = modName;
+        // }
 
         s.moduleVersions[modName] = version;
     }
 
     function _removeSelectors(AppStorage storage s, string memory modName) internal {
         bytes4[] memory selectors = s.modules[modName].selectors;
-        for (uint i = 0; i < selectors.length; i++) {
-            delete s.selectorToModule[selectors[i]];
-        }
+        // for (uint i = 0; i < selectors.length; i++) {
+        //     delete s.selectorToModule[selectors[i]];
+        // }
     }
 
     // Batch operations for efficiency
@@ -190,7 +193,7 @@ abstract contract ModuleRegistry is IAEDModule, AEDConstants {
         return "ModuleRegistry";
     }
 
-    function appSelectors() public pure virtual returns (bytes4[] memory) {
+    function getSelectors() external pure override returns (bytes4[] memory) {
         bytes4[] memory selectors = new bytes4[](0);
         return selectors;
     }

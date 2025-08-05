@@ -1,64 +1,54 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "../core/AppStorage.sol";
 import "../core/AEDConstants.sol";
+import "./LibAppStorage.sol";
 
 library LibReverse {
     using LibAppStorage for AppStorage;
     
-    event ReverseSet(address indexed addr, string domain);
-    event ReverseCleared(address indexed addr);
+    event ReverseRecordSet(address indexed addr, string indexed domain);
+    event ReverseRecordCleared(address indexed addr, string indexed domain);
     
-    function setReverse(string calldata domain) internal {
+    /**
+     * @dev Sets the reverse record for the caller
+     * @param domain The domain to set as reverse record
+     */
+    function setReverseRecord(string calldata domain) internal {
         AppStorage storage s = LibAppStorage.appStorage();
         
-        // Verify caller owns the domain
+        // Verify the caller owns the domain
         uint256 tokenId = s.domainToTokenId[domain];
+        require(tokenId != 0, "Domain not found");
         require(s.owners[tokenId] == msg.sender, "Not domain owner");
         
-        // Clear previous reverse if exists
-        string memory oldReverse = s.reverseRecords[msg.sender];
-        if (bytes(oldReverse).length > 0) {
-            delete s.reverseOwners[oldReverse];
+        // Clear previous reverse record if exists
+        string memory oldDomain = s.reverseRecords[msg.sender];
+        if (bytes(oldDomain).length > 0) {
+            delete s.reverseOwners[oldDomain];
         }
         
-        // Set new reverse
+        // Set new reverse record
         s.reverseRecords[msg.sender] = domain;
         s.reverseOwners[domain] = msg.sender;
         
-        emit ReverseSet(msg.sender, domain);
+        emit ReverseRecordSet(msg.sender, domain);
     }
     
-    function clearReverse() internal {
+    /**
+     * @dev Clears the reverse record for the caller
+     */
+    function clearReverseRecord() internal {
         AppStorage storage s = LibAppStorage.appStorage();
         
         string memory domain = s.reverseRecords[msg.sender];
-        require(bytes(domain).length > 0, "No reverse set");
+        require(bytes(domain).length > 0, "No reverse record set");
         
+        // Clear reverse record
         delete s.reverseRecords[msg.sender];
         delete s.reverseOwners[domain];
         
-        emit ReverseCleared(msg.sender);
-    }
-    
-    function getReverse(address addr) internal view returns (string memory) {
-        return LibAppStorage.appStorage().reverseRecords[addr];
-    }
-    
-    function getReverseOwner(string calldata domain) internal view returns (address) {
-        return LibAppStorage.appStorage().reverseOwners[domain];
-    }
-    
-    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {
-        AppStorage storage s = LibAppStorage.appStorage();
-        address owner = s.owners[tokenId];
-        return (spender == owner || 
-                s.tokenApprovals[tokenId] == spender || 
-                s.operatorApprovals[owner][spender]);
-    }
-    
-    function _exists(uint256 tokenId) internal view returns (bool) {
-        return LibAppStorage.appStorage().owners[tokenId] != address(0);
+        emit ReverseRecordCleared(msg.sender, domain);
     }
 }

@@ -100,16 +100,4 @@ struct AppStorage {
     uint256[47] __gap; // Reserve slots for future use
 }
 
-// Storage access library
-library LibAppStorage {
-    bytes32 constant STORAGE_POSITION = keccak256("aed.app.storage");
-    
-    function appStorage() internal pure returns (AppStorage storage s) {
-        bytes32 position = STORAGE_POSITION;
-        assembly {
-            s.slot := position
-        }
-    }
-}
-
 

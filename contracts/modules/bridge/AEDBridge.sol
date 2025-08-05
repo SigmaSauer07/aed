@@ -24,7 +24,7 @@ abstract contract AEDBridge is ModuleBase, IAEDBridge {
         uint256 destChainId,
         bytes32 bridgeHash,
         uint256 timestamp,
-        bool isBridged
+        bool bridged
     ) {
         return LibBridge.getBridgeInfo(tokenId);
     }

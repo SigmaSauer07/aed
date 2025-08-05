@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "";
 import "../../core/AEDConstants.sol";
 import "../../libraries/LibAppStorage.sol";
 import "../../libraries/LibModuleRegistry.sol";
@@ -13,19 +12,13 @@ import "../../core/interfaces/IAEDModule.sol";
  */
 contract ModuleRegistry is AEDConstants {
     using LibAppStorage for AppStorage;
-    
-    struct ModuleInfo {
-        address moduleAddress;
-        uint256 version;
-        bool enabled;
-        bytes4[] selectors;
-    }
+    using LibModuleRegistry for AppStorage;
     
     event ModuleRegistered(string moduleName, address moduleAddress, uint256 version);
     event ModuleUpgraded(string moduleName, address oldAddress, address newAddress);
     
     modifier onlyAdmin() {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.admins[msg.sender], "Not admin");
         _;
     }
@@ -36,31 +29,31 @@ contract ModuleRegistry is AEDConstants {
         uint256 version,
         bytes4[] calldata selectors
     ) external onlyAdmin {
-        AppStorage storage s = LibAppStorage.appStorage();
-        
-        if (s.moduleAddresses[moduleName] != address(0)) {
-            emit ModuleUpgraded(moduleName, s.moduleAddresses[moduleName], moduleAddress);
-        }
-        
-        s.moduleAddresses[moduleName] = moduleAddress;
-        s.moduleVersions[moduleName] = version;
-        s.moduleEnabled[moduleName] = true;
-        
-        emit ModuleRegistered(moduleName, moduleAddress, version);
+        LibModuleRegistry.registerModule(moduleName, moduleAddress, version, selectors);
     }
     
     function upgradeModule(
         string calldata moduleName,
         address newModuleAddress,
-        uint256 newVersion
+        uint256 newVersion,
+        bytes4[] calldata newSelectors
     ) external onlyAdmin {
-        AppStorage storage s = LibAppStorage.appStorage();
-        require(s.moduleAddresses[moduleName] != address(0), "Module not found");
-        
-        address oldAddress = s.moduleAddresses[moduleName];
-        s.moduleAddresses[moduleName] = newModuleAddress;
-        s.moduleVersions[moduleName] = newVersion;
-        
-        emit ModuleUpgraded(moduleName, oldAddress, newModuleAddress);
+        LibModuleRegistry.upgradeModule(moduleName, newModuleAddress, newVersion, newSelectors);
+    }
+    
+    function toggleModule(string calldata moduleName, bool enabled) external onlyAdmin {
+        LibModuleRegistry.toggleModule(moduleName, enabled);
+    }
+    
+    function getModuleInfo(string calldata moduleName) external view returns (ModuleInfo memory) {
+        return LibModuleRegistry.getModuleInfo(moduleName);
+    }
+    
+    function isModuleEnabled(string calldata moduleName) external view returns (bool) {
+        return LibModuleRegistry.isModuleEnabled(moduleName);
+    }
+    
+    function isModuleUpgradeable(string calldata moduleName, uint256 targetVersion) external view returns (bool) {
+        return LibModuleRegistry.isModuleUpgradeable(moduleName, targetVersion);
     }
 }

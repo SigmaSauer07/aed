@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
 
 library LibEnhancements {
@@ -14,7 +14,7 @@ library LibEnhancements {
     event FeatureAdded(string featureName, uint256 price, uint256 flag);
     
     function purchaseFeature(uint256 tokenId, string calldata featureName) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.owners[tokenId] == msg.sender, "Not token owner");
         
         uint256 price = s.enhancementPrices[featureName];
@@ -23,17 +23,18 @@ library LibEnhancements {
         
         // Enable feature based on name
         if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
+            s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
             s.enhancedDomains[s.tokenIdToDomain[tokenId]] = true;
         } else if (keccak256(bytes(featureName)) == keccak256("metadata")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_METADATA;
+            s.domainFeatures[tokenId] |= FEATURE_METADATA;
         } else if (keccak256(bytes(featureName)) == keccak256("reverse")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_REVERSE;
+            s.domainFeatures[tokenId] |= FEATURE_REVERSE;
         } else if (keccak256(bytes(featureName)) == keccak256("bridge")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_BRIDGE;
+            s.domainFeatures[tokenId] |= FEATURE_BRIDGE;
         }
         
         s.totalRevenue += price;
+        payable(s.feeCollector).transfer(price);
         emit FeaturePurchased(tokenId, featureName, price);
         
         // Refund excess
@@ -43,16 +44,17 @@ library LibEnhancements {
     }
     
     function enableSubdomains(uint256 tokenId) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.owners[tokenId] == msg.sender, "Not token owner");
-        require((s.domainFeatures[tokenId] & AEDConstants.FEATURE_SUBDOMAINS) == 0, "Already enabled");
+        require((s.domainFeatures[tokenId] & FEATURE_SUBDOMAINS) == 0, "Already enabled");
         
         uint256 price = s.enhancementPrices["subdomain"];
         require(msg.value >= price, "Insufficient payment");
         
-        s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
+        s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
         s.enhancedDomains[s.tokenIdToDomain[tokenId]] = true;
         s.totalRevenue += price;
+        payable(s.feeCollector).transfer(price);
         
         emit SubdomainsEnabled(tokenId, price);
         
@@ -63,14 +65,15 @@ library LibEnhancements {
     }
     
     function upgradeExternalDomain(string calldata externalDomain) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         uint256 price = s.enhancementPrices["byo"];
         require(price > 0, "BYO not available");
         require(msg.value >= price, "Insufficient payment");
         
         // Create a virtual token for external domain
-        uint256 tokenId = s.nextTokenId++;
+        uint256 tokenId = s.nextTokenId;
+        s.nextTokenId++;
         s.owners[tokenId] = msg.sender;
         s.balances[msg.sender]++;
         s.domainToTokenId[externalDomain] = tokenId;
@@ -93,9 +96,10 @@ library LibEnhancements {
         });
         
         // Enable subdomain feature
-        s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
+        s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
         s.enhancedDomains[externalDomain] = true;
         s.totalRevenue += price;
+        payable(s.feeCollector).transfer(price);
         
         emit ExternalDomainUpgraded(externalDomain, price);
         
@@ -106,20 +110,20 @@ library LibEnhancements {
     }
     
     function getFeaturePrice(string calldata featureName) internal view returns (uint256) {
-        return LibAppStorage.appStorage().enhancementPrices[featureName];
+        return LibAppStorage.s().enhancementPrices[featureName];
     }
     
     function isFeatureEnabled(uint256 tokenId, string calldata featureName) internal view returns (bool) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_SUBDOMAINS) != 0;
+            return (s.domainFeatures[tokenId] & FEATURE_SUBDOMAINS) != 0;
         } else if (keccak256(bytes(featureName)) == keccak256("metadata")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_METADATA) != 0;
+            return (s.domainFeatures[tokenId] & FEATURE_METADATA) != 0;
         } else if (keccak256(bytes(featureName)) == keccak256("reverse")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_REVERSE) != 0;
+            return (s.domainFeatures[tokenId] & FEATURE_REVERSE) != 0;
         } else if (keccak256(bytes(featureName)) == keccak256("bridge")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_BRIDGE) != 0;
+            return (s.domainFeatures[tokenId] & FEATURE_BRIDGE) != 0;
         }
         
         return false;
@@ -135,14 +139,14 @@ library LibEnhancements {
     }
     
     function setFeaturePrice(string calldata featureName, uint256 price) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         uint256 oldPrice = s.enhancementPrices[featureName];
         s.enhancementPrices[featureName] = price;
         emit FeaturePriceUpdated(featureName, oldPrice, price);
     }
     
     function addFeature(string calldata featureName, uint256 price, uint256 flag) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         s.enhancementPrices[featureName] = price;
         // Store feature flag in future storage
         s.futureUint256[uint256(keccak256(bytes(featureName)))] = flag;

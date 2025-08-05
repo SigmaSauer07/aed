@@ -7,213 +7,113 @@ import "../core/AppStorage.sol";
 /// @author SigmaSauer07 <https://github.com/SigmaSauer07>
 /// @notice This library provides a way to access and modify the AppStorage structure in a secure manner.
 library LibAppStorage {
-    /// @dev Returns a reference to the AppStorage struct stored at address 0x1.
-    function appStorage() internal pure returns (AppStorage storage s) {
+    bytes32 constant STORAGE_POSITION = keccak256("aed.app.storage");
+    
+    /// @dev Returns a reference to the AppStorage struct stored at the designated position.
+    function appStorage() internal pure returns (AppStorage storage storageRef) {
+        bytes32 position = STORAGE_POSITION;
         assembly {
-            s.slot := 0x1
+            storageRef.slot := position
         }
     }
-    /// @dev Sets the value of an AppStorage variable using its name as a string.
-    /// @param _name The name of the variable to set.
-    /// @param _value The new value for the variable.
-    function set(string memory _name, uint256 _value) internal {
-        bytes32 slot = keccak256(abi.encodePacked(_name));
-        assembly {
-            sstore(slot, _value)
-        }
+    
+    /// @dev Helper function to get storage reference
+    function s() internal pure returns (AppStorage storage) {
+        return appStorage();
     }
-    /// @dev Retrieves the value of an AppStorage variable using its name as a string.
-    /// @param _name The name of the variable to retrieve.
-    /// @return The value of the variable.
-    function get(string memory _name) internal view returns (uint256) {
-        bytes32 slot = keccak256(abi.encodePacked(_name));
-        uint256 value;
-        assembly {
-            value := sload(slot)
-        }
-        return value;
+    
+    /// @dev Check if a domain exists
+    function domainExists(string memory domain) internal view returns (bool) {
+        return s().domainExists[domain];
     }
-    /// @dev Deletes the value of an AppStorage variable using its name as a string.
-    /// @param _name The name of the variable to delete.
-    function del(string memory _name) internal {
-        bytes32 slot = keccak256(abi.encodePacked(_name));
-        assembly {
-            sstore(slot, 0)
-        }
+    
+    /// @dev Get domain owner
+    function getDomainOwner(string memory domain) internal view returns (address) {
+        return s().domains[s().domainToTokenId[domain]].owner;
     }
-
-    function getSlot(string memory _name) internal pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_name));
+    
+    /// @dev Check if TLD supports subdomains
+    function withSubdomains(string memory tld, bool checkValid, bool checkFree) internal view returns (bool) {
+        if (checkValid && !s().validTlds[tld]) return false;
+        if (checkFree && s().freeTlds[tld]) return true;
+        return true; // Default to true for paid TLDs
     }
-    function getValue(bytes32 _slot) internal view returns (uint256) {
-        uint256 value;
-        assembly {
-            value := sload(_slot)
-        }
-        return value;
+    
+    /// @dev Normalize domain name
+    function normalizeDomain(string memory name) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(name));
     }
-    function setValue(bytes32 _slot, uint256 _value) internal {
-        assembly {
-            sstore(_slot, _value)
-        }
-    }
-    function delValue(bytes32 _slot) internal {
-        assembly {
-            sstore(_slot, 0)
-        }
-    }
-    function exists(bytes32 _slot) internal view returns (bool) {
-        uint256 value;
-        assembly {
-            value := sload(_slot)
-        }
-        return value != 0;
-    }
-
-    function getAllSlots() internal view returns (bytes32[] memory slots) {}
-
-    function getAllValues() internal view returns (uint256[] memory values) {}
-
-    function getAllKeys() internal view returns (string[] memory keys) {}
-
-    function getAllPairs()
-        internal
-        view
-        returns (
-            bytes32[] memory slots,
-            uint256[] memory values,
-            string[] memory keys
-        ) {}
-
-        function getAllPairsWithNames(
-        string[] memory names
-    )
-        internal
-        view
-        returns (
-            bytes32[] memory slots,
-            uint256[] memory values,
-            string[] memory keys
-        ) {}
-
-        function getAllPairsWithValue(uint256 value)
-        internal
-        view
-        returns (
-            bytes32[] memory slots,
-            uint256[] memory values,
-            string[] memory keys
-        ) {
-            for (uint i = 0; i < names.length; i++) {
-        function (string memory name, uint256 value)
-        internal
-        view
-        returns (
-            bytes32[] memory slots,
-            uint256[] memory values,
-            string[] memory keys,
-            bool[] memory matches
-        )
-            
-            i = 0;(i < names.length = i++); {
+    
+    /// @dev Validate domain name
+    function validateDomainName(string memory name) internal pure returns (bool) {
+        bytes memory nameBytes = bytes(name);
+        if (nameBytes.length < 1 || nameBytes.length > 63) return false;
         
-        // function getAllPairsWithNameAndValue(string memory name, uint256 value)
-        //     internal
-        //     view
-        //     returns (
-        //         bytes32[] memory slots,
-        //         uint256[] memory values,
-        //         string[] memory keys
-        //     )
-
-        //  function getAllPairsWithNameAndValue(string memory name, uint256 value)
-        //     internal
-        //     view
-        //     returns (
-        //         bytes32[] memory slots,
-        //         uint256[] memory values,
-        //         string[] memory keys
-        //     
-            }       
-            // storage for updates to be applied after all transactions are processed
-            mapping(bytes32 => uint256) updates; {
-
-            }
-            function()_addUpdate; (bytes32 _slot, uint256 _newValue) = 3; deployedAt; {
-                if (!exists(_slot)) {
-                    revert("Slot does not exist");
+        for (uint256 i = 0; i < nameBytes.length; i++) {
+            bytes1 char = nameBytes[i];
+            if (char < 0x61 || char > 0x7a) { // Not lowercase a-z
+                if (char < 0x30 || char > 0x39) { // Not 0-9
+                    if (char != 0x2d) { // Not hyphen
+                        return false;
+                    }
                 }
-                setValue(_slot, _newValue);
-            }
-            function() addUpdate; (bytes32 _slot, uint256 _newValue) = 4; deployedAt; {
-                updates[_slot] = _newValue;
-            }
-            function() removeUpdate; (bytes32 _slot) = 5; deployedAt; {
-                updates.remove(_slot);
-            }
-            
-              // apply any pending updates
-            function() applyUpdates = 6; deployedAt; {
-                for (uint i = 0; i < updates.length(); i++) {
-                    bytes32 slot = updates[i];
-                    uint256 newValue = getValue(slot);
-                    setValue(slot, newValue);
-                }
-                updates.clear();
-            }
-            function() clearUpdates = 7; deployedAt; { 
-                updates[_slot] = _newValue;
-            }
-                for (uint i = 0; i < updates.length(); i++) {
-                    bytes32 slot = updates[i];
-                    uint256 newValue = getValue(slot);
-                    setValue(slot, newValue);
-                }
-                updates.clear();
-            }
-            function() clearUpdates = 8; deployedAt; {
-                updates.clear(_slot);
-            }
-
-            // gap
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-```````````uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            }
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-``````````` uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            uint256[50] __gap; // Reserve slots for future use; {
-            }
-            function() updateSlot; (bytes32 _slot, uint256 _newValue) = 9; deployedAt; {
-                if (!exists(_slot)) {
-                    revert("Slot does not exist");
-                }
-                setValue(_slot, _newValue);
-            }
-            function() addUpdate; (bytes32 _slot, uint256 _newValue) = 10; deployedAt; {
-                updates[_slot] = _newValue;
-            }
-            function() removeUpdate; (bytes32 _slot) = 11; deployedAt; {
-                updates.remove(_slot);
             }
         }
-
-
-
-
-
-
+        return true;
+    }
+    
+    /// @dev Check if address is admin
+    function isAdmin(address account) internal view returns (bool) {
+        return s().admins[account];
+    }
+    
+    /// @dev Check if contract is paused
+    function isPaused() internal view returns (bool) {
+        return s().paused;
+    }
+    
+    /// @dev Get fee collector address
+    function getFeeCollector() internal view returns (address) {
+        return s().feeCollector;
+    }
+    
+    /// @dev Get TLD price
+    function getTldPrice(string memory tld) internal view returns (uint256) {
+        return s().tldPrices[tld];
+    }
+    
+    /// @dev Check if TLD is free
+    function isFreeTld(string memory tld) internal view returns (bool) {
+        return s().freeTlds[tld];
+    }
+    
+    /// @dev Check if TLD is valid
+    function isValidTld(string memory tld) internal view returns (bool) {
+        return s().validTlds[tld];
+    }
+    
+    /// @dev Get enhancement price
+    function getEnhancementPrice(string memory enhancement) internal view returns (uint256) {
+        return s().enhancementPrices[enhancement];
+    }
+    
+    /// @dev Get next token ID
+    function getNextTokenId() internal view returns (uint256) {
+        return s().nextTokenId;
+    }
+    
+    /// @dev Increment next token ID
+    function incrementTokenId() internal {
+        s().nextTokenId++;
+    }
+    
+    /// @dev Add revenue
+    function addRevenue(uint256 amount) internal {
+        s().totalRevenue += amount;
+    }
+    
+    /// @dev Get total revenue
+    function getTotalRevenue() internal view returns (uint256) {
+        return s().totalRevenue;
+    }
+}

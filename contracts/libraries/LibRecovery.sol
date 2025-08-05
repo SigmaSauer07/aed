@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
 
 struct RecoveryRequest {
@@ -16,9 +16,6 @@ struct RecoveryRequest {
 library LibRecovery {
     using LibAppStorage for AppStorage;
     
-    // Use future storage slots for recovery data
-    bytes32 constant RECOVERY_STORAGE_SLOT = keccak256("aed.recovery.storage");
-    
     event GuardianAdded(uint256 indexed tokenId, address indexed guardian);
     event GuardianRemoved(uint256 indexed tokenId, address indexed guardian);
     event RecoveryInitiated(uint256 indexed tokenId, address indexed newOwner, uint256 deadline);
@@ -27,7 +24,7 @@ library LibRecovery {
     event RecoveryExecuted(uint256 indexed tokenId, address indexed oldOwner, address indexed newOwner);
     
     function addGuardian(uint256 tokenId, address guardian) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.owners[tokenId] != address(0), "Token does not exist");
         require(guardian != address(0), "Invalid guardian");
         require(guardian != s.owners[tokenId], "Owner cannot be guardian");
@@ -53,7 +50,7 @@ library LibRecovery {
     }
     
     function removeGuardian(uint256 tokenId, address guardian) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.owners[tokenId] != address(0), "Token does not exist");
         
         bytes32 guardiansSlot = keccak256(abi.encode(tokenId, "guardians"));
@@ -74,7 +71,7 @@ library LibRecovery {
     }
     
     function initiateRecovery(uint256 tokenId, address newOwner) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.owners[tokenId] != address(0), "Token does not exist");
         require(newOwner != address(0), "Invalid new owner");
         require(isGuardian(tokenId, msg.sender), "Not a guardian");
@@ -110,7 +107,7 @@ library LibRecovery {
     }
     
     function confirmRecovery(uint256 tokenId) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(isGuardian(tokenId, msg.sender), "Not a guardian");
         
         bytes32 activeSlot = keccak256(abi.encode(tokenId, "recovery", "active"));
@@ -132,7 +129,7 @@ library LibRecovery {
     }
     
     function cancelRecovery(uint256 tokenId) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.owners[tokenId] == msg.sender, "Not token owner");
         
         _clearRecovery(tokenId);
@@ -140,7 +137,7 @@ library LibRecovery {
     }
     
     function executeRecovery(uint256 tokenId) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         bytes32 activeSlot = keccak256(abi.encode(tokenId, "recovery", "active"));
         require(s.futureUint256[uint256(activeSlot)] == 1, "No active recovery");
@@ -170,7 +167,7 @@ library LibRecovery {
     }
     
     function getGuardians(uint256 tokenId) internal view returns (address[] memory) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         bytes32 guardiansSlot = keccak256(abi.encode(tokenId, "guardians"));
         uint256 guardianCount = s.futureUint256[uint256(guardiansSlot)];
         
@@ -201,7 +198,7 @@ library LibRecovery {
         uint256 deadline,
         bool isActive
     ) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         bytes32 activeSlot = keccak256(abi.encode(tokenId, "recovery", "active"));
         isActive = s.futureUint256[uint256(activeSlot)] == 1;
@@ -220,18 +217,18 @@ library LibRecovery {
     }
     
     function isGuardian(uint256 tokenId, address account) internal view returns (bool) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         return s.futureAddressUint256[account] == uint256(uint160(account));
     }
     
     function getGuardianCount(uint256 tokenId) internal view returns (uint256) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         bytes32 guardiansSlot = keccak256(abi.encode(tokenId, "guardians"));
         return s.futureUint256[uint256(guardiansSlot)];
     }
     
     function _clearRecovery(uint256 tokenId) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         bytes32 activeSlot = keccak256(abi.encode(tokenId, "recovery", "active"));
         bytes32 newOwnerSlot = keccak256(abi.encode(tokenId, "recovery", "newOwner"));

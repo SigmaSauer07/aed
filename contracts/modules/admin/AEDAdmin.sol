@@ -2,11 +2,13 @@
 pragma solidity ^0.8.30;
 
 import "../../libraries/LibAdmin.sol";
+import "../../libraries/LibRoles.sol";
 import "../base/ModuleBase.sol";
 import "../../interfaces/modules/IAEDAdmin.sol";
 
 abstract contract AEDAdmin is ModuleBase, IAEDAdmin {
     using LibAdmin for AppStorage;
+    using LibRoles for AppStorage;
 
     function updateFee(string calldata feeType, uint256 newAmount) external override onlyFeeManager {
         LibAdmin.updateFee(feeType, newAmount);
@@ -37,11 +39,11 @@ abstract contract AEDAdmin is ModuleBase, IAEDAdmin {
     }
     
     function grantRole(bytes32 role, address account) external onlyAdmin {
-        LibAdmin.grantRole(role, account);
+        LibRoles.grantRole(role, account);
     }
     
     function revokeRole(bytes32 role, address account) external onlyAdmin {
-        LibAdmin.revokeRole(role, account);
+        LibRoles.revokeRole(role, account);
     }
     
     function pause() external onlyAdmin {
@@ -50,6 +52,10 @@ abstract contract AEDAdmin is ModuleBase, IAEDAdmin {
     
     function unpause() external onlyAdmin {
         LibAdmin.unpauseContract();
+    }
+    
+    function updateEnhancementPrice(string calldata enhancement, uint256 newPrice) external onlyFeeManager {
+        LibAdmin.updateEnhancementPrice(enhancement, newPrice);
     }
     
     // Module interface overrides

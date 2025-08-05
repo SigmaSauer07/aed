@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
 
 library LibBridge {
@@ -12,7 +12,7 @@ library LibBridge {
     event ChainSupportUpdated(uint256 indexed chainId, bool supported);
     
     function bridgeDomain(uint256 tokenId, string calldata destination) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.owners[tokenId] != address(0), "Token does not exist");
         require(!s.bridgeData[tokenId].isBridged, "Already bridged");
         
@@ -43,7 +43,7 @@ library LibBridge {
         bytes32 bridgeHash,
         bytes calldata signature
     ) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.owners[tokenId] == address(0), "Token already exists");
         
         // Verify signature (simplified - in production use proper signature verification)
@@ -81,19 +81,19 @@ library LibBridge {
         uint256 destChainId,
         bytes32 bridgeHash,
         uint256 timestamp,
-        bool isBridged
+        bool bridged
     ) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         BridgeReceipt memory receipt = s.bridgeData[tokenId];
         return (receipt.destChainId, receipt.bridgeHash, receipt.timestamp, receipt.isBridged);
     }
     
     function isBridged(uint256 tokenId) internal view returns (bool) {
-        return LibAppStorage.appStorage().bridgeData[tokenId].isBridged;
+        return LibAppStorage.s().bridgeData[tokenId].isBridged;
     }
     
     function setSupportedChain(uint256 chainId, bool supported) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         bytes32 chainSlot = keccak256(abi.encode("supportedChain", chainId));
         s.futureUint256[uint256(chainSlot)] = supported ? 1 : 0;
         emit ChainSupportUpdated(chainId, supported);
@@ -109,11 +109,13 @@ library LibBridge {
         if (keccak256(bytes(destination)) == keccak256("polygon")) return 137;
         if (keccak256(bytes(destination)) == keccak256("arbitrum")) return 42161;
         if (keccak256(bytes(destination)) == keccak256("optimism")) return 10;
+        if (keccak256(bytes(destination)) == keccak256("base")) return 8453;
+        if (keccak256(bytes(destination)) == keccak256("bsc")) return 56;
         revert("Unknown destination");
     }
     
     function _isSupportedChain(uint256 chainId) internal view returns (bool) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         bytes32 chainSlot = keccak256(abi.encode("supportedChain", chainId));
         return s.futureUint256[uint256(chainSlot)] == 1;
     }

@@ -11,7 +11,7 @@ abstract contract AEDGovernance is ModuleBase {
     event VoteCast(uint256 indexed proposalId, address voter, bool support);
     
     function createProposal(string calldata description) external {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.balances[msg.sender] > 0, "Must own domain to propose");
         
         uint256 proposalId = s.futureUint256[0]++; // Use future storage
@@ -20,10 +20,19 @@ abstract contract AEDGovernance is ModuleBase {
     }
     
     function vote(uint256 proposalId, bool support) external {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         require(s.balances[msg.sender] > 0, "Must own domain to vote");
         
         // Voting logic using future storage slots
         emit VoteCast(proposalId, msg.sender, support);
+    }
+    
+    // Module interface overrides
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AEDGovernance");
+    }
+    
+    function moduleName() external pure override returns (string memory) {
+        return "AEDGovernance";
     }
 }

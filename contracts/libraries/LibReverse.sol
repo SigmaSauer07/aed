@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
 
 library LibReverse {
@@ -11,10 +11,11 @@ library LibReverse {
     event ReverseCleared(address indexed addr);
     
     function setReverse(string calldata domain) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         // Verify caller owns the domain
         uint256 tokenId = s.domainToTokenId[domain];
+        require(tokenId != 0, "Domain not found");
         require(s.owners[tokenId] == msg.sender, "Not domain owner");
         
         // Clear previous reverse if exists
@@ -31,7 +32,7 @@ library LibReverse {
     }
     
     function clearReverse() internal {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         string memory domain = s.reverseRecords[msg.sender];
         require(bytes(domain).length > 0, "No reverse set");
@@ -43,22 +44,18 @@ library LibReverse {
     }
     
     function getReverse(address addr) internal view returns (string memory) {
-        return LibAppStorage.appStorage().reverseRecords[addr];
+        return LibAppStorage.s().reverseRecords[addr];
     }
     
     function getReverseOwner(string calldata domain) internal view returns (address) {
-        return LibAppStorage.appStorage().reverseOwners[domain];
+        return LibAppStorage.s().reverseOwners[domain];
     }
     
-    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {
-        AppStorage storage s = LibAppStorage.appStorage();
-        address owner = s.owners[tokenId];
-        return (spender == owner || 
-                s.tokenApprovals[tokenId] == spender || 
-                s.operatorApprovals[owner][spender]);
+    function hasReverse(address addr) internal view returns (bool) {
+        return bytes(LibAppStorage.s().reverseRecords[addr]).length > 0;
     }
     
-    function _exists(uint256 tokenId) internal view returns (bool) {
-        return LibAppStorage.appStorage().owners[tokenId] != address(0);
+    function isReverseOwner(string calldata domain, address addr) internal view returns (bool) {
+        return LibAppStorage.s().reverseOwners[domain] == addr;
     }
 }

@@ -42,7 +42,7 @@ abstract contract AEDCore is Initializable, AEDConstants {
         return LibAppStorage.appStorage().totalRevenue;
     }
     
-    function _tokenExists(uint256 tokenId) internal view returns (bool) {
+    function _tokenExists(uint256 tokenId) internal view virtual returns (bool) {
         return LibAppStorage.appStorage().owners[tokenId] != address(0);
     }
     
@@ -54,7 +54,7 @@ abstract contract AEDCore is Initializable, AEDConstants {
                 s.operatorApprovals[owner][spender]);
     }
     
-    function _transfer(address from, address to, uint256 tokenId) internal {
+    function _transfer(address from, address to, uint256 tokenId) internal virtual {
         AppStorage storage s = LibAppStorage.appStorage();
         require(s.owners[tokenId] == from, "Transfer from incorrect owner");
         require(to != address(0), "Transfer to zero address");
@@ -78,7 +78,7 @@ abstract contract AEDCore is Initializable, AEDConstants {
         s.tokenApprovals[tokenId] = to;
     }
     
-    function _setApprovalForAll(address owner, address operator, bool approved) internal {
+    function _setApprovalForAll(address owner, address operator, bool approved) internal virtual {
         require(owner != operator, "Approve to caller");
         AppStorage storage s = LibAppStorage.appStorage();
         s.operatorApprovals[owner][operator] = approved;

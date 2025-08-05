@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import "../core/AEDConstants.sol";
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 
 library LibAdmin {
     using LibAppStorage for AppStorage;
@@ -42,30 +42,40 @@ library LibAdmin {
         s.roles[role][account] = true;
         
         // Update legacy mappings for compatibility
-        if (role == hasRole(hasRole(AEDConstants.ROLES, account,true), AEDConstants.ADMIN_ROLE)) {
+        bytes32 ADMIN_ROLE = keccak256("ADMIN_ROLE");
+        bytes32 FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
+        bytes32 TLD_MANAGER_ROLE = keccak256("TLD_MANAGER_ROLE");
+        
+        if (role == ADMIN_ROLE) {
             s.admins[account] = true;
-        }else if (role == AEDConstants.FEE_MANAGER_ROLE) {
+        } else if (role == FEE_MANAGER_ROLE) {
             s.feeManagers[account] = true;
-            return false;
+        } else if (role == TLD_MANAGER_ROLE) {
+            s.tldManagers[account] = true;
         }
-        return false;
+        
+        emit RoleGranted(role, account);
     }
     
-        function revokeRole(bytes32 role, address account) internal {
-            AppStorage storage s = LibAppStorage.appStorage();
-            s.roles[role][account] = false;
-            
-            // Update legacy mappings for compatibility
-            if (role == AEDConstants.ADMIN_ROLE) {
-                s.admins[account] = false;
-            } else if (role == AEDConstants.FEE_MANAGER_ROLE) {
-                s.feeManagers[account] = false;
-            } else if (role == AEDConstants.TLD_MANAGER_ROLE) {
-                s.tldManagers[account] = false;
-            }
-            
-            emit RoleRevoked(role, account);
+    function revokeRole(bytes32 role, address account) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        s.roles[role][account] = false;
+        
+        // Update legacy mappings for compatibility
+        bytes32 ADMIN_ROLE = keccak256("ADMIN_ROLE");
+        bytes32 FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
+        bytes32 TLD_MANAGER_ROLE = keccak256("TLD_MANAGER_ROLE");
+        
+        if (role == ADMIN_ROLE) {
+            s.admins[account] = false;
+        } else if (role == FEE_MANAGER_ROLE) {
+            s.feeManagers[account] = false;
+        } else if (role == TLD_MANAGER_ROLE) {
+            s.tldManagers[account] = false;
         }
+        
+        emit RoleRevoked(role, account);
+    }
     
     function hasRole(bytes32 role, address account) internal view returns (bool) {
         AppStorage storage s = LibAppStorage.appStorage();

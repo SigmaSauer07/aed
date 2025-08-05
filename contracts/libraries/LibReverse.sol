@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
 
 library LibReverse {

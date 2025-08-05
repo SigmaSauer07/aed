@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
 
 /// @title Library for managing registry of addresses and their associated data.
@@ -39,17 +39,20 @@ library LibRegistry {
     function linkExternalDomain(string calldata externalDomain, uint256 tokenId) internal {
         AppStorage storage s = LibAppStorage.appStorage();
         require(s.owners[tokenId] == msg.sender, "Not token owner");
-        require(s.futureUint256[keccak256(bytes(externalDomain))] == 0, "Already linked");
+        
+        bytes32 domainHash = keccak256(bytes(externalDomain));
+        require(s.futureUint256[uint256(domainHash)] == 0, "Already linked");
         
         // Charge BYO fee
         uint256 byoFee = s.enhancementPrices["byo"];
         require(msg.value >= byoFee, "Insufficient payment");
         
-        s.futureUint256[keccak256(bytes(externalDomain))] = tokenId;
+        s.futureUint256[uint256(domainHash)] = tokenId;
         s.totalRevenue += byoFee;
         
         // Enable subdomain feature for linked domain
-        s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
+        uint256 FEATURE_SUBDOMAINS = 1 << 0;
+        s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
         
         emit ExternalDomainLinked(externalDomain, tokenId);
         
@@ -61,16 +64,18 @@ library LibRegistry {
     
     function unlinkExternalDomain(string calldata externalDomain) internal {
         AppStorage storage s = LibAppStorage.appStorage();
-        uint256 tokenId = s.futureUint256[keccak256(bytes(externalDomain))];
+        bytes32 domainHash = keccak256(bytes(externalDomain));
+        uint256 tokenId = s.futureUint256[uint256(domainHash)];
         require(tokenId != 0, "Domain not linked");
         require(s.owners[tokenId] == msg.sender, "Not token owner");
         
-        delete s.futureUint256[keccak256(bytes(externalDomain))];
+        delete s.futureUint256[uint256(domainHash)];
         emit ExternalDomainUnlinked(externalDomain);
     }
     
     function getLinkedDomain(string calldata externalDomain) internal view returns (uint256) {
         AppStorage storage s = LibAppStorage.appStorage();
-        return s.futureUint256[keccak256(bytes(externalDomain))];
+        bytes32 domainHash = keccak256(bytes(externalDomain));
+        return s.futureUint256[uint256(domainHash)];
     }
 }

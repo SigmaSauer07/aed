@@ -3,41 +3,44 @@ pragma solidity ^0.8.30;
 
 import "../../libraries/LibRegistry.sol";
 import "../base/ModuleBase.sol";
-import "../../interfaces/modules/IAEDRegistry.sol";
+import "../../libraries/LibAppStorage.sol";
 
-abstract contract AEDRegistry is ModuleBase, IAEDRegistry {
-    using LibRegistry for AppStorage;
+contract AEDRegistry is ModuleBase {
+    using LibAppStorage for AppStorage;
     
-    function enableFeature(uint256 tokenId, uint256 feature) external override onlyTokenOwner(tokenId) {
+    function enableFeature(uint256 tokenId, uint256 feature) external onlyTokenOwner(tokenId) {
         LibRegistry.enableFeature(tokenId, feature);
     }
     
-    function disableFeature(uint256 tokenId, uint256 feature) external override onlyTokenOwner(tokenId) {
+    function disableFeature(uint256 tokenId, uint256 feature) external onlyTokenOwner(tokenId) {
         LibRegistry.disableFeature(tokenId, feature);
     }
     
-    function hasFeature(uint256 tokenId, uint256 feature) external view override returns (bool) {
+    function checkFeature(uint256 tokenId, uint256 feature) external view returns (bool) {
         return LibRegistry.hasFeature(tokenId, feature);
     }
     
-    function linkExternalDomain(string calldata externalDomain, uint256 tokenId) external override payable {
+    function linkExternalDomain(string calldata externalDomain, uint256 tokenId) external payable {
         LibRegistry.linkExternalDomain(externalDomain, tokenId);
     }
     
-    function unlinkExternalDomain(string calldata externalDomain) external override {
+    function unlinkExternalDomain(string calldata externalDomain) external {
         LibRegistry.unlinkExternalDomain(externalDomain);
     }
     
-    function getLinkedDomain(string calldata externalDomain) external view override returns (uint256) {
-        return LibRegistry.getLinkedDomain(externalDomain);
+    function isExternalDomainLinked(string calldata externalDomain) external view returns (bool) {
+        return LibRegistry.isExternalDomainLinked(externalDomain);
     }
     
-    // Module interface overrides
+    function getLinkedToken(string calldata externalDomain) external view returns (uint256) {
+        return LibRegistry.getLinkedToken(externalDomain);
+    }
+    
     function moduleId() external pure override returns (bytes32) {
-        return keccak256("AEDRegistry");
+        return keccak256("AED_REGISTRY");
     }
     
     function moduleName() external pure override returns (string memory) {
-        return "AEDRegistry";
+        return "AED Registry";
     }
 }

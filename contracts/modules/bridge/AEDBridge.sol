@@ -1,52 +1,51 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../../libraries/LibBridge.sol";
 import "../base/ModuleBase.sol";
-import "../../interfaces/modules/IAEDBridge.sol";
+import "../../libraries/LibBridge.sol";
 
-abstract contract AEDBridge is ModuleBase, IAEDBridge {
-    using LibBridge for AppStorage;
+contract AEDBridge is ModuleBase {
     
-    function bridgeDomain(uint256 tokenId, string calldata destination) external override onlyTokenOwner(tokenId) {
-        LibBridge.bridgeDomain(tokenId, destination);
+    event DomainBridgeRequested(uint256 indexed tokenId, uint256 indexed targetChainId);
+    event DomainUnbridgeRequested(uint256 indexed tokenId);
+    
+    function bridgeDomain(uint256 tokenId, uint256 targetChainId) external onlyTokenOwner(tokenId) {
+        LibBridge.bridgeDomain(tokenId, targetChainId);
+        emit DomainBridgeRequested(tokenId, targetChainId);
     }
     
-    function claimBridgedDomain(
-        uint256 tokenId,
-        bytes32 bridgeHash,
-        bytes calldata signature
-    ) external override {
-        LibBridge.claimBridgedDomain(tokenId, bridgeHash, signature);
+    function unbridgeDomain(uint256 tokenId) external onlyTokenOwner(tokenId) {
+        LibBridge.unbridgeDomain(tokenId);
+        emit DomainUnbridgeRequested(tokenId);
     }
     
-    function getBridgeInfo(uint256 tokenId) external view override returns (
-        uint256 destChainId,
-        bytes32 bridgeHash,
-        uint256 timestamp,
-        bool isBridged
+    function getBridgeInfo(uint256 tokenId) external view returns (
+        uint256 chainId,
+        address bridgeAddress,
+        uint256 bridgedAt,
+        bool bridgedOut
     ) {
-        return LibBridge.getBridgeInfo(tokenId);
+        BridgeInfo memory info = LibBridge.getBridgeInfo(tokenId);
+        return (info.chainId, info.bridgeAddress, info.bridgedAt, info.isBridgedOut);
     }
     
-    function isBridged(uint256 tokenId) external view override returns (bool) {
+    function isBridged(uint256 tokenId) external view returns (bool) {
         return LibBridge.isBridged(tokenId);
     }
     
-    function setSupportedChain(uint256 chainId, bool supported) external onlyAdmin {
-        LibBridge.setSupportedChain(chainId, supported);
+    function configureBridge(
+        uint256 chainId,
+        address bridgeAddress,
+        bool enabled
+    ) external onlyAdmin {
+        LibBridge.configureBridge(chainId, bridgeAddress, enabled);
     }
     
-    function isSupportedChain(uint256 chainId) external view override returns (bool) {
-        return LibBridge.isSupportedChain(chainId);
-    }
-    
-    // Module interface overrides
     function moduleId() external pure override returns (bytes32) {
-        return keccak256("AEDBridge");
+        return keccak256("AED_BRIDGE");
     }
     
     function moduleName() external pure override returns (string memory) {
-        return "AEDBridge";
+        return "AED Bridge";
     }
 }

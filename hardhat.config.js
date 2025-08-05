@@ -1,8 +1,7 @@
-require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-toolbox");
-require("@openzeppelin/hardhat-upgrades");
 require("dotenv").config();
 
+/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
     version: "0.8.30",
@@ -11,29 +10,21 @@ module.exports = {
         enabled: true,
         runs: 200,
       },
-      evmVersion: "cancun",
+      viaIR: true, // Enable IR optimizer to fix stack too deep errors
+      evmVersion: "cancun"
     },
   },
   networks: {
+    hardhat: {
+      chainId: 1337,
+    },
     amoy: {
       url: process.env.AMOY_RPC,
       accounts: [process.env.PRIVATE_KEY],
-      timeout: 120000,
+      chainId: 80002,
     },
   },
-etherscan: {
-  apiKey: {
-    polygonAmoy: "YOUR_POLYGONSCAN_API_KEY"
+  etherscan: {
+    apiKey: process.env.POLYGONSCAN_API_KEY,
   },
-  customChains: [
-    {
-      network: "polygonAmoy",
-      chainId: 80002,
-      urls: {
-        apiURL: "https://amoy.polygonscan.com/api",
-        browserURL: "https://amoy.polygonscan.com"
-      }
-    }
-  ]
-}
-}
+};

@@ -1,120 +1,180 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
-import "../core/AEDConstants.sol";
+import "./LibAppStorage.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 library LibMetadata {
     using LibAppStorage for AppStorage;
+    using Strings for uint256;
     
     event ProfileURIUpdated(uint256 indexed tokenId, string uri);
     event ImageURIUpdated(uint256 indexed tokenId, string uri);
     
     function setProfileURI(uint256 tokenId, string calldata uri) internal {
-        require(_exists(tokenId), "Token does not exist");
+        require(LibAppStorage.tokenExists(tokenId), "Token does not exist");
         AppStorage storage s = LibAppStorage.appStorage();
-        s.domains[tokenId].profileURI = uri;
+        
         s.profileURIs[tokenId] = uri;
+        s.domains[tokenId].profileURI = uri;
+        
         emit ProfileURIUpdated(tokenId, uri);
     }
     
     function setImageURI(uint256 tokenId, string calldata uri) internal {
-        require(_exists(tokenId), "Token does not exist");
+        require(LibAppStorage.tokenExists(tokenId), "Token does not exist");
         AppStorage storage s = LibAppStorage.appStorage();
-        s.domains[tokenId].imageURI = uri;
+        
         s.imageURIs[tokenId] = uri;
+        s.domains[tokenId].imageURI = uri;
+        
         emit ImageURIUpdated(tokenId, uri);
     }
     
     function getProfileURI(uint256 tokenId) internal view returns (string memory) {
-        AppStorage storage s = LibAppStorage.appStorage();
-        return s.domains[tokenId].profileURI;
+        return LibAppStorage.appStorage().profileURIs[tokenId];
     }
     
     function getImageURI(uint256 tokenId) internal view returns (string memory) {
-        AppStorage storage s = LibAppStorage.appStorage();
-        return s.domains[tokenId].imageURI;
+        return LibAppStorage.appStorage().imageURIs[tokenId];
     }
     
+    /**
+     * @dev Generates tokenURI with JSON metadata
+     * @param tokenId The token ID
+     * @return uri The complete tokenURI
+     */
     function tokenURI(uint256 tokenId) internal view returns (string memory) {
-        require(_exists(tokenId), "Token does not exist");
+        require(LibAppStorage.tokenExists(tokenId), "Token does not exist");
+        
         AppStorage storage s = LibAppStorage.appStorage();
-        
         string memory domain = s.tokenIdToDomain[tokenId];
-        string memory baseURI = s.baseURI;
+        Domain memory domainInfo = s.domains[tokenId];
         
-        return bytes(baseURI).length > 0 
-            ? string(abi.encodePacked(baseURI, domain))
-            : _generateSVG(tokenId, domain);
-    }
-    
-    function _generateSVG(uint256 tokenId, string memory domain) internal pure returns (string memory) {
-
-        string memory domain = "name";
-        if (tokenId < AEDConstants.MAX_DOMAINS) {
-            domain = AEDConstants.DOMAINS[tokenId];
-        }
-        else {
-            domain = "Unknown";
-        }
-
-        string memory svg = string(abi.encodePacked(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">',
-            '<rect width="400" height="400" fill="#001f3f"/>',
-            '<text x="200" y="200" text-anchor="middle" fill="#39FF14" font-size="24" font-family="monospace">',
-            domain,
-            '</text>',
-            '<text x="200" y="250" text-anchor="middle" fill="#39FF14" font-size="12" font-family="monospace">',
-            'Alsania Enhanced Domain',
-            '</text>',
-            '</svg>'
-        ));
+        // Use custom image if set, otherwise generate SVG
+        string memory imageURI = bytes(domainInfo.imageURI).length > 0 
+            ? domainInfo.imageURI 
+            : _generateSVG(domain, domainInfo);
         
+        // Build JSON metadata
         string memory json = string(abi.encodePacked(
             '{"name":"', domain, '",',
-            '"description":"Alsania Enhanced Domain NFT",',
-            '"image":"data:image/svg+xml;base64,', _base64Encode(bytes(svg)), '",',
-            '"attributes":[{"trait_type":"Domain","value":"', domain, '"}]}'
+            '"description":"Alsania Enhanced Domain - ', domain, '",',
+            '"image":"', imageURI, '",',
+            '"external_url":"https://alsania.io/domain/', domain, '",',
+            '"attributes":[',
+                '{"trait_type":"TLD","value":"', domainInfo.tld, '"},',
+                '{"trait_type":"Subdomains","value":', domainInfo.subdomainCount.toString(), '},',
+                '{"trait_type":"Type","value":"', domainInfo.isSubdomain ? "Subdomain" : "Domain", '"},',
+                '{"trait_type":"Features","value":', _getFeatureCount(tokenId).toString(), '}',
+            ']}'
         ));
         
         return string(abi.encodePacked(
             "data:application/json;base64,",
-            _base64Encode(bytes(json))
+            Base64.encode(bytes(json))
         ));
     }
     
-    function _base64Encode(bytes memory data) internal pure returns (string memory) {
-        if (data.length == 0) return "";
+    /**
+     * @dev Generates dynamic SVG for domains
+     * @param domain The domain name
+     * @param domainInfo The domain information
+     * @return svg The base64 encoded SVG
+     */
+    function _generateSVG(string memory domain, Domain memory domainInfo) private pure returns (string memory) {
+        string memory truncatedDomain = _truncateDomain(domain, 20);
         
-        string memory table = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-        string memory result = new string(4 * ((data.length + 2) / 3));
+        string memory svg = string(abi.encodePacked(
+            '<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">',
+            '<defs>',
+            '<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">',
+            '<stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />',
+            '<stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />',
+            '</linearGradient>',
+            '</defs>',
+            '<rect width="400" height="400" fill="url(#bg)"/>',
+            '<circle cx="200" cy="150" r="60" fill="rgba(255,255,255,0.1)"/>',
+            '<text x="200" y="200" font-family="Arial, sans-serif" font-size="18" font-weight="bold" ',
+            'text-anchor="middle" fill="white">',
+            truncatedDomain,
+            '</text>',
+            '<text x="200" y="250" font-family="Arial, sans-serif" font-size="14" ',
+            'text-anchor="middle" fill="rgba(255,255,255,0.8)">',
+            domainInfo.isSubdomain ? "Subdomain" : "Domain",
+            '</text>',
+            '<text x="200" y="320" font-family="Arial, sans-serif" font-size="12" ',
+            'text-anchor="middle" fill="rgba(255,255,255,0.6)">',
+            'Alsania Enhanced Domains',
+            '</text>',
+            '</svg>'
+        ));
         
-        assembly {
-            let tablePtr := add(table, 1)
-            let resultPtr := add(result, 32)
-            
-            for { let i := 0 } lt(i, mload(data)) { i := add(i, 3) } {
-                let input := shl(248, mload(add(add(data, 32), i)))
-                
-                mstore8(resultPtr, mload(add(tablePtr, and(shr(250, input), 0x3F))))
-                resultPtr := add(resultPtr, 1)
-                mstore8(resultPtr, mload(add(tablePtr, and(shr(244, input), 0x3F))))
-                resultPtr := add(resultPtr, 1)
-                mstore8(resultPtr, mload(add(tablePtr, and(shr(238, input), 0x3F))))
-                resultPtr := add(resultPtr, 1)
-                mstore8(resultPtr, mload(add(tablePtr, and(shr(232, input), 0x3F))))
-                resultPtr := add(resultPtr, 1)
-            }
-            
-            switch mod(mload(data), 3)
-            case 1 { mstore(sub(resultPtr, 2), shl(240, 0x3d3d)) }
-            case 2 { mstore(sub(resultPtr, 1), shl(248, 0x3d)) }
-        }
-        
-        return result;
+        return string(abi.encodePacked(
+            "data:image/svg+xml;base64,",
+            Base64.encode(bytes(svg))
+        ));
     }
     
-    function _exists(uint256 tokenId) internal view returns (bool) {
-        return LibAppStorage.appStorage().owners[tokenId] != address(0);
+    /**
+     * @dev Truncates domain name for display
+     * @param domain The domain name
+     * @param maxLength Maximum length
+     * @return truncated The truncated domain
+     */
+    function _truncateDomain(string memory domain, uint256 maxLength) private pure returns (string memory) {
+        bytes memory domainBytes = bytes(domain);
+        if (domainBytes.length <= maxLength) {
+            return domain;
+        }
+        
+        bytes memory truncated = new bytes(maxLength - 3);
+        for (uint256 i = 0; i < maxLength - 3; i++) {
+            truncated[i] = domainBytes[i];
+        }
+        
+        return string(abi.encodePacked(truncated, "..."));
+    }
+    
+    /**
+     * @dev Gets the number of enabled features for a domain
+     * @param tokenId The token ID
+     * @return count The feature count
+     */
+    function _getFeatureCount(uint256 tokenId) private view returns (uint256) {
+        AppStorage storage s = LibAppStorage.appStorage();
+        uint256 features = s.domainFeatures[tokenId];
+        uint256 count = 0;
+        
+        // Count bits set in features
+        while (features > 0) {
+            if (features & 1 == 1) {
+                count++;
+            }
+            features >>= 1;
+        }
+        
+        return count;
+    }
+    
+    /**
+     * @dev Contract-level metadata
+     * @return uri The contract URI
+     */
+    function contractURI() internal pure returns (string memory) {
+        string memory json = string(abi.encodePacked(
+            '{"name":"Alsania Enhanced Domains",',
+            '"description":"A comprehensive domain name system with enhanced features",',
+            '"image":"https://api.alsania.io/contract-image.png",',
+            '"external_link":"https://alsania.io",',
+            '"seller_fee_basis_points":250,',
+            '"fee_recipient":"0x0000000000000000000000000000000000000000"}'
+        ));
+        
+        return string(abi.encodePacked(
+            "data:application/json;base64,",
+            Base64.encode(bytes(json))
+        ));
     }
 }

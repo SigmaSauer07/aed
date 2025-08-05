@@ -113,6 +113,8 @@ Feature	Status
 
 This version of AED is more than MVP. It’s creator-grade, modular, sovereign infrastructure — ready for mainnet with only minor polish.
 
+ ---
+ 
 aed
 ├── AED-MVP-Feature-Checklist.md
 ├── AED-Production-Readiness-Checklist.md

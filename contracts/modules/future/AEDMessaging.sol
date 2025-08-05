@@ -14,7 +14,7 @@ abstract contract AEDMessaging is ModuleBase {
         string calldata toDomain,
         string calldata message
     ) external {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         uint256 fromTokenId = s.domainToTokenId[fromDomain];
         require(s.owners[fromTokenId] == msg.sender, "Not domain owner");
@@ -26,5 +26,14 @@ abstract contract AEDMessaging is ModuleBase {
         s.futureStringString[string(abi.encodePacked("msg_", fromDomain, "_", toDomain))] = message;
         
         emit MessageSent(fromDomain, toDomain, messageHash);
+    }
+    
+    // Module interface overrides
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AEDMessaging");
+    }
+    
+    function moduleName() external pure override returns (string memory) {
+        return "AEDMessaging";
     }
 }

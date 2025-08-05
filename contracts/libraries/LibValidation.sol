@@ -2,8 +2,7 @@
 pragma solidity ^0.8.30;
 
 import "../core/AEDConstants.sol";
-import "../libraries/LibAppStorage.sol"; 
-import "../libraries/LibMinting.sol";
+import "./LibAppStorage.sol";
 
 /**
  * @title ValidationLib
@@ -12,11 +11,15 @@ import "../libraries/LibMinting.sol";
 library LibValidation {
     using LibAppStorage for AppStorage;
     
+    // Custom errors for validation
+    error EmptyLabel();
+    error InvalidNameFormat();
+    
     function validateDomainName(string memory name) internal pure {
         bytes memory nameBytes = bytes(name);
         uint256 nameLength = nameBytes.length;
         
-        if (nameLength < AEDConstants.MIN_NAME_LENGTH || nameLength > AEDConstants.MAX_NAME_LENGTH) {
+        if (nameLength < MIN_NAME_LENGTH || nameLength > MAX_NAME_LENGTH) {
             revert InvalidNameLength();
         }
         

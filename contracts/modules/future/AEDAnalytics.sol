@@ -10,7 +10,7 @@ abstract contract AEDAnalytics is ModuleBase {
     event AnalyticsEnabled(address indexed user);
     
     function enableAnalytics() external {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         // Future analytics logic here
         emit AnalyticsEnabled(msg.sender);
     }
@@ -20,10 +20,19 @@ abstract contract AEDAnalytics is ModuleBase {
         uint256 totalRevenue,
         uint256 creationTime
     ) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         subdomainCount = s.subdomainCounts[domain];
         // Additional stats logic
         return (subdomainCount, 0, 0);
+    }
+    
+    // Module interface overrides
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AEDAnalytics");
+    }
+    
+    function moduleName() external pure override returns (string memory) {
+        return "AEDAnalytics";
     }
 }

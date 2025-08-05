@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
 
 library LibMetadata {
@@ -12,7 +12,7 @@ library LibMetadata {
     
     function setProfileURI(uint256 tokenId, string calldata uri) internal {
         require(_exists(tokenId), "Token does not exist");
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         s.domains[tokenId].profileURI = uri;
         s.profileURIs[tokenId] = uri;
         emit ProfileURIUpdated(tokenId, uri);
@@ -20,25 +20,25 @@ library LibMetadata {
     
     function setImageURI(uint256 tokenId, string calldata uri) internal {
         require(_exists(tokenId), "Token does not exist");
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         s.domains[tokenId].imageURI = uri;
         s.imageURIs[tokenId] = uri;
         emit ImageURIUpdated(tokenId, uri);
     }
     
     function getProfileURI(uint256 tokenId) internal view returns (string memory) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         return s.domains[tokenId].profileURI;
     }
     
     function getImageURI(uint256 tokenId) internal view returns (string memory) {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         return s.domains[tokenId].imageURI;
     }
     
     function tokenURI(uint256 tokenId) internal view returns (string memory) {
         require(_exists(tokenId), "Token does not exist");
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         
         string memory domain = s.tokenIdToDomain[tokenId];
         string memory baseURI = s.baseURI;
@@ -49,32 +49,38 @@ library LibMetadata {
     }
     
     function _generateSVG(uint256 tokenId, string memory domain) internal pure returns (string memory) {
-
-        string memory domain = "name";
-        if (tokenId < AEDConstants.MAX_DOMAINS) {
-            domain = AEDConstants.DOMAINS[tokenId];
-        }
-        else {
-            domain = "Unknown";
-        }
-
         string memory svg = string(abi.encodePacked(
             '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">',
-            '<rect width="400" height="400" fill="#001f3f"/>',
-            '<text x="200" y="200" text-anchor="middle" fill="#39FF14" font-size="24" font-family="monospace">',
+            '<defs>',
+            '<linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">',
+            '<stop offset="0%" style="stop-color:#001f3f;stop-opacity:1" />',
+            '<stop offset="100%" style="stop-color:#003366;stop-opacity:1" />',
+            '</linearGradient>',
+            '</defs>',
+            '<rect width="400" height="400" fill="url(#grad1)"/>',
+            '<circle cx="200" cy="150" r="80" fill="none" stroke="#39FF14" stroke-width="2" opacity="0.3"/>',
+            '<text x="200" y="160" text-anchor="middle" fill="#39FF14" font-size="18" font-family="monospace" font-weight="bold">',
             domain,
             '</text>',
-            '<text x="200" y="250" text-anchor="middle" fill="#39FF14" font-size="12" font-family="monospace">',
+            '<text x="200" y="280" text-anchor="middle" fill="#39FF14" font-size="14" font-family="monospace">',
             'Alsania Enhanced Domain',
+            '</text>',
+            '<text x="200" y="300" text-anchor="middle" fill="#39FF14" font-size="12" font-family="monospace">',
+            'Token ID: ',
+            _uint2str(tokenId),
             '</text>',
             '</svg>'
         ));
         
         string memory json = string(abi.encodePacked(
             '{"name":"', domain, '",',
-            '"description":"Alsania Enhanced Domain NFT",',
+            '"description":"Alsania Enhanced Domain NFT - A sovereign identity in the Web3 ecosystem",',
             '"image":"data:image/svg+xml;base64,', _base64Encode(bytes(svg)), '",',
-            '"attributes":[{"trait_type":"Domain","value":"', domain, '"}]}'
+            '"attributes":[',
+            '{"trait_type":"Domain","value":"', domain, '"},',
+            '{"trait_type":"Token ID","value":"', _uint2str(tokenId), '"},',
+            '{"trait_type":"Type","value":"Enhanced Domain"}',
+            ']}'
         ));
         
         return string(abi.encodePacked(
@@ -114,7 +120,27 @@ library LibMetadata {
         return result;
     }
     
+    function _uint2str(uint256 value) internal pure returns (string memory) {
+        if (value == 0) return "0";
+        
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        
+        return string(buffer);
+    }
+    
     function _exists(uint256 tokenId) internal view returns (bool) {
-        return LibAppStorage.appStorage().owners[tokenId] != address(0);
+        return LibAppStorage.s().owners[tokenId] != address(0);
     }
 }

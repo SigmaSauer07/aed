@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 import "./LibAppStorage.sol";
 
-library LibAdmin {
+library LibRoles {
     using LibAppStorage for AppStorage;
     
     // Role constants
@@ -12,38 +12,13 @@ library LibAdmin {
     bytes32 constant TLD_MANAGER_ROLE = keccak256("TLD_MANAGER_ROLE");
     bytes32 constant BRIDGE_MANAGER_ROLE = keccak256("BRIDGE_MANAGER_ROLE");
     
-    event FeeUpdated(string feeType, uint256 oldFee, uint256 newFee);
-    event TLDConfigured(string tld, bool isActive, uint256 price);
     event RoleGranted(bytes32 indexed role, address indexed account);
     event RoleRevoked(bytes32 indexed role, address indexed account);
     
-    function updateFee(string calldata feeType, uint256 newAmount) internal {
-        AppStorage storage s = LibAppStorage.s();
-        uint256 oldFee = s.fees[feeType];
-        s.fees[feeType] = newAmount;
-        emit FeeUpdated(feeType, oldFee, newAmount);
-    }
-
-    function updateFeeRecipient(address newRecipient) internal {
-        require(newRecipient != address(0), "Invalid recipient");
-        AppStorage storage s = LibAppStorage.s();
-        s.feeCollector = newRecipient;
-    }
-    
-    function configureTLD(string calldata tld, bool isActive, uint256 price) internal {
-        AppStorage storage s = LibAppStorage.s();
-        s.validTlds[tld] = isActive;
-        if (price > 0) {
-            s.tldPrices[tld] = price;
-            s.freeTlds[tld] = false;
-        } else {
-            s.freeTlds[tld] = true;
-        }
-        emit TLDConfigured(tld, isActive, price);
-    }
-    
     function grantRole(bytes32 role, address account) internal {
         AppStorage storage s = LibAppStorage.s();
+        require(account != address(0), "Invalid account");
+        
         s.roles[role][account] = true;
         
         // Update legacy mappings for compatibility
@@ -53,6 +28,9 @@ library LibAdmin {
             s.feeManagers[account] = true;
         } else if (role == TLD_MANAGER_ROLE) {
             s.tldManagers[account] = true;
+        } else if (role == BRIDGE_MANAGER_ROLE) {
+            // Store in future storage for bridge managers
+            s.futureAddressUint256[account] = 1;
         }
         
         emit RoleGranted(role, account);
@@ -60,6 +38,7 @@ library LibAdmin {
     
     function revokeRole(bytes32 role, address account) internal {
         AppStorage storage s = LibAppStorage.s();
+        
         s.roles[role][account] = false;
         
         // Update legacy mappings for compatibility
@@ -69,6 +48,9 @@ library LibAdmin {
             s.feeManagers[account] = false;
         } else if (role == TLD_MANAGER_ROLE) {
             s.tldManagers[account] = false;
+        } else if (role == BRIDGE_MANAGER_ROLE) {
+            // Clear from future storage
+            s.futureAddressUint256[account] = 0;
         }
         
         emit RoleRevoked(role, account);
@@ -77,23 +59,6 @@ library LibAdmin {
     function hasRole(bytes32 role, address account) internal view returns (bool) {
         AppStorage storage s = LibAppStorage.s();
         return s.roles[role][account];
-    }
-    
-    function pauseContract() internal {
-        AppStorage storage s = LibAppStorage.s();
-        s.paused = true;
-    }
-    
-    function unpauseContract() internal {
-        AppStorage storage s = LibAppStorage.s();
-        s.paused = false;
-    }
-    
-    function updateEnhancementPrice(string calldata enhancement, uint256 newPrice) internal {
-        AppStorage storage s = LibAppStorage.s();
-        uint256 oldPrice = s.enhancementPrices[enhancement];
-        s.enhancementPrices[enhancement] = newPrice;
-        emit FeeUpdated(enhancement, oldPrice, newPrice);
     }
     
     function isAdmin(address account) internal view returns (bool) {
@@ -106,5 +71,29 @@ library LibAdmin {
     
     function isTLDManager(address account) internal view returns (bool) {
         return hasRole(TLD_MANAGER_ROLE, account);
+    }
+    
+    function isBridgeManager(address account) internal view returns (bool) {
+        return hasRole(BRIDGE_MANAGER_ROLE, account);
+    }
+    
+    function requireRole(bytes32 role, address account) internal view {
+        require(hasRole(role, account), "Missing required role");
+    }
+    
+    function requireAdmin(address account) internal view {
+        require(isAdmin(account), "Admin role required");
+    }
+    
+    function requireFeeManager(address account) internal view {
+        require(isFeeManager(account), "Fee manager role required");
+    }
+    
+    function requireTLDManager(address account) internal view {
+        require(isTLDManager(account), "TLD manager role required");
+    }
+    
+    function requireBridgeManager(address account) internal view {
+        require(isBridgeManager(account), "Bridge manager role required");
     }
 }

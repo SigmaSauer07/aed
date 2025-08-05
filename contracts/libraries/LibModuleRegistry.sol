@@ -1,20 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-
 import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
+import "../core/interfaces/IAEDModule.sol";
 
-
-
-
-abstract contract ModuleRegistry is IAEDModule, AEDConstants {
-    modifier onlyAdmin() {
-        AppStorage storage s = LibAppStorage.appStorage();
-        require(s.admins[msg.sender], "Not admin");
-        _;
-    }
-
+library LibModuleRegistry {
+    using LibAppStorage for AppStorage;
+    
+    event ModuleRegistered(string indexed modName, address indexed moduleAddress, uint256 version);
+    event ModuleUpgraded(string indexed modName, address indexed oldAddress, address indexed newAddress, uint256 oldVersion, uint256 newVersion);
+    event ModuleEnabled(string indexed modName);
+    event ModuleDisabled(string indexed modName);
 
     // Register a new module
     function registerModule(
@@ -22,8 +19,8 @@ abstract contract ModuleRegistry is IAEDModule, AEDConstants {
         address moduleAddress,
         uint256 version,
         bytes4[] calldata selectors
-    ) external {
-        AppStorage storage s = LibAppStorage.appStorage();
+    ) internal {
+        AppStorage storage s = LibAppStorage.s();
         require(s.modules[modName].moduleAddress == address(0), "Module already exists");
 
         _setModuleInfo(s, modName, moduleAddress, version, selectors);
@@ -36,8 +33,8 @@ abstract contract ModuleRegistry is IAEDModule, AEDConstants {
         address newModuleAddress,
         uint256 newVersion,
         bytes4[] calldata newSelectors
-    ) external onlyAdmin {
-        AppStorage storage s = LibAppStorage.appStorage();
+    ) internal {
+        AppStorage storage s = LibAppStorage.s();
         ModuleInfo storage module = s.modules[modName];
         require(module.moduleAddress != address(0), "Module not found");
         require(newVersion > module.version, "Version must be higher");
@@ -55,8 +52,8 @@ abstract contract ModuleRegistry is IAEDModule, AEDConstants {
     }
 
     // Enable/disable modules without upgrading
-    function toggleModule(string calldata modName, bool enabled) external onlyAdmin {
-        AppStorage storage s = LibAppStorage.appStorage();
+    function toggleModule(string calldata modName, bool enabled) internal {
+        AppStorage storage s = LibAppStorage.s();
         ModuleInfo storage module = s.modules[modName];
         require(module.moduleAddress != address(0), "Module not found");
         module.enabled = enabled;
@@ -68,24 +65,30 @@ abstract contract ModuleRegistry is IAEDModule, AEDConstants {
         }
     }
 
-    // app module info
-    function appModuleInfo(string calldata modName)
-        external
+    // Get module info
+    function getModuleInfo(string calldata modName)
+        internal
         view
         returns (ModuleInfo memory)
     {
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         return s.modules[modName];
     }
 
     // Check if module needs upgrade
-    function isModuleUpgradeable(string calldata modName, uint256 tarappVersion)
-        external
+    function isModuleUpgradeable(string calldata modName, uint256 targetVersion)
+        internal
         view
         returns (bool)
     {
-        AppStorage storage s = LibAppStorage.appStorage();
-        return s.modules[modName].version < tarappVersion;
+        AppStorage storage s = LibAppStorage.s();
+        return s.modules[modName].version < targetVersion;
+    }
+
+    // Check if module is enabled
+    function isModuleEnabled(string calldata modName) internal view returns (bool) {
+        AppStorage storage s = LibAppStorage.s();
+        return s.modules[modName].enabled;
     }
 
     // Internal helper functions
@@ -103,19 +106,16 @@ abstract contract ModuleRegistry is IAEDModule, AEDConstants {
         module.deployedAt = block.timestamp;
         module.selectors = selectors;
 
-        // Register selectors
-        for (uint i = 0; i < selectors.length; i++) {
-            s.selectorToModule[selectors[i]] = modName;
-        }
-
         s.moduleVersions[modName] = version;
+        s.moduleAddresses[modName] = moduleAddress;
+        s.moduleEnabled[modName] = true;
     }
 
     function _removeSelectors(AppStorage storage s, string memory modName) internal {
         bytes4[] memory selectors = s.modules[modName].selectors;
-        for (uint i = 0; i < selectors.length; i++) {
-            delete s.selectorToModule[selectors[i]];
-        }
+        // Note: In a full implementation, you'd want to track selector mappings
+        // For now, we just clear the selectors array
+        delete s.modules[modName].selectors;
     }
 
     // Batch operations for efficiency
@@ -124,12 +124,12 @@ abstract contract ModuleRegistry is IAEDModule, AEDConstants {
         address[] calldata moduleAddresses,
         uint256[] calldata versions,
         bytes4[][] calldata selectors
-    ) external onlyAdmin {
+    ) internal {
         require(moduleNames.length == moduleAddresses.length, "Length mismatch");
         require(moduleNames.length == versions.length, "Length mismatch");
         require(moduleNames.length == selectors.length, "Length mismatch");
 
-        AppStorage storage s = LibAppStorage.appStorage();
+        AppStorage storage s = LibAppStorage.s();
         for (uint i = 0; i < moduleNames.length; i++) {
             _upgradeModule(
                 s,
@@ -164,44 +164,4 @@ abstract contract ModuleRegistry is IAEDModule, AEDConstants {
 
         emit ModuleUpgraded(modName, oldAddress, newModuleAddress, oldVersion, newVersion);
     }
-
-    // --- IAEDModule interface stubs ---
-
-    function moduleId() external pure override returns (bytes32) {
-        return keccak256("ModuleRegistry");
-    }
-
-    function moduleVersion() external pure override returns (uint256) {
-        return 1;
-    }
-
-    function dependencies() external pure override returns (bytes32[] memory) {
-        bytes32[] memory deps = new bytes32[](0);
-        return deps;
-    }
-
-    function initialize(bytes calldata) external override {}
-
-    function isEnabled() external pure override returns (bool) {
-        return true;
-    }
-
-    function moduleName() external pure override returns (string memory) {
-        return "ModuleRegistry";
-    }
-
-    function appSelectors() public pure virtual returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](0);
-        return selectors;
-    }
-
-    function initializeModule() external override {}
-
-    function isInitialized() external pure override returns (bool) {
-        return true;
-    }
-
-    function disable() external override {}
-
-    function enable() external override {}
 }

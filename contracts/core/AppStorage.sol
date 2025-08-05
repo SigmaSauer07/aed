@@ -44,13 +44,13 @@ struct AppStorage {
     mapping(uint256 => string) tokenIdToDomain;
     mapping(string => bool) domainExists;
     mapping(address => string[]) userDomains;
-    mapping(uint256 => Domain) domains; // Add missing domains mapping
+    mapping(uint256 => Domain) domains;
     
     // Pricing & TLD Storage
     mapping(string => uint256) tldPrices;
     mapping(string => bool) freeTlds;
     mapping(string => bool) validTlds;
-    mapping(string => uint256) fees; // Add missing fees mapping
+    mapping(string => uint256) fees;
     
     // Enhancement Storage
     mapping(string => bool) enhancedDomains;
@@ -74,9 +74,9 @@ struct AppStorage {
     mapping(address => bool) admins;
     mapping(address => bool) feeManagers;
     mapping(address => bool) tldManagers;
-    mapping(bytes32 => mapping(address => bool)) roles; // Add role-based access
+    mapping(bytes32 => mapping(address => bool)) roles;
     bool paused;
-    address feeCollector; // Add missing fee collector
+    address feeCollector;
     
     // System State
     uint256 nextTokenId;
@@ -87,29 +87,17 @@ struct AppStorage {
     mapping(string => bool) moduleEnabled;
     mapping(string => address) moduleAddresses;
     mapping(string => uint256) moduleVersions;
-    mapping(string => ModuleInfo) modules; // Add missing modules mapping
+    mapping(string => ModuleInfo) modules;
     
     // Bridge Storage
     mapping(uint256 => BridgeReceipt) bridgeData;
-    mapping(uint256 => uint256) domainFeatures; // Add missing domain features
+    mapping(uint256 => uint256) domainFeatures;
     
     // Future Storage Slots (Reserve for upgrades)
     mapping(uint256 => uint256) futureUint256;
     mapping(address => uint256) futureAddressUint256;
     mapping(string => string) futureStringString;
     uint256[47] __gap; // Reserve slots for future use
-}
-
-// Storage access library
-library LibAppStorage {
-    bytes32 constant STORAGE_POSITION = keccak256("aed.app.storage");
-    
-    function appStorage() internal pure returns (AppStorage storage s) {
-        bytes32 position = STORAGE_POSITION;
-        assembly {
-            s.slot := position
-        }
-    }
 }
 
 

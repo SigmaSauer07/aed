@@ -114,127 +114,127 @@ Feature	Status
 This version of AED is more than MVP. It’s creator-grade, modular, sovereign infrastructure — ready for mainnet with only minor polish.
 
  ---
- 
-aed
+
+ aed/
 ├── AED-MVP-Feature-Checklist.md
 ├── AED-Production-Readiness-Checklist.md
-├── cache
-│   ├── solidity-files-cache.json
-│   └── validations.json
-├── contracts
-│   ├── AEDImplementation.sol
-│   ├── AED.sol
-│   ├── core
-│   │   ├── AEDConstants.sol
-│   │   ├── AEDCore.sol
-│   │   ├── AppStorage.sol
-│   │   └── interfaces
-│   │       ├── IAEDCore.sol
-│   │       └── IAEDModule.sol
-│   ├── interfaces
-│   │   ├── external
-│   │   │   └── IERC721Extended.sol
-│   │   └── modules
-│   │       ├── IAEDAdmin.sol
-│   │       ├── IAEDBridge.sol
-│   │       ├── IAEDEnhancements.sol
-│   │       ├── IAEDMetadata.sol
-│   │       ├── IAEDMinting.sol
-│   │       ├── IAEDRecovery.sol
-│   │       ├── IAEDRegistry.sol
-│   │       └── IAEDReverse.sol
-│   ├── libraries
-│   │   ├── AEDEvents.sol.bak
-│   │   ├── LibAdmin.sol
-│   │   ├── LibBridge.sol
-│   │   ├── LibEnhancements.sol
-│   │   ├── LibMetadata.sol
-│   │   ├── LibMinting.sol
-│   │   ├── LibModuleRegistry.sol
-│   │   ├── LibModule.sol
-│   │   ├── LibRecovery.sol
-│   │   ├── LibRegistry.sol
-│   │   ├── LibReverse.sol
-│   │   ├── LibRoles.sol
-│   │   └── LibValidation.sol
-│   └── modules
-│       ├── admin
-│       │   └── AEDAdmin.sol
-│       ├── base
-│       │   ├── ModuleBase.sol
-│       │   └── ModuleRegistry.sol
-│       ├── bridge
-│       │   └── AEDBridge.sol
-│       ├── enhancements
-│       │   └── AEDEnhancements.sol
-│       ├── future
-│       │   ├── AEDAnalytics.sol
-│       │   ├── AEDGovernance.sol
-│       │   └── AEDMessaging.sol
-│       ├── metadata
-│       │   └── AEDMetadata.sol
-│       ├── minting
-│       │   └── AEDMinting.sol
-│       ├── recovery
-│       │   └── AEDRecovery.sol
-│       ├── registry
-│       │   └── AEDRegistry.sol
-│       └── reverse
-│           └── AEDReverse.sol
-├── frontend
-│   ├── abi
-│   │   └── aedABI.json
-│   ├── aed-admin
-│   │   ├── aed-admin.html
-│   │   ├── css
-│   │   │   ├── ad.css
-│   │   │   └── style.css
-│   │   ├── img
-│   │   │   ├── AEDlogo.png
-│   │   │   └── bg.png
-│   │   └── js
-│   │       ├── aedABI.json
-│   │       └── script.js
-│   ├── aed-home
-│   │   ├── aed_home.html
-│   │   ├── css
-│   │   │   └── ah.css
-│   │   ├── img
-│   │   │   ├── AEDlogo.png
-│   │   │   └── bg.png
-│   │   └── js
-│   │       ├── aedABI.json
-│   │       └── index.js
-│   ├── assets
-│   │   └── img
-│   │       ├── domain_background.png
-│   │       └── subdomain_background.png
-│   └── components
-│       ├── component-loader.js
-│       ├── footer.css
-│       ├── footer.html
-│       ├── header.css
-│       ├── header.html
-│       └── header.js
+├── cache/
+│   ├── solidity-files-cache.json
+│   └── validations.json
+├── contracts/
+│   ├── AEDImplementation.sol
+│   ├── AED.sol
+│   ├── core/
+│   │   ├── AEDConstants.sol
+│   │   ├── AEDCore.sol
+│   │   ├── AppStorage.sol
+│   │   └── interfaces/
+│   │       ├── IAEDCore.sol
+│   │       └── IAEDModule.sol
+│   ├── interfaces/
+│   │   ├── external/
+│   │   │   └── IERC721Extended.sol
+│   │   └── modules/
+│   │       ├── IAEDAdmin.sol
+│   │       ├── IAEDBridge.sol
+│   │       ├── IAEDEnhancements.sol
+│   │       ├── IAEDMetadata.sol
+│   │       ├── IAEDMinting.sol
+│   │       ├── IAEDRecovery.sol
+│   │       ├── IAEDRegistry.sol
+│   │       └── IAEDReverse.sol
+│   ├── libraries/
+│   │   ├── AEDEvents.sol.bak
+│   │   ├── LibAdmin.sol
+│   │   ├── LibBridge.sol
+│   │   ├── LibEnhancements.sol
+│   │   ├── LibMetadata.sol
+│   │   ├── LibMinting.sol
+│   │   ├── LibModuleRegistry.sol
+│   │   ├── LibModule.sol
+│   │   ├── LibRecovery.sol
+│   │   ├── LibRegistry.sol
+│   │   ├── LibReverse.sol
+│   │   ├── LibRoles.sol
+│   │   └── LibValidation.sol
+│   └── modules/
+│       ├── admin/
+│       │   └── AEDAdmin.sol
+│       ├── base/
+│       │   ├── ModuleBase.sol
+│       │   └── ModuleRegistry.sol
+│       ├── bridge/
+│       │   └── AEDBridge.sol
+│       ├── enhancements/
+│       │   └── AEDEnhancements.sol
+│       ├── future/
+│       │   ├── AEDAnalytics.sol
+│       │   ├── AEDGovernance.sol
+│       │   └── AEDMessaging.sol
+│       ├── metadata/
+│       │   └── AEDMetadata.sol
+│       ├── minting/
+│       │   └── AEDMinting.sol
+│       ├── recovery/
+│       │   └── AEDRecovery.sol
+│       ├── registry/
+│       │   └── AEDRegistry.sol
+│       └── reverse/
+│           └── AEDReverse.sol
+├── frontend/
+│   ├── abi/
+│   │   └── aedABI.json
+│   ├── aed-admin/
+│   │   ├── aed-admin.html
+│   │   ├── css/
+│   │   │   ├── ad.css
+│   │   │   └── style.css
+│   │   ├── img/
+│   │   │   ├── AEDlogo.png
+│   │   │   └── bg.png
+│   │   └── js/
+│   │       ├── aedABI.json
+│   │       └── script.js
+│   ├── aed-home/
+│   │   ├── aed_home.html
+│   │   ├── css/
+│   │   │   └── ah.css
+│   │   ├── img/
+│   │   │   ├── AEDlogo.png
+│   │   │   └── bg.png
+│   │   └── js/
+│   │       ├── aedABI.json
+│   │       └── index.js
+│   ├── assets/
+│   │   └── img/
+│   │       ├── domain_background.png
+│   │       └── subdomain_background.png
+│   └── components/
+│       ├── component-loader.js
+│       ├── footer.css
+│       ├── footer.html
+│       ├── header.css
+│       ├── header.html
+│       └── header.js
 ├── hardhat.config.js
-├── legal
-│   ├── Cookie-Policy.md
-│   ├── Legal-Implementation-Guide.md
-│   ├── Privacy-Policy.md
-│   └── Terms-of-Service.md
+├── legal/
+│   ├── Cookie-Policy.md
+│   ├── Legal-Implementation-Guide.md
+│   ├── Privacy-Policy.md
+│   └── Terms-of-Service.md
 ├── LICENSE
 ├── package.json
 ├── package-lock.json
 ├── README.md
-├── scripts
-│   ├── checkState.js
-│   ├── deploy.js
-│   ├── mintTest.js
-│   └── verify.js
-└── test
+├── scripts/
+│   ├── checkState.js
+│   ├── deploy.js
+│   ├── mintTest.js
+│   └── verify.js
+└── test/
     ├── AEDCoreTest.sol
     ├── aed.test.js
     ├── basic.test.js
     ├── ModuleBase_test.sol
-    └── modules
-        └── base
+    └── modules/
+        └── base/

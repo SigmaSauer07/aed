@@ -8,6 +8,11 @@ import "./LibAppStorage.sol";
 library LibAdmin {
     using LibAppStorage for AppStorage;
     
+    // Define role constants locally since AEDConstants is a contract
+    bytes32 constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
+    bytes32 constant TLD_MANAGER_ROLE = keccak256("TLD_MANAGER_ROLE");
+    
     event FeeUpdated(string feeType, uint256 oldFee, uint256 newFee);
     event TLDConfigured(string tld, bool isActive, uint256 price);
     event RoleGranted(bytes32 indexed role, address indexed account);
@@ -50,11 +55,11 @@ library LibAdmin {
         s.roles[role][account] = true;
         
         // Update legacy mappings for compatibility
-        if (role == AEDConstants.ADMIN_ROLE) {
+        if (role == ADMIN_ROLE) {
             s.admins[account] = true;
-        } else if (role == AEDConstants.FEE_MANAGER_ROLE) {
+        } else if (role == FEE_MANAGER_ROLE) {
             s.feeManagers[account] = true;
-        } else if (role == AEDConstants.TLD_MANAGER_ROLE) {
+        } else if (role == TLD_MANAGER_ROLE) {
             s.tldManagers[account] = true;
         }
         
@@ -66,11 +71,11 @@ library LibAdmin {
         s.roles[role][account] = false;
         
         // Update legacy mappings for compatibility
-        if (role == AEDConstants.ADMIN_ROLE) {
+        if (role == ADMIN_ROLE) {
             s.admins[account] = false;
-        } else if (role == AEDConstants.FEE_MANAGER_ROLE) {
+        } else if (role == FEE_MANAGER_ROLE) {
             s.feeManagers[account] = false;
-        } else if (role == AEDConstants.TLD_MANAGER_ROLE) {
+        } else if (role == TLD_MANAGER_ROLE) {
             s.tldManagers[account] = false;
         }
         

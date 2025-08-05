@@ -9,8 +9,14 @@ import "./LibAppStorage.sol";
 library LibMinting {
     using LibAppStorage for AppStorage;
     
+    // Constants from AEDConstants (hardcoded since it's a contract)
+    uint256 constant MIN_NAME_LENGTH = 1;
+    uint256 constant MAX_NAME_LENGTH = 63;
+    uint256 constant MAX_SUBDOMAINS = 20;
+    uint256 constant FEATURE_SUBDOMAINS = 1 << 0;
+    
     event DomainRegistered(string indexed domain, address indexed owner, uint256 indexed tokenId);
-    event SubdomainCreated(string indexed subdomain, string indexed parent, address indexed owner, uint256 indexed tokenId);
+    event SubdomainCreated(string indexed subdomain, string indexed parent, address indexed owner, uint256 tokenId);
     
     function registerDomain(
         string calldata name,
@@ -20,8 +26,8 @@ library LibMinting {
         AppStorage storage s = LibAppStorage.appStorage();
         
         // Validate inputs
-        require(bytes(name).length >= AEDConstants.MIN_NAME_LENGTH && 
-                bytes(name).length <= AEDConstants.MAX_NAME_LENGTH, "Invalid name length");
+        require(bytes(name).length >= MIN_NAME_LENGTH && 
+                bytes(name).length <= MAX_NAME_LENGTH, "Invalid name length");
         require(s.validTlds[tld], "Invalid TLD");
         
         // Normalize and check domain availability
@@ -58,7 +64,7 @@ library LibMinting {
         
         // Enable subdomains if requested
         if (enableSubdomains) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
+            s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
             s.enhancedDomains[fullDomain] = true;
         }
         
@@ -68,18 +74,18 @@ library LibMinting {
     
     function createSubdomain(
         string calldata label,
-        string calldata parentDomain
+        string memory parentDomain
     ) internal returns (uint256) {
         AppStorage storage s = LibAppStorage.appStorage();
         
         // Validate parent domain exists and has subdomain feature
         require(s.domainExists[parentDomain], "Parent domain not found");
         uint256 parentTokenId = s.domainToTokenId[parentDomain];
-        require((s.domainFeatures[parentTokenId] & AEDConstants.FEATURE_SUBDOMAINS) != 0, "Subdomains not enabled");
+        require((s.domainFeatures[parentTokenId] & FEATURE_SUBDOMAINS) != 0, "Subdomains not enabled");
         require(s.owners[parentTokenId] == msg.sender, "Not parent domain owner");
         
         // Validate subdomain limits
-        require(s.subdomainCounts[parentDomain] < AEDConstants.MAX_SUBDOMAINS, "Max subdomains reached");
+        require(s.subdomainCounts[parentDomain] < MAX_SUBDOMAINS, "Max subdomains reached");
         
         // Create subdomain name
         string memory normalizedLabel = _normalizeName(label);

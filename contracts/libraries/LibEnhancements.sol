@@ -1,103 +1,96 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import "../core/AppStorage.sol";
 import "./LibAppStorage.sol";
-import "../core/AEDConstants.sol";
 
 library LibEnhancements {
     using LibAppStorage for AppStorage;
     
-    event FeaturePurchased(uint256 indexed tokenId, string featureName, uint256 price);
-    event SubdomainsEnabled(uint256 indexed tokenId, uint256 price);
-    event ExternalDomainUpgraded(string indexed externalDomain, uint256 price);
-    event FeaturePriceUpdated(string featureName, uint256 oldPrice, uint256 newPrice);
-    event FeatureAdded(string featureName, uint256 price, uint256 flag);
+    // Constants from AEDConstants (hardcoded since it's a contract)
+    uint256 constant FEATURE_SUBDOMAINS = 1 << 0;
+    uint256 constant FEATURE_METADATA = 1 << 1;
+    uint256 constant FEATURE_REVERSE = 1 << 2;
+    uint256 constant FEATURE_BRIDGE = 1 << 3;
+    
+    event FeaturePurchased(uint256 indexed tokenId, string indexed featureName, uint256 price);
+    event FeatureEnabled(uint256 indexed tokenId, uint256 feature);
+    event FeatureDisabled(uint256 indexed tokenId, uint256 feature);
     
     function purchaseFeature(uint256 tokenId, string calldata featureName) internal {
         AppStorage storage s = LibAppStorage.appStorage();
+        
         require(s.owners[tokenId] == msg.sender, "Not token owner");
         
         uint256 price = s.enhancementPrices[featureName];
         require(price > 0, "Feature not available");
         require(msg.value >= price, "Insufficient payment");
         
-        // Enable feature based on name
+        // Enable the feature based on name
         if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
-            s.enhancedDomains[s.tokenIdToDomain[tokenId]] = true;
+            s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
         } else if (keccak256(bytes(featureName)) == keccak256("metadata")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_METADATA;
+            s.domainFeatures[tokenId] |= FEATURE_METADATA;
         } else if (keccak256(bytes(featureName)) == keccak256("reverse")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_REVERSE;
+            s.domainFeatures[tokenId] |= FEATURE_REVERSE;
         } else if (keccak256(bytes(featureName)) == keccak256("bridge")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_BRIDGE;
+            s.domainFeatures[tokenId] |= FEATURE_BRIDGE;
         }
         
+        // Update revenue
         s.totalRevenue += price;
-        emit FeaturePurchased(tokenId, featureName, price);
+        
+        // Send to fee collector
+        if (price > 0) {
+            payable(s.feeCollector).transfer(price);
+        }
         
         // Refund excess
         if (msg.value > price) {
             payable(msg.sender).transfer(msg.value - price);
         }
+        
+        emit FeaturePurchased(tokenId, featureName, price);
     }
     
     function enableSubdomains(uint256 tokenId) internal {
         AppStorage storage s = LibAppStorage.appStorage();
+        
         require(s.owners[tokenId] == msg.sender, "Not token owner");
-        require((s.domainFeatures[tokenId] & AEDConstants.FEATURE_SUBDOMAINS) == 0, "Already enabled");
         
         uint256 price = s.enhancementPrices["subdomain"];
         require(msg.value >= price, "Insufficient payment");
         
-        s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
-        s.enhancedDomains[s.tokenIdToDomain[tokenId]] = true;
+        s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
         s.totalRevenue += price;
         
-        emit SubdomainsEnabled(tokenId, price);
+        // Send to fee collector
+        if (price > 0) {
+            payable(s.feeCollector).transfer(price);
+        }
         
         // Refund excess
         if (msg.value > price) {
             payable(msg.sender).transfer(msg.value - price);
         }
+        
+        emit FeatureEnabled(tokenId, FEATURE_SUBDOMAINS);
     }
     
     function upgradeExternalDomain(string calldata externalDomain) internal {
         AppStorage storage s = LibAppStorage.appStorage();
         
         uint256 price = s.enhancementPrices["byo"];
-        require(price > 0, "BYO not available");
         require(msg.value >= price, "Insufficient payment");
         
-        // Create a virtual token for external domain
-        uint256 tokenId = s.nextTokenId++;
-        s.owners[tokenId] = msg.sender;
-        s.balances[msg.sender]++;
-        s.domainToTokenId[externalDomain] = tokenId;
-        s.tokenIdToDomain[tokenId] = externalDomain;
-        s.domainExists[externalDomain] = true;
-        s.userDomains[msg.sender].push(externalDomain);
-        
-        // Initialize domain struct for external domain
-        s.domains[tokenId] = Domain({
-            name: externalDomain,
-            tld: "external",
-            profileURI: "",
-            imageURI: "",
-            subdomainCount: 0,
-            mintFee: 0,
-            expiresAt: 0,
-            feeEnabled: false,
-            isSubdomain: false,
-            owner: msg.sender
-        });
-        
-        // Enable subdomain feature
-        s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
-        s.enhancedDomains[externalDomain] = true;
+        // Store external domain upgrade
+        s.futureStringString[externalDomain] = "upgraded";
         s.totalRevenue += price;
         
-        emit ExternalDomainUpgraded(externalDomain, price);
+        // Send to fee collector
+        if (price > 0) {
+            payable(s.feeCollector).transfer(price);
+        }
         
         // Refund excess
         if (msg.value > price) {
@@ -112,17 +105,18 @@ library LibEnhancements {
     function isFeatureEnabled(uint256 tokenId, string calldata featureName) internal view returns (bool) {
         AppStorage storage s = LibAppStorage.appStorage();
         
+        uint256 feature = 0;
         if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_SUBDOMAINS) != 0;
+            feature = FEATURE_SUBDOMAINS;
         } else if (keccak256(bytes(featureName)) == keccak256("metadata")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_METADATA) != 0;
+            feature = FEATURE_METADATA;
         } else if (keccak256(bytes(featureName)) == keccak256("reverse")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_REVERSE) != 0;
+            feature = FEATURE_REVERSE;
         } else if (keccak256(bytes(featureName)) == keccak256("bridge")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_BRIDGE) != 0;
+            feature = FEATURE_BRIDGE;
         }
         
-        return false;
+        return (s.domainFeatures[tokenId] & feature) != 0;
     }
     
     function getAvailableFeatures() internal pure returns (string[] memory) {
@@ -135,17 +129,12 @@ library LibEnhancements {
     }
     
     function setFeaturePrice(string calldata featureName, uint256 price) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
-        uint256 oldPrice = s.enhancementPrices[featureName];
-        s.enhancementPrices[featureName] = price;
-        emit FeaturePriceUpdated(featureName, oldPrice, price);
+        LibAppStorage.appStorage().enhancementPrices[featureName] = price;
     }
     
     function addFeature(string calldata featureName, uint256 price, uint256 flag) internal {
         AppStorage storage s = LibAppStorage.appStorage();
         s.enhancementPrices[featureName] = price;
-        // Store feature flag in future storage
-        s.futureUint256[uint256(keccak256(bytes(featureName)))] = flag;
-        emit FeatureAdded(featureName, price, flag);
+        // Feature flag handling would be implemented here
     }
 }

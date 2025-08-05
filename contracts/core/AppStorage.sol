@@ -18,17 +18,22 @@ struct Domain {
 // ModuleInfo struct for module registry
 struct ModuleInfo {
     address moduleAddress;
+    string name;
     uint256 version;
-    bool enabled;
-    uint256 deployedAt;
-    bytes4[] selectors;
+    bool isActive;
 }
 
-struct BridgeReceipt {
-    uint256 destChainId;
-    bytes32 bridgeHash;
-    uint256 timestamp;
-    bool isBridged;
+// Bridge structs
+struct BridgeInfo {
+    uint256 chainId;
+    address bridgeAddress;
+    uint256 bridgedAt;
+    bool isBridgedOut;
+}
+
+struct BridgeConfig {
+    address bridgeAddress;
+    bool enabled;
 }
 
 // Use a single struct for ALL storage
@@ -44,13 +49,13 @@ struct AppStorage {
     mapping(uint256 => string) tokenIdToDomain;
     mapping(string => bool) domainExists;
     mapping(address => string[]) userDomains;
-    mapping(uint256 => Domain) domains; // Add missing domains mapping
+    mapping(uint256 => Domain) domains;
     
     // Pricing & TLD Storage
     mapping(string => uint256) tldPrices;
     mapping(string => bool) freeTlds;
     mapping(string => bool) validTlds;
-    mapping(string => uint256) fees; // Add missing fees mapping
+    mapping(string => uint256) fees;
     
     // Enhancement Storage
     mapping(string => bool) enhancedDomains;
@@ -74,9 +79,9 @@ struct AppStorage {
     mapping(address => bool) admins;
     mapping(address => bool) feeManagers;
     mapping(address => bool) tldManagers;
-    mapping(bytes32 => mapping(address => bool)) roles; // Add role-based access
+    mapping(bytes32 => mapping(address => bool)) roles;
     bool paused;
-    address feeCollector; // Add missing fee collector
+    address feeCollector;
     
     // System State
     uint256 nextTokenId;
@@ -87,11 +92,12 @@ struct AppStorage {
     mapping(string => bool) moduleEnabled;
     mapping(string => address) moduleAddresses;
     mapping(string => uint256) moduleVersions;
-    mapping(string => ModuleInfo) modules; // Add missing modules mapping
+    mapping(bytes32 => ModuleInfo) moduleRegistry;
     
     // Bridge Storage
-    mapping(uint256 => BridgeReceipt) bridgeData;
-    mapping(uint256 => uint256) domainFeatures; // Add missing domain features
+    mapping(uint256 => BridgeInfo) bridgedDomains;
+    mapping(uint256 => BridgeConfig) bridgeConfigs;
+    mapping(uint256 => uint256) domainFeatures;
     
     // Future Storage Slots (Reserve for upgrades)
     mapping(uint256 => uint256) futureUint256;

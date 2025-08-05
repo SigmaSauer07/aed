@@ -5,6 +5,10 @@ import "../core/AEDConstants.sol";
 
 library LibValidation {
     
+    // Constants from AEDConstants (hardcoded since it's a contract)
+    uint256 constant MIN_NAME_LENGTH = 1;
+    uint256 constant MAX_NAME_LENGTH = 63;
+    
     /**
      * @dev Validates domain name format and characters
      * @param name The domain name to validate
@@ -15,7 +19,7 @@ library LibValidation {
         uint256 length = nameBytes.length;
         
         // Check length constraints
-        if (length < AEDConstants.MIN_NAME_LENGTH || length > AEDConstants.MAX_NAME_LENGTH) {
+        if (length < MIN_NAME_LENGTH || length > MAX_NAME_LENGTH) {
             return false;
         }
         

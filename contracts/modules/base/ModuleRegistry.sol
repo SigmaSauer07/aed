@@ -1,26 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../../core/AEDConstants.sol";
+import "../../core/AppStorage.sol";
 import "../../libraries/LibAppStorage.sol";
 import "../../core/interfaces/IAEDModule.sol";
 
-/**
- * @title ModuleRegistry
- * @dev Central registry for managing and upgrading AED modules
- */
-contract ModuleRegistry is AEDConstants {
+contract ModuleRegistry {
     using LibAppStorage for AppStorage;
     
-    struct ModuleInfo {
-        address moduleAddress;
-        uint256 version;
-        bool enabled;
-        bytes4[] selectors;
-    }
-    
-    event ModuleRegistered(string moduleName, address moduleAddress, uint256 version);
-    event ModuleUpgraded(string moduleName, address oldAddress, address newAddress);
+    event ModuleRegistered(bytes32 indexed moduleId, address indexed moduleAddress, string name);
+    event ModuleUpgraded(bytes32 indexed moduleId, address indexed oldAddress, address indexed newAddress);
+    event ModuleDeactivated(bytes32 indexed moduleId);
     
     modifier onlyAdmin() {
         AppStorage storage s = LibAppStorage.appStorage();
@@ -29,36 +19,59 @@ contract ModuleRegistry is AEDConstants {
     }
     
     function registerModule(
-        string calldata moduleName,
+        bytes32 moduleId,
         address moduleAddress,
-        uint256 version,
-        bytes4[] calldata selectors
+        string calldata name
     ) external onlyAdmin {
         AppStorage storage s = LibAppStorage.appStorage();
         
-        if (s.moduleAddresses[moduleName] != address(0)) {
-            emit ModuleUpgraded(moduleName, s.moduleAddresses[moduleName], moduleAddress);
-        }
+        require(moduleAddress != address(0), "Invalid module address");
+        require(!s.moduleRegistry[moduleId].isActive, "Module already registered");
         
-        s.moduleAddresses[moduleName] = moduleAddress;
-        s.moduleVersions[moduleName] = version;
-        s.moduleEnabled[moduleName] = true;
+        s.moduleRegistry[moduleId] = ModuleInfo({
+            moduleAddress: moduleAddress,
+            name: name,
+            version: 1,
+            isActive: true
+        });
         
-        emit ModuleRegistered(moduleName, moduleAddress, version);
+        emit ModuleRegistered(moduleId, moduleAddress, name);
     }
     
     function upgradeModule(
-        string calldata moduleName,
-        address newModuleAddress,
-        uint256 newVersion
+        bytes32 moduleId,
+        address newModuleAddress
     ) external onlyAdmin {
         AppStorage storage s = LibAppStorage.appStorage();
-        require(s.moduleAddresses[moduleName] != address(0), "Module not found");
         
-        address oldAddress = s.moduleAddresses[moduleName];
-        s.moduleAddresses[moduleName] = newModuleAddress;
-        s.moduleVersions[moduleName] = newVersion;
+        require(newModuleAddress != address(0), "Invalid module address");
+        require(s.moduleRegistry[moduleId].isActive, "Module not registered");
         
-        emit ModuleUpgraded(moduleName, oldAddress, newModuleAddress);
+        address oldAddress = s.moduleRegistry[moduleId].moduleAddress;
+        s.moduleRegistry[moduleId].moduleAddress = newModuleAddress;
+        s.moduleRegistry[moduleId].version++;
+        
+        emit ModuleUpgraded(moduleId, oldAddress, newModuleAddress);
+    }
+    
+    function deactivateModule(bytes32 moduleId) external onlyAdmin {
+        AppStorage storage s = LibAppStorage.appStorage();
+        
+        require(s.moduleRegistry[moduleId].isActive, "Module not active");
+        s.moduleRegistry[moduleId].isActive = false;
+        
+        emit ModuleDeactivated(moduleId);
+    }
+    
+    function getModuleInfo(bytes32 moduleId) external view returns (ModuleInfo memory) {
+        return LibAppStorage.appStorage().moduleRegistry[moduleId];
+    }
+    
+    function isModuleActive(bytes32 moduleId) external view returns (bool) {
+        return LibAppStorage.appStorage().moduleRegistry[moduleId].isActive;
+    }
+    
+    function getModuleAddress(bytes32 moduleId) external view returns (address) {
+        return LibAppStorage.appStorage().moduleRegistry[moduleId].moduleAddress;
     }
 }

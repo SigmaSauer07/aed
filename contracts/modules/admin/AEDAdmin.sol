@@ -3,37 +3,53 @@ pragma solidity ^0.8.30;
 
 import "../../libraries/LibAdmin.sol";
 import "../base/ModuleBase.sol";
-import "../../interfaces/modules/IAEDAdmin.sol";
+import "../../libraries/LibAppStorage.sol";
 
-abstract contract AEDAdmin is ModuleBase, IAEDAdmin {
-    using LibAdmin for AppStorage;
+contract AEDAdmin is ModuleBase {
+    using LibAppStorage for AppStorage;
+    
+    // Role constants
+    bytes32 constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
+    bytes32 constant TLD_MANAGER_ROLE = keccak256("TLD_MANAGER_ROLE");
+    
+    modifier onlyFeeManager() {
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(s.roles[FEE_MANAGER_ROLE][msg.sender] || s.admins[msg.sender], "Not fee manager");
+        _;
+    }
+    
+    modifier onlyTLDManager() {
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(s.roles[TLD_MANAGER_ROLE][msg.sender] || s.admins[msg.sender], "Not TLD manager");
+        _;
+    }
 
-    function updateFee(string calldata feeType, uint256 newAmount) external override onlyFeeManager {
+    function updateFee(string calldata feeType, uint256 newAmount) external onlyFeeManager {
         LibAdmin.updateFee(feeType, newAmount);
     }
 
-    function updateFeeRecipient(address newRecipient) external override onlyAdmin {
+    function updateFeeRecipient(address newRecipient) external onlyAdmin {
         LibAdmin.updateFeeRecipient(newRecipient);
     }
     
-    function configureTLD(string calldata tld, bool isActive, uint256 price) external override onlyTLDManager {
+    function configureTLD(string calldata tld, bool isActive, uint256 price) external onlyTLDManager {
         LibAdmin.configureTLD(tld, isActive, price);
     }
     
-    function updateSubdomainSettings(uint256 newMax, uint256 newBasePrice, uint256 newMultiplier) external override onlyAdmin {
+    function updateSubdomainSettings(uint256 newMax, uint256 newBasePrice, uint256 newMultiplier) external onlyAdmin {
         // Implementation for subdomain settings
-        AppStorage storage store = s();
+        AppStorage storage store = LibAppStorage.appStorage();
         store.futureUint256[0] = newMax;
         store.futureUint256[1] = newBasePrice;
         store.futureUint256[2] = newMultiplier;
     }
     
-    function getFee(string calldata feeType) external view override returns (uint256) {
-        return s().fees[feeType];
+    function getFee(string calldata feeType) external view returns (uint256) {
+        return LibAppStorage.appStorage().fees[feeType];
     }
     
-    function isTLDActive(string calldata tld) external view override returns (bool) {
-        return s().validTlds[tld];
+    function isTLDActive(string calldata tld) external view returns (bool) {
+        return LibAppStorage.appStorage().validTlds[tld];
     }
     
     function grantRole(bytes32 role, address account) external onlyAdmin {
@@ -52,12 +68,11 @@ abstract contract AEDAdmin is ModuleBase, IAEDAdmin {
         LibAdmin.unpauseContract();
     }
     
-    // Module interface overrides
     function moduleId() external pure override returns (bytes32) {
-        return keccak256("AEDAdmin");
+        return keccak256("AED_ADMIN");
     }
     
     function moduleName() external pure override returns (string memory) {
-        return "AEDAdmin";
+        return "AED Admin";
     }
 }

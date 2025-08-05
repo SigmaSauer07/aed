@@ -12,6 +12,10 @@ library LibRegistry {
     
     event DomainRegistered(string indexed domain, address indexed owner, uint256 indexed tokenId);
     event RegistryUpdated(string indexed key, address indexed value);
+    event FeatureEnabled(uint256 indexed tokenId, uint256 feature);
+    event FeatureDisabled(uint256 indexed tokenId, uint256 feature);
+    event ExternalDomainLinked(string indexed domain, uint256 indexed tokenId);
+    event ExternalDomainUnlinked(string indexed domain);
     
     function registerDomain(
         string calldata name,
@@ -50,6 +54,58 @@ library LibRegistry {
         
         emit DomainRegistered(fullDomain, owner, tokenId);
         return tokenId;
+    }
+    
+    function enableFeature(uint256 tokenId, uint256 feature) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(s.owners[tokenId] != address(0), "Token does not exist");
+        
+        s.domainFeatures[tokenId] |= feature;
+        emit FeatureEnabled(tokenId, feature);
+    }
+    
+    function disableFeature(uint256 tokenId, uint256 feature) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(s.owners[tokenId] != address(0), "Token does not exist");
+        
+        s.domainFeatures[tokenId] &= ~feature;
+        emit FeatureDisabled(tokenId, feature);
+    }
+    
+    function hasFeature(uint256 tokenId, uint256 feature) internal view returns (bool) {
+        AppStorage storage s = LibAppStorage.appStorage();
+        return (s.domainFeatures[tokenId] & feature) != 0;
+    }
+    
+    function linkExternalDomain(string calldata externalDomain, uint256 tokenId) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(s.owners[tokenId] == msg.sender, "Not token owner");
+        require(!s.domainExists[externalDomain], "Domain name conflict");
+        
+        // Store the link in future storage
+        s.futureStringString[externalDomain] = s.tokenIdToDomain[tokenId];
+        
+        emit ExternalDomainLinked(externalDomain, tokenId);
+    }
+    
+    function unlinkExternalDomain(string calldata externalDomain) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(bytes(s.futureStringString[externalDomain]).length > 0, "Domain not linked");
+        
+        delete s.futureStringString[externalDomain];
+        emit ExternalDomainUnlinked(externalDomain);
+    }
+    
+    function isExternalDomainLinked(string calldata externalDomain) internal view returns (bool) {
+        return bytes(LibAppStorage.appStorage().futureStringString[externalDomain]).length > 0;
+    }
+    
+    function getLinkedToken(string calldata externalDomain) internal view returns (uint256) {
+        AppStorage storage s = LibAppStorage.appStorage();
+        string memory linkedDomain = s.futureStringString[externalDomain];
+        require(bytes(linkedDomain).length > 0, "Domain not linked");
+        
+        return s.domainToTokenId[linkedDomain];
     }
     
     function updateRegistry(string calldata key, address value) internal {

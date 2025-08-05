@@ -3,34 +3,30 @@ pragma solidity ^0.8.30;
 
 import "../../libraries/LibMinting.sol";
 import "../base/ModuleBase.sol";
-import "../../interfaces/modules/IAEDMinting.sol";
+import "../../libraries/LibAppStorage.sol";
 
-abstract contract AEDMinting is ModuleBase, IAEDMinting {
+contract AEDMinting is ModuleBase {
     using LibAppStorage for AppStorage;
     
     function registerDomain(
         string calldata name,
         string calldata tld,
         bool enableSubdomains
-    ) external payable override whenNotPaused returns (uint256) {
-        uint256 tokenId = LibMinting.registerDomain(name, tld, enableSubdomains);
-        _processDomainPayment(tld, enableSubdomains);
-        return tokenId;
+    ) external payable returns (uint256) {
+        return LibMinting.registerDomain(name, tld, enableSubdomains);
     }
     
     function mintSubdomain(
         uint256 parentId,
         string calldata label
-    ) external payable override returns (uint256) {
-        string memory parentDomain = s().tokenIdToDomain[parentId];
+    ) external payable returns (uint256) {
+        string memory parentDomain = LibAppStorage.appStorage().tokenIdToDomain[parentId];
         require(bytes(parentDomain).length > 0, "Parent not found");
         
-        uint256 tokenId = LibMinting.createSubdomain(label, parentDomain);
-        _processSubdomainPayment(parentId);
-        return tokenId;
+        return LibMinting.createSubdomain(label, parentDomain);
     }
     
-    function calculateSubdomainFee(uint256 parentId) external view override returns (uint256) {
+    function calculateSubdomainFee(uint256 parentId) external view returns (uint256) {
         return LibMinting.calculateSubdomainFee(parentId);
     }
     
@@ -52,7 +48,12 @@ abstract contract AEDMinting is ModuleBase, IAEDMinting {
         }
         
         require(msg.value >= totalCost, "Insufficient payment");
-        s().totalRevenue += totalCost;
+        LibAppStorage.appStorage().totalRevenue += totalCost;
+        
+        // Send to fee collector
+        if (totalCost > 0) {
+            payable(LibAppStorage.appStorage().feeCollector).transfer(totalCost);
+        }
         
         // Refund excess
         if (msg.value > totalCost) {
@@ -62,32 +63,15 @@ abstract contract AEDMinting is ModuleBase, IAEDMinting {
         return tokenIds;
     }
     
-    function _processDomainPayment(string calldata tld, bool withEnhancements) internal {
-        uint256 totalCost = _calculateDomainCost(tld, withEnhancements);
-        
-        require(msg.value >= totalCost, "Insufficient payment");
-        s().totalRevenue += totalCost;
-        
-        // Send to fee collector
-        if (totalCost > 0) {
-            payable(s().feeCollector).transfer(totalCost);
-        }
-        
-        // Refund excess
-        if (msg.value > totalCost) {
-            payable(msg.sender).transfer(msg.value - totalCost);
-        }
-    }
-    
     function _processSubdomainPayment(uint256 parentId) internal {
         uint256 cost = LibMinting.calculateSubdomainFee(parentId);
         require(msg.value >= cost, "Insufficient payment");
         
-        s().totalRevenue += cost;
+        LibAppStorage.appStorage().totalRevenue += cost;
         
         // Send to fee collector
         if (cost > 0) {
-            payable(s().feeCollector).transfer(cost);
+            payable(LibAppStorage.appStorage().feeCollector).transfer(cost);
         }
         
         // Refund excess
@@ -97,7 +81,7 @@ abstract contract AEDMinting is ModuleBase, IAEDMinting {
     }
     
     function _calculateDomainCost(string calldata tld, bool withEnhancements) internal view returns (uint256) {
-        AppStorage storage store = s();
+        AppStorage storage store = LibAppStorage.appStorage();
         uint256 totalCost = 0;
         
         // Add TLD cost
@@ -113,22 +97,22 @@ abstract contract AEDMinting is ModuleBase, IAEDMinting {
         return totalCost;
     }
     
-    // Module interface overrides
     function moduleId() external pure override returns (bytes32) {
-        return keccak256("AEDMinting");
+        return keccak256("AED_MINTING");
     }
     
     function moduleName() external pure override returns (string memory) {
-        return "AEDMinting";
+        return "AED Minting";
     }
     
     function getSelectors() external pure override returns (bytes4[] memory) {
-        bytes4[] memory selectors = new bytes4[](5);
+        bytes4[] memory selectors = new bytes4[](6);
         selectors[0] = this.registerDomain.selector;
         selectors[1] = this.mintSubdomain.selector;
         selectors[2] = this.calculateSubdomainFee.selector;
         selectors[3] = this.getDomainOwner.selector;
         selectors[4] = this.batchRegisterDomains.selector;
+        selectors[5] = this.moduleId.selector;
         return selectors;
     }
 }

@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibMinting.sol";
+import "../../libraries/LibMinting.sol";
 import "../base/ModuleBase.sol";
 import "../../interfaces/modules/IAEDMinting.sol";
 
 abstract contract AEDMinting is ModuleBase, IAEDMinting {
-    using LibMinting for AppStorage;
     
     function registerDomain(
         string calldata name,
@@ -32,8 +31,7 @@ abstract contract AEDMinting is ModuleBase, IAEDMinting {
     
     function calculateSubdomainFee(uint256 parentId) external view override returns (uint256) {
         string memory parentDomain = s().tokenIdToDomain[parentId];
-        uint256 subdomainCount = s().subdomainCounts[parentDomain];
-        return subdomainCount * 0.1 ether; // Linear pricing
+        return LibMinting.calculateSubdomainFee(parentDomain);
     }
     
     function getDomainOwner(string calldata domain) external view returns (address) {
@@ -54,6 +52,11 @@ abstract contract AEDMinting is ModuleBase, IAEDMinting {
         require(msg.value >= totalCost, "Insufficient payment");
         store.totalRevenue += totalCost;
         
+        // Send to fee collector
+        if (totalCost > 0 && store.feeCollector != address(0)) {
+            payable(store.feeCollector).transfer(totalCost);
+        }
+        
         // Send excess back
         if (msg.value > totalCost) {
             payable(msg.sender).transfer(msg.value - totalCost);
@@ -61,10 +64,16 @@ abstract contract AEDMinting is ModuleBase, IAEDMinting {
     }
     
     function _processSubdomainPayment(uint256 parentId) internal {
-        uint256 cost = calculateSubdomainFee(parentId);
+        uint256 cost = this.calculateSubdomainFee(parentId);
         require(msg.value >= cost, "Insufficient payment");
         
-        s().totalRevenue += cost;
+        AppStorage storage store = s();
+        store.totalRevenue += cost;
+        
+        // Send to fee collector
+        if (cost > 0 && store.feeCollector != address(0)) {
+            payable(store.feeCollector).transfer(cost);
+        }
         
         // Send excess back
         if (msg.value > cost) {

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
 
 library LibEnhancements {
     using LibAppStorage for AppStorage;
     
+    event EnhancementEnabled(uint256 indexed tokenId, string enhancement, uint256 price);
     event FeaturePurchased(uint256 indexed tokenId, string featureName, uint256 price);
     event SubdomainsEnabled(uint256 indexed tokenId, uint256 price);
     event ExternalDomainUpgraded(string indexed externalDomain, uint256 price);
@@ -23,14 +24,18 @@ library LibEnhancements {
         
         // Enable feature based on name
         if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
+            uint256 FEATURE_SUBDOMAINS = 1 << 0;
+            s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
             s.enhancedDomains[s.tokenIdToDomain[tokenId]] = true;
         } else if (keccak256(bytes(featureName)) == keccak256("metadata")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_METADATA;
+            uint256 FEATURE_METADATA = 1 << 1;
+            s.domainFeatures[tokenId] |= FEATURE_METADATA;
         } else if (keccak256(bytes(featureName)) == keccak256("reverse")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_REVERSE;
+            uint256 FEATURE_REVERSE = 1 << 2;
+            s.domainFeatures[tokenId] |= FEATURE_REVERSE;
         } else if (keccak256(bytes(featureName)) == keccak256("bridge")) {
-            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_BRIDGE;
+            uint256 FEATURE_BRIDGE = 1 << 3;
+            s.domainFeatures[tokenId] |= FEATURE_BRIDGE;
         }
         
         s.totalRevenue += price;
@@ -45,21 +50,24 @@ library LibEnhancements {
     function enableSubdomains(uint256 tokenId) internal {
         AppStorage storage s = LibAppStorage.appStorage();
         require(s.owners[tokenId] == msg.sender, "Not token owner");
-        require((s.domainFeatures[tokenId] & AEDConstants.FEATURE_SUBDOMAINS) == 0, "Already enabled");
+        
+        // Check if already enabled
+        uint256 FEATURE_SUBDOMAINS = 1 << 0;
+        require((s.domainFeatures[tokenId] & FEATURE_SUBDOMAINS) == 0, "Already enabled");
         
         uint256 price = s.enhancementPrices["subdomain"];
         require(msg.value >= price, "Insufficient payment");
         
-        s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
+        s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
         s.enhancedDomains[s.tokenIdToDomain[tokenId]] = true;
         s.totalRevenue += price;
-        
-        emit SubdomainsEnabled(tokenId, price);
         
         // Refund excess
         if (msg.value > price) {
             payable(msg.sender).transfer(msg.value - price);
         }
+        
+        emit EnhancementEnabled(tokenId, "subdomain", price);
     }
     
     function upgradeExternalDomain(string calldata externalDomain) internal {
@@ -92,8 +100,9 @@ library LibEnhancements {
             owner: msg.sender
         });
         
-        // Enable subdomain feature
-        s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS;
+        // Enable subdomain feature for the linked domain
+        uint256 FEATURE_SUBDOMAINS = 1 << 0;
+        s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
         s.enhancedDomains[externalDomain] = true;
         s.totalRevenue += price;
         
@@ -109,17 +118,21 @@ library LibEnhancements {
         return LibAppStorage.appStorage().enhancementPrices[featureName];
     }
     
-    function isFeatureEnabled(uint256 tokenId, string calldata featureName) internal view returns (bool) {
+    function isFeatureEnabled(uint256 tokenId, string calldata enhancement) internal view returns (bool) {
         AppStorage storage s = LibAppStorage.appStorage();
         
-        if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_SUBDOMAINS) != 0;
-        } else if (keccak256(bytes(featureName)) == keccak256("metadata")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_METADATA) != 0;
-        } else if (keccak256(bytes(featureName)) == keccak256("reverse")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_REVERSE) != 0;
-        } else if (keccak256(bytes(featureName)) == keccak256("bridge")) {
-            return (s.domainFeatures[tokenId] & AEDConstants.FEATURE_BRIDGE) != 0;
+        if (keccak256(bytes(enhancement)) == keccak256(bytes("subdomain"))) {
+            uint256 FEATURE_SUBDOMAINS = 1 << 0;
+            return (s.domainFeatures[tokenId] & FEATURE_SUBDOMAINS) != 0;
+        } else if (keccak256(bytes(enhancement)) == keccak256(bytes("metadata"))) {
+            uint256 FEATURE_METADATA = 1 << 1;
+            return (s.domainFeatures[tokenId] & FEATURE_METADATA) != 0;
+        } else if (keccak256(bytes(enhancement)) == keccak256(bytes("reverse"))) {
+            uint256 FEATURE_REVERSE = 1 << 2;
+            return (s.domainFeatures[tokenId] & FEATURE_REVERSE) != 0;
+        } else if (keccak256(bytes(enhancement)) == keccak256(bytes("bridge"))) {
+            uint256 FEATURE_BRIDGE = 1 << 3;
+            return (s.domainFeatures[tokenId] & FEATURE_BRIDGE) != 0;
         }
         
         return false;

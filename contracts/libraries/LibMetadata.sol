@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "../libraries/LibAppStorage.sol";
+import "./LibAppStorage.sol";
 import "../core/AEDConstants.sol";
 
 library LibMetadata {
@@ -49,15 +49,7 @@ library LibMetadata {
     }
     
     function _generateSVG(uint256 tokenId, string memory domain) internal pure returns (string memory) {
-
-        string memory domain = "name";
-        if (tokenId < AEDConstants.MAX_DOMAINS) {
-            domain = AEDConstants.DOMAINS[tokenId];
-        }
-        else {
-            domain = "Unknown";
-        }
-
+        // Use the provided domain parameter instead of redefining
         string memory svg = string(abi.encodePacked(
             '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">',
             '<rect width="400" height="400" fill="#001f3f"/>',

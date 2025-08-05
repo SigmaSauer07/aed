@@ -4,32 +4,28 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./core/AppStorage.sol";
 import "./core/AEDCore.sol";
-import "./modules/admin/AEDAdmin.sol";
-import "./modules/registry/AEDRegistry.sol";
-import "./modules/minting/AEDMinting.sol";
-import "./modules/metadata/AEDMetadata.sol";
-import "./modules/reverse/AEDReverse.sol";
-import "./modules/enhancements/AEDEnhancements.sol";
-import "./modules/recovery/AEDRecovery.sol";
-import "./modules/bridge/AEDBridge.sol";
+import "./libraries/LibMinting.sol";
+import "./libraries/LibMetadata.sol";
+import "./libraries/LibAdmin.sol";
+import "./libraries/LibRegistry.sol";
+import "./libraries/LibReverse.sol";
 
 contract AEDImplementation is 
     UUPSUpgradeable,
     ERC721Upgradeable,
-    AccessControlUpgradeable,
-    AEDCore,
-    AEDAdmin,
-    AEDRegistry,
-    AEDMinting,
-    AEDMetadata,
-    AEDReverse,
-    AEDEnhancements,
-    AEDRecovery,
-    AEDBridge
+    AccessControlUpgradeable
 {
     using LibAppStorage for AppStorage;
+    
+    // Role constants
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    
+    // Events
+    event DomainRegistered(string indexed domain, address indexed owner, uint256 indexed tokenId);
+    event DomainTransferred(uint256 indexed tokenId, address indexed from, address indexed to);
     
     function initialize(
         string memory name,
@@ -40,7 +36,6 @@ contract AEDImplementation is
         __ERC721_init(name, symbol);
         __AccessControl_init();
         __UUPSUpgradeable_init();
-        __AEDCore_init();
         
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(ADMIN_ROLE, admin);
@@ -48,6 +43,8 @@ contract AEDImplementation is
         AppStorage storage s = LibAppStorage.appStorage();
         s.feeCollector = paymentWallet;
         s.admins[admin] = true;
+        s.nextTokenId = 1;
+        s.baseURI = "https://api.alsania.io/metadata/";
         
         // Initialize default pricing
         s.enhancementPrices["subdomain"] = 2 ether;
@@ -75,92 +72,155 @@ contract AEDImplementation is
         override 
     {}
     
-    // ERC721 overrides using AppStorage
-    function ownerOf(uint256 tokenId) 
-        public 
-        view 
-        override 
-        returns (address) 
-    {
-        AppStorage storage s = LibAppStorage.appStorage();
-        address owner = s.owners[tokenId];
-        require(owner != address(0), "Token does not exist");
-        return owner;
-    }
-    
-    function balanceOf(address owner) 
-        public 
-        view 
-        override 
-        returns (uint256) 
-    {
-        require(owner != address(0), "Zero address query");
-        return LibAppStorage.appStorage().balances[owner];
-    }
-    
-    function approve(address to, uint256 tokenId) public override {
-        address owner = ownerOf(tokenId);
-        require(to != owner, "Approval to current owner");
-        require(
-            msg.sender == owner || isApprovedForAll(owner, msg.sender),
-            "Not owner nor approved"
-        );
+    // Minting functions
+    function registerDomain(
+        string calldata name,
+        string calldata tld,
+        bool enableSubdomains
+    ) external payable returns (uint256) {
+        uint256 tokenId = LibMinting.registerDomain(name, tld, enableSubdomains);
         
-        _approve(to, tokenId);
+        // Mint the ERC721 token
+        _mint(msg.sender, tokenId);
+        
+        _processDomainPayment(tld, enableSubdomains);
+        return tokenId;
     }
     
-    function getApproved(uint256 tokenId) public view override returns (address) {
-        require(_tokenExists(tokenId), "Token does not exist");
-        return LibAppStorage.appStorage().tokenApprovals[tokenId];
+    function mintSubdomain(
+        uint256 parentId,
+        string calldata label
+    ) external payable returns (uint256) {
+        string memory parentDomain = LibAppStorage.appStorage().tokenIdToDomain[parentId];
+        require(bytes(parentDomain).length > 0, "Parent not found");
+        
+        uint256 tokenId = LibMinting.createSubdomain(label, parentDomain);
+        
+        // Mint the ERC721 token
+        _mint(msg.sender, tokenId);
+        
+        _processSubdomainPayment(parentDomain);
+        return tokenId;
     }
     
-    function setApprovalForAll(address operator, bool approved) public override {
-        require(operator != msg.sender, "Approve to caller");
-        _setApprovalForAll(msg.sender, operator, approved);
+    // Metadata functions
+    function setProfileURI(uint256 tokenId, string calldata uri) external {
+        require(ownerOf(tokenId) == msg.sender, "Not token owner");
+        LibMetadata.setProfileURI(tokenId, uri);
     }
     
-    function isApprovedForAll(address owner, address operator) public view override returns (bool) {
-        return LibAppStorage.appStorage().operatorApprovals[owner][operator];
+    function setImageURI(uint256 tokenId, string calldata uri) external {
+        require(ownerOf(tokenId) == msg.sender, "Not token owner");
+        LibMetadata.setImageURI(tokenId, uri);
     }
     
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        return LibMetadata.tokenURI(tokenId);
+    }
+    
+    // Admin functions
+    function updateFee(string calldata feeType, uint256 newAmount) external onlyRole(ADMIN_ROLE) {
+        LibAdmin.updateFee(feeType, newAmount);
+    }
+    
+    function configureTLD(string calldata tld, bool isActive, uint256 price) external onlyRole(ADMIN_ROLE) {
+        LibAdmin.configureTLD(tld, isActive, price);
+    }
+    
+    // Registry functions
+    function enableFeature(uint256 tokenId, uint256 feature) external {
+        require(ownerOf(tokenId) == msg.sender, "Not token owner");
+        LibRegistry.enableFeature(tokenId, feature);
+    }
+    
+    function hasFeature(uint256 tokenId, uint256 feature) external view returns (bool) {
+        return LibRegistry.hasFeature(tokenId, feature);
+    }
+    
+    // Reverse resolution functions
+    function setReverse(string calldata domain) external {
+        LibReverse.setReverse(domain);
+    }
+    
+    function getReverse(address addr) external view returns (string memory) {
+        return LibReverse.getReverse(addr);
+    }
+    
+    // Internal payment processing
+    function _processDomainPayment(string calldata tld, bool withEnhancements) internal {
+        AppStorage storage store = LibAppStorage.appStorage();
+        
+        uint256 totalCost = 0;
+        if (!store.freeTlds[tld]) {
+            totalCost += store.tldPrices[tld];
+        }
+        if (withEnhancements) {
+            totalCost += store.enhancementPrices["subdomain"];
+        }
+        
+        require(msg.value >= totalCost, "Insufficient payment");
+        store.totalRevenue += totalCost;
+        
+        // Send to fee collector
+        if (totalCost > 0 && store.feeCollector != address(0)) {
+            payable(store.feeCollector).transfer(totalCost);
+        }
+        
+        // Send excess back
+        if (msg.value > totalCost) {
+            payable(msg.sender).transfer(msg.value - totalCost);
+        }
+    }
+    
+    function _processSubdomainPayment(string memory parentDomain) internal {
+        uint256 cost = LibMinting.calculateSubdomainFee(parentDomain);
+        require(msg.value >= cost, "Insufficient payment");
+        
+        AppStorage storage store = LibAppStorage.appStorage();
+        store.totalRevenue += cost;
+        
+        // Send to fee collector
+        if (cost > 0 && store.feeCollector != address(0)) {
+            payable(store.feeCollector).transfer(cost);
+        }
+        
+        // Send excess back
+        if (msg.value > cost) {
+            payable(msg.sender).transfer(msg.value - cost);
+        }
+    }
+    
+    // Internal helper functions
+    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {
+        address owner = ownerOf(tokenId);
+        return (spender == owner || 
+                getApproved(tokenId) == spender || 
+                isApprovedForAll(owner, spender));
+    }
+    
+    // Override transfers to maintain our custom storage
     function transferFrom(address from, address to, uint256 tokenId) public override {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
-        _transfer(from, to, tokenId);
-    }
-    
-    function safeTransferFrom(address from, address to, uint256 tokenId) public override {
-        safeTransferFrom(from, to, tokenId, "");
+        super.transferFrom(from, to, tokenId);
+        
+        // Update our custom domain storage
+        AppStorage storage s = LibAppStorage.appStorage();
+        s.domains[tokenId].owner = to;
+        
+        emit DomainTransferred(tokenId, from, to);
     }
     
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
-        _safeTransfer(from, to, tokenId, data);
+        super.safeTransferFrom(from, to, tokenId, data);
+        
+        // Update our custom domain storage
+        AppStorage storage s = LibAppStorage.appStorage();
+        s.domains[tokenId].owner = to;
+        
+        emit DomainTransferred(tokenId, from, to);
     }
     
-    function _safeTransfer(address from, address to, uint256 tokenId, bytes memory data) internal {
-        _transfer(from, to, tokenId);
-        require(_checkOnERC721Received(from, to, tokenId, data), "Transfer to non ERC721Receiver");
-    }
-    
-    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory data) private returns (bool) {
-        if (to.code.length > 0) {
-            try IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data) returns (bytes4 retval) {
-                return retval == IERC721Receiver.onERC721Received.selector;
-            } catch (bytes memory reason) {
-                if (reason.length == 0) {
-                    revert("Transfer to non ERC721Receiver");
-                } else {
-                    assembly {
-                        revert(add(32, reason), mload(reason))
-                    }
-                }
-            }
-        } else {
-            return true;
-        }
-    }
-    
-    // Support interface detection
     function supportsInterface(bytes4 interfaceId) 
         public 
         view 

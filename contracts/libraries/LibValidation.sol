@@ -2,21 +2,28 @@
 pragma solidity ^0.8.30;
 
 import "../core/AEDConstants.sol";
-import "../libraries/LibAppStorage.sol"; 
-import "../libraries/LibMinting.sol";
+import "./LibAppStorage.sol";
 
 /**
- * @title ValidationLib
+ * @title LibValidation
  * @dev Library for domain name and label validation
  */
 library LibValidation {
     using LibAppStorage for AppStorage;
     
+    // Custom errors for gas efficiency
+    error InvalidNameLength();
+    error EmptyLabel();
+    error InvalidNameFormat();
+    
     function validateDomainName(string memory name) internal pure {
         bytes memory nameBytes = bytes(name);
         uint256 nameLength = nameBytes.length;
         
-        if (nameLength < AEDConstants.MIN_NAME_LENGTH || nameLength > AEDConstants.MAX_NAME_LENGTH) {
+        uint256 MIN_NAME_LENGTH = 1;
+        uint256 MAX_NAME_LENGTH = 63;
+        
+        if (nameLength < MIN_NAME_LENGTH || nameLength > MAX_NAME_LENGTH) {
             revert InvalidNameLength();
         }
         

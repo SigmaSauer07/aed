@@ -6,8 +6,7 @@ pragma solidity ^0.8.30;
  * @dev System-wide constants and feature flags
  */
 contract AEDConstants {
-    // Role constants
-    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
+    // Role constants (DEFAULT_ADMIN_ROLE is inherited from OpenZeppelin)
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
     bytes32 public constant TLD_MANAGER_ROLE = keccak256("TLD_MANAGER_ROLE");

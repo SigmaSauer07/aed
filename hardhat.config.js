@@ -16,8 +16,8 @@ module.exports = {
   },
   networks: {
     amoy: {
-      url: process.env.AMOY_RPC,
-      accounts: [process.env.PRIVATE_KEY],
+      url: process.env.AMOY_RPC || "https://rpc-mumbai.maticvigil.com",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       timeout: 120000,
     },
   },

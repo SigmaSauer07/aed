@@ -61,7 +61,7 @@ abstract contract AEDMinting is ModuleBase, IAEDMinting {
     }
     
     function _processSubdomainPayment(uint256 parentId) internal {
-        uint256 cost = calculateSubdomainFee(parentId);
+        uint256 cost = this.calculateSubdomainFee(parentId);
         require(msg.value >= cost, "Insufficient payment");
         
         s().totalRevenue += cost;

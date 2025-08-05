@@ -45,7 +45,7 @@ library LibMinting {
         
         if (withEnhancements) {
             s.enhancedDomains[fullDomain] = true;
-            s.domainFeatures[tokenId] |= FEATURE_SUBDOMAIN;
+            s.domainFeatures[tokenId] |= AEDConstants.FEATURE_SUBDOMAINS();
         }
         
         emit DomainRegistered(fullDomain, msg.sender, tokenId);

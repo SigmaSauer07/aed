@@ -4,6 +4,7 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./core/AppStorage.sol";
 import "./core/AEDCore.sol";
 import "./modules/admin/AEDAdmin.sol";

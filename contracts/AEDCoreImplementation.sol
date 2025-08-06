@@ -10,7 +10,7 @@ import "./libraries/LibAppStorage.sol";
 import "./libraries/LibAdmin.sol";
 
 /// @title AED Core Implementation
-/// @dev Minimal implementation containing only essential ERC721 functionality
+/// @dev Simplified implementation containing only essential ERC721 functionality
 /// This contract is designed to be small enough to deploy while maintaining core functionality
 contract AEDCoreImplementation is 
     UUPSUpgradeable,
@@ -22,7 +22,6 @@ contract AEDCoreImplementation is
     // Core events
     event DomainRegistered(string indexed domain, address indexed owner, uint256 indexed tokenId);
     event DomainTransferred(uint256 indexed tokenId, address indexed from, address indexed to);
-    event SubdomainCreated(string indexed subdomain, string indexed parent, address indexed owner);
 
     function initialize(
         string memory name,
@@ -45,7 +44,6 @@ contract AEDCoreImplementation is
         
         // Initialize default pricing
         s.enhancementPrices["subdomain"] = 2 ether;
-        s.enhancementPrices["byo"] = 5 ether;
         s.tldPrices["alsania"] = 1 ether;
         s.tldPrices["fx"] = 1 ether;
         s.tldPrices["echo"] = 1 ether;
@@ -60,6 +58,13 @@ contract AEDCoreImplementation is
         s.validTlds["alsania"] = true;
         s.validTlds["fx"] = true;
         s.validTlds["echo"] = true;
+        s.validTlds["aelion"] = true;
+        s.validTlds["sigma"] = true;
+        s.validTlds["mcp"] = true;
+        s.validTlds["n3xt"] = true;
+        s.validTlds["chain"] = true;
+        s.validTlds["mind"] = true;
+        s.validTlds["ai"] = true;
     }
     
     // UUPS upgrade authorization
@@ -92,11 +97,7 @@ contract AEDCoreImplementation is
         return LibAppStorage.appStorage().balances[owner];
     }
     
-    function _tokenExistsCustom(uint256 tokenId) internal view returns (bool) {
-        return LibAppStorage.appStorage().owners[tokenId] != address(0);
-    }
-    
-    function _isApprovedOrOwnerCustom(address spender, uint256 tokenId) internal view returns (bool) {
+    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {
         AppStorage storage s = LibAppStorage.appStorage();
         address owner = s.owners[tokenId];
         return (spender == owner || 
@@ -109,13 +110,12 @@ contract AEDCoreImplementation is
         return LibAppStorage.appStorage().nextTokenId;
     }
 
-    function isRegistered(string calldata name, string calldata tld) external view returns (bool) {
-        string memory fullDomain = string(abi.encodePacked(name, ".", tld));
-        return LibAppStorage.appStorage().domainExists[fullDomain];
+    function isRegistered(string calldata domain) external view returns (bool) {
+        return LibAppStorage.appStorage().domainExists[domain];
     }
 
     function getDomainInfo(uint256 tokenId) external view returns (Domain memory) {
-        require(_tokenExistsCustom(tokenId), "Token does not exist");
+        require(LibAppStorage.appStorage().owners[tokenId] != address(0), "Token does not exist");
         return LibAppStorage.appStorage().domains[tokenId];
     }
 
@@ -127,12 +127,94 @@ contract AEDCoreImplementation is
         return LibAppStorage.appStorage().totalRevenue;
     }
     
+    // Domain registration function
+    function registerDomain(string calldata domain, address owner) external payable {
+        AppStorage storage s = LibAppStorage.appStorage();
+        
+        // Parse domain into name and TLD
+        (string memory name, string memory tld) = _parseDomain(domain);
+        
+        // Check if domain is already registered
+        require(!s.domainExists[domain], "Domain already registered");
+        
+        // Validate TLD
+        require(s.validTlds[tld], "Invalid TLD");
+        
+        // Check pricing
+        uint256 price = s.freeTlds[tld] ? 0 : s.tldPrices[tld];
+        require(msg.value >= price, "Insufficient payment");
+        
+        // Register the domain
+        uint256 tokenId = s.nextTokenId;
+        s.nextTokenId++;
+        
+        s.owners[tokenId] = owner;
+        s.balances[owner]++;
+        s.domainExists[domain] = true;
+        
+        // Store domain info
+        s.domains[tokenId] = Domain({
+            name: name,
+            tld: tld,
+            profileURI: "",
+            imageURI: "",
+            subdomainCount: 0,
+            mintFee: 0,
+            expiresAt: uint64(block.timestamp + 365 days),
+            feeEnabled: false,
+            isSubdomain: false,
+            owner: owner
+        });
+        
+        // Add to user's domain list
+        s.userDomains[owner].push(domain);
+        
+        // Collect fees
+        if (msg.value > 0) {
+            s.totalRevenue += msg.value;
+            (bool success, ) = s.feeCollector.call{value: msg.value}("");
+            require(success, "Fee transfer failed");
+        }
+        
+        emit Transfer(address(0), owner, tokenId);
+        emit DomainRegistered(domain, owner, tokenId);
+    }
+    
+    // Helper function to parse domain
+    function _parseDomain(string calldata domain) internal pure returns (string memory name, string memory tld) {
+        bytes memory domainBytes = bytes(domain);
+        uint256 dotIndex = 0;
+        
+        // Find the last dot
+        for (uint256 i = 0; i < domainBytes.length; i++) {
+            if (domainBytes[i] == ".") {
+                dotIndex = i;
+            }
+        }
+        
+        require(dotIndex > 0, "Invalid domain format");
+        
+        // Extract name and TLD
+        bytes memory nameBytes = new bytes(dotIndex);
+        bytes memory tldBytes = new bytes(domainBytes.length - dotIndex - 1);
+        
+        for (uint256 i = 0; i < dotIndex; i++) {
+            nameBytes[i] = domainBytes[i];
+        }
+        
+        for (uint256 i = 0; i < tldBytes.length; i++) {
+            tldBytes[i] = domainBytes[dotIndex + 1 + i];
+        }
+        
+        return (string(nameBytes), string(tldBytes));
+    }
+    
     // Basic transfer functionality
     function transferFrom(address from, address to, uint256 tokenId) 
         public 
         override 
     {
-        require(_isApprovedOrOwnerCustom(msg.sender, tokenId), "Not approved");
+        require(_isApprovedOrOwner(msg.sender, tokenId), "Not approved");
         require(from == ownerOf(tokenId), "Wrong owner");
         require(to != address(0), "Invalid recipient");
         
@@ -150,23 +232,6 @@ contract AEDCoreImplementation is
         
         emit Transfer(from, to, tokenId);
         emit DomainTransferred(tokenId, from, to);
-    }
-    
-    function safeTransferFrom(address from, address to, uint256 tokenId) 
-        public 
-        virtual 
-        override 
-    {
-        safeTransferFrom(from, to, tokenId, "");
-    }
-    
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) 
-        public 
-        virtual 
-        override 
-    {
-        transferFrom(from, to, tokenId);
-        require(_checkOnERC721Received(from, to, tokenId, data), "ERC721: transfer to non ERC721Receiver implementer");
     }
     
     function approve(address to, uint256 tokenId) 
@@ -196,7 +261,7 @@ contract AEDCoreImplementation is
         override 
         returns (address) 
     {
-        require(_tokenExistsCustom(tokenId), "Token does not exist");
+        require(LibAppStorage.appStorage().owners[tokenId] != address(0), "Token does not exist");
         return LibAppStorage.appStorage().tokenApprovals[tokenId];
     }
     
@@ -209,39 +274,9 @@ contract AEDCoreImplementation is
         return LibAppStorage.appStorage().operatorApprovals[owner][operator];
     }
     
-    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory data) 
-        private 
-        returns (bool) 
-    {
-        if (to.code.length > 0) {
-            try IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data) returns (bytes4 retval) {
-                return retval == IERC721Receiver.onERC721Received.selector;
-            } catch (bytes memory reason) {
-                if (reason.length == 0) {
-                    revert("ERC721: transfer to non ERC721Receiver implementer");
-                } else {
-                    assembly {
-                        revert(add(32, reason), mload(reason))
-                    }
-                }
-            }
-        } else {
-            return true;
-        }
-    }
-    
-    // Required overrides
-    function _transfer(address from, address to, uint256 tokenId) internal virtual override {
-        // This is handled by our custom transferFrom
-    }
-    
-    function _approve(address to, uint256 tokenId, address auth) internal virtual override {
-        // This is handled by our custom approve
-    }
-    
-    function _setApprovalForAll(address owner, address operator, bool approved) internal virtual override {
-        // This is handled by our custom setApprovalForAll
-    }
+    // Note: We don't override _transfer, _approve, or _setApprovalForAll
+    // because OpenZeppelin's functions are not virtual
+    // Our custom implementations handle the functionality directly
     
     function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControlUpgradeable, ERC721Upgradeable) returns (bool) {
         return super.supportsInterface(interfaceId);

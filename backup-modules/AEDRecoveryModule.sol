@@ -5,14 +5,15 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
 import "../libraries/LibAppStorage.sol";
-import "../interfaces/modules/IAEDBridge.sol";
+import "../libraries/LibAdmin.sol";
+import "../interfaces/modules/IAEDRecovery.sol";
 
-/// @title AED Bridge Module
-/// @dev Standalone bridge module for the modular UUPS system
-contract AEDBridgeModule is 
+/// @title AED Recovery Module
+/// @dev Standalone recovery module for the modular UUPS system
+contract AEDRecoveryModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
-    IAEDBridge
+    IAEDRecovery
 {
     using LibAppStorage for AppStorage;
     
@@ -21,7 +22,7 @@ contract AEDBridgeModule is
         __UUPSUpgradeable_init();
         
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ADMIN_ROLE, admin);
+        _grantRole(LibAdmin.ADMIN_ROLE, admin);
     }
     
     // UUPS upgrade authorization
@@ -33,10 +34,10 @@ contract AEDBridgeModule is
     
     // Module interface
     function moduleId() external pure returns (bytes32) {
-        return keccak256("AEDBridge");
+        return keccak256("AEDRecovery");
     }
     
     function moduleName() external pure returns (string memory) {
-        return "AEDBridge";
+        return "AEDRecovery";
     }
 } 

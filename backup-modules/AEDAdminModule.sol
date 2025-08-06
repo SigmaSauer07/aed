@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "../core/AppStorage.sol";
 import "../libraries/LibAppStorage.sol";
 import "../libraries/LibAdmin.sol";
+import "../modules/base/ModuleBase.sol";
 import "../interfaces/modules/IAEDAdmin.sol";
 
 /// @title AED Admin Module
@@ -13,6 +14,7 @@ import "../interfaces/modules/IAEDAdmin.sol";
 contract AEDAdminModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
+    ModuleBase,
     IAEDAdmin
 {
     using LibAppStorage for AppStorage;
@@ -79,11 +81,11 @@ contract AEDAdminModule is
     }
     
     // Module interface
-    function moduleId() external pure returns (bytes32) {
+    function moduleId() external pure override returns (bytes32) {
         return keccak256("AEDAdmin");
     }
     
-    function moduleName() external pure returns (string memory) {
+    function moduleName() external pure override returns (string memory) {
         return "AEDAdmin";
     }
 } 

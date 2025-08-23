@@ -87,6 +87,8 @@ struct AppStorage {
     uint256 nextTokenId;
     uint256 totalRevenue;
     string baseURI;
+    string name;
+    string symbol;
     
     // Module States
     mapping(string => bool) moduleEnabled;

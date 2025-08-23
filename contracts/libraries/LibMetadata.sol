@@ -8,6 +8,12 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 library LibMetadata {
     using LibAppStorage for AppStorage;
     using Strings for uint256;
+
+    // Default background images for domains and subdomains
+    // These IPFS URIs point to pinned PNGs hosted on Pinata.  If you change the pin or host,
+    // update these constants accordingly.
+    string constant DOMAIN_BG_URI = "ipfs://bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/domain_background.png";
+    string constant SUBDOMAIN_BG_URI = "ipfs://bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/subdomain_background.png";
     
     event ProfileURIUpdated(uint256 indexed tokenId, string uri);
     event ImageURIUpdated(uint256 indexed tokenId, string uri);
@@ -85,28 +91,22 @@ library LibMetadata {
      */
     function _generateSVG(string memory domain, Domain memory domainInfo) private pure returns (string memory) {
         string memory truncatedDomain = _truncateDomain(domain, 20);
+        // Choose the appropriate background URI based on whether this is a subdomain
+        string memory bgURI = domainInfo.isSubdomain ? SUBDOMAIN_BG_URI : DOMAIN_BG_URI;
         
         string memory svg = string(abi.encodePacked(
             '<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">',
-            '<defs>',
-            '<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">',
-            '<stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />',
-            '<stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />',
-            '</linearGradient>',
-            '</defs>',
-            '<rect width="400" height="400" fill="url(#bg)"/>',
-            '<circle cx="200" cy="150" r="60" fill="rgba(255,255,255,0.1)"/>',
-            '<text x="200" y="200" font-family="Arial, sans-serif" font-size="18" font-weight="bold" ',
-            'text-anchor="middle" fill="white">',
+            // embed background image
+            '<image href="', bgURI, '" x="0" y="0" width="400" height="400"/>',
+            // overlay domain/subdomain text in neon green
+            '<text x="200" y="250" font-family="\'Orbitron\', sans-serif" font-size="20" font-weight="bold" ',
+            'text-anchor="middle" fill="#39FF14">',
             truncatedDomain,
             '</text>',
-            '<text x="200" y="250" font-family="Arial, sans-serif" font-size="14" ',
-            'text-anchor="middle" fill="rgba(255,255,255,0.8)">',
+            // overlay type (Domain or Subdomain) below
+            '<text x="200" y="290" font-family="\'Orbitron\', sans-serif" font-size="14" ',
+            'text-anchor="middle" fill="#39FF14">',
             domainInfo.isSubdomain ? "Subdomain" : "Domain",
-            '</text>',
-            '<text x="200" y="320" font-family="Arial, sans-serif" font-size="12" ',
-            'text-anchor="middle" fill="rgba(255,255,255,0.6)">',
-            'Alsania Enhanced Domains',
             '</text>',
             '</svg>'
         ));

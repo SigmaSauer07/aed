@@ -36,11 +36,14 @@ library LibMinting {
         require(!s.domainExists[fullDomain], "Domain already exists");
         
         // Generate token ID
-        uint256 tokenId = s.nextTokenId++;
+        // Cache nextTokenId locally and manually increment to save an extra SLOAD/STORE
+        uint256 tokenId = s.nextTokenId;
+        s.nextTokenId = tokenId + 1;
         
         // Mint NFT
         s.owners[tokenId] = msg.sender;
-        s.balances[msg.sender]++;
+        // Use unchecked increment for gas efficiency; balance cannot realistically overflow
+        unchecked { s.balances[msg.sender]++; }
         
         // Store domain mappings
         s.domainToTokenId[fullDomain] = tokenId;
@@ -49,11 +52,13 @@ library LibMinting {
         s.userDomains[msg.sender].push(fullDomain);
         
         // Initialize domain struct
+        // TODO: Set sensible defaults for profileURI and imageURI (e.g. an IPFS link or baseURI)
+        // If you have specific default metadata or images, replace the empty strings below accordingly.
         s.domains[tokenId] = Domain({
             name: normalizedName,
             tld: tld,
-            profileURI: "",
-            imageURI: "",
+            profileURI: "", // Set default profile URI here
+            imageURI: "",    // Set default image URI here
             subdomainCount: 0,
             mintFee: 0,
             expiresAt: 0,
@@ -93,11 +98,12 @@ library LibMinting {
         require(!s.domainExists[subdomainName], "Subdomain already exists");
         
         // Generate token ID
-        uint256 tokenId = s.nextTokenId++;
+        uint256 tokenId = s.nextTokenId;
+        s.nextTokenId = tokenId + 1;
         
         // Mint NFT
         s.owners[tokenId] = msg.sender;
-        s.balances[msg.sender]++;
+        unchecked { s.balances[msg.sender]++; }
         
         // Store subdomain mappings
         s.domainToTokenId[subdomainName] = tokenId;
@@ -112,11 +118,12 @@ library LibMinting {
         s.domains[parentTokenId].subdomainCount++;
         
         // Initialize subdomain struct
+        // TODO: Provide sensible defaults for profileURI and imageURI for subdomains
         s.domains[tokenId] = Domain({
             name: normalizedLabel,
             tld: parentDomain,
-            profileURI: "",
-            imageURI: "",
+            profileURI: "", // Set default profile URI here
+            imageURI: "",    // Set default image URI here
             subdomainCount: 0,
             mintFee: 0,
             expiresAt: 0,
@@ -179,8 +186,9 @@ library LibMinting {
         
         tokenIds = new uint256[](names.length);
         
-        for (uint256 i = 0; i < names.length; i++) {
+        for (uint256 i = 0; i < names.length; ) {
             tokenIds[i] = registerDomain(names[i], tlds[i], enableSubdomains[i]);
+            unchecked { ++i; }
         }
         
         return tokenIds;

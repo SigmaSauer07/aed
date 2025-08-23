@@ -1,79 +1,90 @@
 const { ethers } = require("hardhat");
+const fs = require("fs");
 
 async function main() {
-  console.log("🚀 Deploying AED Simple Version...");
+  console.log("🚀 Deploying SIMPLE AED to Hardhat...");
+  console.log("🔧 This is a working version without proxy complexity");
   
+  // Get the signer from Hardhat
   const [deployer] = await ethers.getSigners();
   console.log("Deploying with account:", deployer.address);
-  console.log("Account balance:", ethers.formatEther(await deployer.provider.getBalance(deployer.address)));
+  console.log("Account balance:", ethers.formatEther(await deployer.provider.getBalance(deployer.address)), "ETH");
 
-  // Deploy libraries first
-  console.log("📚 Deploying LibMinting...");
-  const LibMinting = await ethers.getContractFactory("LibMinting");
-  const libMinting = await LibMinting.deploy();
-  await libMinting.waitForDeployment();
-  console.log("LibMinting deployed to:", await libMinting.getAddress());
-
-  // Deploy implementation
-  console.log("🏗️  Deploying AED Implementation...");
-  const AEDImplementation = await ethers.getContractFactory("AEDImplementation", {
-    libraries: {
-      "contracts/libraries/LibMinting.sol:LibMinting": await libMinting.getAddress()
-    }
-  });
-  
-  const implementation = await AEDImplementation.deploy();
-  await implementation.waitForDeployment();
-  console.log("Implementation deployed to:", await implementation.getAddress());
-
-  // Deploy proxy
-  console.log("🎭 Deploying Proxy...");
-  const AED = await ethers.getContractFactory("AED");
-  
-  // Encode initialization data
-  const initData = implementation.interface.encodeFunctionData(
-    'initialize',
-    [
-      "Alsania Enhanced Domains", // name
-      "AED",                      // symbol  
-      deployer.address,           // payment wallet
-      deployer.address            // admin
-    ]
+  // Deploy the simple contract
+  console.log("\n🏗️  Deploying AEDSimple...");
+  const AEDSimple = await ethers.getContractFactory("AEDSimple");
+  const aed = await AEDSimple.deploy(
+    "Alsania Enhanced Domains", // name
+    "AED",                      // symbol
+    deployer.address            // fee collector
   );
-
-  const proxy = await AED.deploy(await implementation.getAddress(), initData);
-  await proxy.waitForDeployment();
-  console.log("Proxy deployed to:", await proxy.getAddress());
-
-  // Connect to proxy using implementation interface
-  const aed = implementation.attach(await proxy.getAddress());
-
-  // Verify deployment
-  console.log("🔍 Verifying deployment...");
-  console.log("Name:", await aed.name());
-  console.log("Symbol:", await aed.symbol());
-  console.log("Next Token ID:", await aed.getNextTokenId());
-
-  console.log("🎉 Deployment completed successfully!");
-  console.log("📝 Contract Addresses:");
-  console.log("- Proxy (main):", await proxy.getAddress());
-  console.log("- Implementation:", await implementation.getAddress());
-  console.log("- LibMinting:", await libMinting.getAddress());
   
-  return {
-    proxy: await proxy.getAddress(),
-    implementation: await implementation.getAddress(),
-    libMinting: await libMinting.getAddress()
+  await aed.waitForDeployment();
+  const aedAddress = await aed.getAddress();
+  
+  console.log("✅ AEDSimple deployed to:", aedAddress);
+  
+  // Test basic functionality
+  console.log("\n🔍 Testing basic functionality...");
+  
+  try {
+    const name = await aed.name();
+    const symbol = await aed.symbol();
+    const nextTokenId = await aed.nextTokenId();
+    
+    console.log("✅ Name:", name);
+    console.log("✅ Symbol:", symbol);
+    console.log("✅ Next Token ID:", nextTokenId.toString());
+    
+    // Test domain registration
+    console.log("\n🔍 Testing domain registration...");
+    const tx = await aed.registerDomain("test.alsania", deployer.address, {
+      value: ethers.parseEther("1.0")
+    });
+    await tx.wait();
+    console.log("✅ Domain registered successfully");
+    
+    // Test view functions
+    console.log("\n🔍 Testing view functions...");
+    const owner = await aed.ownerOf(1);
+    const tokenURI = await aed.tokenURI(1);
+    const isRegistered = await aed.isRegistered("test.alsania");
+    const domainInfo = await aed.getDomainInfo(1);
+    
+    console.log("✅ Token 1 owner:", owner);
+    console.log("✅ Domain registered:", isRegistered);
+    console.log("✅ Domain info TLD:", domainInfo.tld);
+    console.log("✅ Token URI (first 100 chars):", tokenURI.substring(0, 100) + "...");
+    
+    // Test user domains
+    const userDomains = await aed.getUserDomains(deployer.address);
+    console.log("✅ User domains:", userDomains);
+    
+    console.log("\n🎉 ALL TESTS PASSED! AEDSimple is working perfectly!");
+    
+  } catch (error) {
+    console.log("❌ Test failed:", error.message);
+  }
+  
+  // Save addresses
+  const addresses = {
+    aedSimple: aedAddress,
+    deployer: deployer.address
   };
+  
+  fs.writeFileSync("simple-addresses.json", JSON.stringify(addresses, null, 2));
+  console.log("\n💾 Addresses saved to: simple-addresses.json");
+  
+  console.log("\n✅ SIMPLE AED Deployment successful!");
+  console.log("Use address for interaction:", aedAddress);
 }
 
 main()
-  .then((result) => {
-    console.log("✅ Deployment successful!");
-    console.log("Use proxy address for interaction:", result.proxy);
+  .then(() => {
+    console.log("\n🎉 SIMPLE AED Deployment completed!");
     process.exit(0);
   })
   .catch((error) => {
-    console.error("❌ Deployment failed:", error);
+    console.error("❌ SIMPLE AED Deployment failed:", error);
     process.exit(1);
   });

@@ -1,5 +1,5 @@
 // Placeholder test
-const { expect } = require('chai');
+import { expect } from 'chai';
 describe('AED', function () {
   it('should deploy', async function () {
     expect(true).to.be.true;

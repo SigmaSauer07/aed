@@ -62,11 +62,13 @@ contract AEDAdminModule is
         return LibAppStorage.appStorage().validTlds[tld];
     }
     
-    function grantRole(bytes32 role, address account) external onlyRole(LibAdmin.ADMIN_ROLE) {
+    function grantRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
+        super.grantRole(role, account);
         LibAdmin.grantRole(role, account);
     }
     
-    function revokeRole(bytes32 role, address account) external onlyRole(LibAdmin.ADMIN_ROLE) {
+    function revokeRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
+        super.revokeRole(role, account);
         LibAdmin.revokeRole(role, account);
     }
     

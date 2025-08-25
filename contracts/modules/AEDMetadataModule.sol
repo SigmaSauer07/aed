@@ -5,14 +5,17 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
 import "../libraries/LibAppStorage.sol";
+import "../libraries/LibAdmin.sol";
 import "../libraries/LibMetadata.sol";
 import "../interfaces/modules/IAEDMetadata.sol";
+import "./base/ModuleBase.sol";
 
 /// @title AED Metadata Module
 /// @dev Standalone metadata module for the modular UUPS system
 contract AEDMetadataModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
+    ModuleBase,
     IAEDMetadata
 {
     using LibAppStorage for AppStorage;
@@ -23,7 +26,7 @@ contract AEDMetadataModule is
         __UUPSUpgradeable_init();
         
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ADMIN_ROLE, admin);
+        _grantRole(LibAdmin.ADMIN_ROLE, admin);
     }
     
     // UUPS upgrade authorization
@@ -54,11 +57,11 @@ contract AEDMetadataModule is
     }
     
     // Module interface
-    function moduleId() external pure returns (bytes32) {
+    function moduleId() external pure override returns (bytes32) {
         return keccak256("AEDMetadata");
     }
     
-    function moduleName() external pure returns (string memory) {
+    function moduleName() external pure override returns (string memory) {
         return "AEDMetadata";
     }
-} 
+}

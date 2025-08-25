@@ -36,11 +36,29 @@ contract AEDReverseModule is
     {}
     
     // Module interface
-    function moduleId() external pure returns (bytes32) {
-        return keccak256("AEDReverse");
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AED_REVERSE");
     }
     
-    function moduleName() external pure returns (string memory) {
-        return "AEDReverse";
+    function moduleName() external pure override returns (string memory) {
+        return "AED Reverse";
+    }
+    
+    // Reverse functions
+    function setReverse(string calldata domain) external override {
+        require(LibAppStorage.appStorage().owners[LibAppStorage.appStorage().domainToTokenId[domain]] == msg.sender, "Not domain owner");
+        // Placeholder implementation - would need actual reverse logic
+    }
+    
+    function clearReverse() external override {
+        // Placeholder implementation - would need actual reverse logic
+    }
+    
+    function getReverse(address addr) external view override returns (string memory) {
+        return LibAppStorage.appStorage().reverseRecords[addr];
+    }
+    
+    function getReverseOwner(string calldata domain) external view override returns (address) {
+        return LibAppStorage.appStorage().reverseOwners[domain];
     }
 } 

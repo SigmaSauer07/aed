@@ -36,11 +36,48 @@ contract AEDEnhancementsModule is
     {}
     
     // Module interface
-    function moduleId() external pure returns (bytes32) {
-        return keccak256("AEDEnhancements");
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AED_ENHANCEMENTS");
     }
     
-    function moduleName() external pure returns (string memory) {
-        return "AEDEnhancements";
+    function moduleName() external pure override returns (string memory) {
+        return "AED Enhancements";
+    }
+    
+    // Enhancement functions
+    function purchaseFeature(uint256 tokenId, string calldata featureName) external payable override {
+        require(LibAppStorage.appStorage().owners[tokenId] == msg.sender, "Not token owner");
+        uint256 price = LibAppStorage.appStorage().enhancementPrices[featureName];
+        require(msg.value >= price, "Insufficient payment");
+        // Placeholder implementation - would need actual feature logic
+    }
+    
+    function enableSubdomains(uint256 tokenId) external payable override {
+        require(LibAppStorage.appStorage().owners[tokenId] == msg.sender, "Not token owner");
+        uint256 price = LibAppStorage.appStorage().enhancementPrices["subdomain"];
+        require(msg.value >= price, "Insufficient payment");
+        // Placeholder implementation - would need actual subdomain logic
+    }
+    
+    function upgradeExternalDomain(string calldata externalDomain) external payable override {
+        uint256 price = LibAppStorage.appStorage().enhancementPrices["byo"];
+        require(msg.value >= price, "Insufficient payment");
+        // Placeholder implementation - would need actual upgrade logic
+    }
+    
+    function getFeaturePrice(string calldata featureName) external view override returns (uint256) {
+        return LibAppStorage.appStorage().enhancementPrices[featureName];
+    }
+    
+    function isFeatureEnabled(uint256 tokenId, string calldata featureName) external view override returns (bool) {
+        return LibAppStorage.appStorage().enhancedDomains[featureName];
+    }
+    
+    function getAvailableFeatures() external view override returns (string[] memory) {
+        // Placeholder implementation - would return actual available features
+        string[] memory features = new string[](2);
+        features[0] = "subdomain";
+        features[1] = "byo";
+        return features;
     }
 } 

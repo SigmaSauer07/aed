@@ -102,11 +102,11 @@ contract AEDMintingModule is
     }
     
     // Module interface
-    function moduleId() external pure returns (bytes32) {
-        return keccak256("AEDMinting");
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AED_MINTING");
     }
     
-    function moduleName() external pure returns (string memory) {
-        return "AEDMinting";
+    function moduleName() external pure override returns (string memory) {
+        return "AED Minting";
     }
 } 

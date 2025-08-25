@@ -66,11 +66,11 @@ contract AEDAdminModule is
         return LibAppStorage.appStorage().validTlds[tld];
     }
     
-    function grantRole(bytes32 role, address account) external override onlyRole(ADMIN_ROLE) {
+    function grantRole(bytes32 role, address account) public override(AccessControlUpgradeable, IAEDAdmin) onlyRole(ADMIN_ROLE) {
         _grantRole(role, account);
     }
     
-    function revokeRole(bytes32 role, address account) external override onlyRole(ADMIN_ROLE) {
+    function revokeRole(bytes32 role, address account) public override(AccessControlUpgradeable, IAEDAdmin) onlyRole(ADMIN_ROLE) {
         _revokeRole(role, account);
     }
     
@@ -85,11 +85,11 @@ contract AEDAdminModule is
     }
     
     // Module interface
-    function moduleId() external pure returns (bytes32) {
-        return keccak256("AEDAdmin");
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AED_ADMIN");
     }
     
-    function moduleName() external pure returns (string memory) {
-        return "AEDAdmin";
+    function moduleName() external pure override returns (string memory) {
+        return "AED Admin";
     }
 } 

@@ -16,11 +16,7 @@ async function main() {
 
   // Deploy implementation
   console.log("🏗️  Deploying AED Implementation...");
-  const AEDImplementation = await ethers.getContractFactory("AEDImplementation", {
-    libraries: {
-      "contracts/libraries/LibMinting.sol:LibMinting": await libMinting.getAddress()
-    }
-  });
+  const AEDImplementation = await ethers.getContractFactory("AEDImplementation");
   
   const implementation = await AEDImplementation.deploy();
   await implementation.waitForDeployment();

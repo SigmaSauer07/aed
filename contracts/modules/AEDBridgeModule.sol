@@ -5,11 +5,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
 import "../libraries/LibAppStorage.sol";
+import "../libraries/LibAdmin.sol";
 import "../interfaces/modules/IAEDBridge.sol";
 
 /// @title AED Bridge Module
 /// @dev Standalone bridge module for the modular UUPS system
-contract AEDBridgeModule is 
+abstract contract AEDBridgeModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
     IAEDBridge
@@ -21,7 +22,7 @@ contract AEDBridgeModule is
         __UUPSUpgradeable_init();
         
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ADMIN_ROLE, admin);
+        _grantRole(LibAdmin.ADMIN_ROLE, admin);
     }
     
     // UUPS upgrade authorization

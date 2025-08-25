@@ -5,11 +5,12 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
 import "../libraries/LibAppStorage.sol";
+import "../libraries/LibAdmin.sol";
 import "../interfaces/modules/IAEDReverse.sol";
 
 /// @title AED Reverse Module
 /// @dev Standalone reverse module for the modular UUPS system
-contract AEDReverseModule is 
+abstract contract AEDReverseModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
     IAEDReverse
@@ -21,7 +22,7 @@ contract AEDReverseModule is
         __UUPSUpgradeable_init();
         
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ADMIN_ROLE, admin);
+        _grantRole(LibAdmin.ADMIN_ROLE, admin);
     }
     
     // UUPS upgrade authorization

@@ -271,6 +271,15 @@ contract AEDImplementation is
         return LibAppStorage.appStorage().totalRevenue;
     }
     
+    // Convenience views expected by tests and tooling
+    function getNextTokenId() external view returns (uint256) {
+        return LibAppStorage.appStorage().nextTokenId;
+    }
+    
+    function isTLDActive(string calldata tld) external view returns (bool) {
+        return LibAppStorage.appStorage().validTlds[tld];
+    }
+    
     function isRegistered(string calldata name, string calldata tld) external view returns (bool) {
         string memory fullDomain = string(abi.encodePacked(name, ".", tld));
         return LibAppStorage.appStorage().domainExists[fullDomain];

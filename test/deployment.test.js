@@ -8,32 +8,14 @@ describe('AED Deployment', function () {
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
 
-    // Deploy only the required library for AEDImplementation
-    const LibMinting = await ethers.getContractFactory('LibMinting');
-    const libMinting = await LibMinting.deploy();
-    await libMinting.waitForDeployment();
-
-    // Deploy implementation with library link
-    const AEDImplementation = await ethers.getContractFactory('AEDImplementation', {
-      libraries: {
-        'contracts/libraries/LibMinting.sol:LibMinting': await libMinting.getAddress()
-      }
-    });
-    aedImplementation = await AEDImplementation.deploy();
-    await aedImplementation.waitForDeployment();
-
-    // Deploy proxy
-    const AED = await ethers.getContractFactory('AED');
-    const initData = aedImplementation.interface.encodeFunctionData(
-      'initialize',
-      ['Alsania Enhanced Domains', 'AED', owner.address, owner.address]
+    const AEDImplementation = await ethers.getContractFactory('AEDImplementation');
+    const { upgrades } = require('hardhat');
+    aed = await upgrades.deployProxy(
+      AEDImplementation,
+      ['Alsania Enhanced Domains', 'AED', owner.address, owner.address],
+      { initializer: 'initialize', kind: 'uups' }
     );
-
-    aed = await AED.deploy(await aedImplementation.getAddress(), initData);
     await aed.waitForDeployment();
-
-    // Connect to proxy with implementation interface
-    aed = aedImplementation.attach(await aed.getAddress());
   });
 
   it('Should deploy and initialize correctly', async function () {

@@ -92,7 +92,7 @@ async function main() {
   // Step 4: Deploy Module Registry
   console.log("\n📋 Step 4: Deploying Module Registry...");
   const ModuleRegistry = await ethers.getContractFactory("ModuleRegistry");
-  const moduleRegistry = await ModuleRegistry.deploy();
+  const moduleRegistry = await ModuleRegistry.deploy(deployer.address);
   await moduleRegistry.waitForDeployment();
   console.log("✅ ModuleRegistry deployed to:", await moduleRegistry.getAddress());
 

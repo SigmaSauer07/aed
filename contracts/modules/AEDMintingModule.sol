@@ -7,12 +7,15 @@ import "../core/AppStorage.sol";
 import "../libraries/LibAppStorage.sol";
 import "../libraries/LibMinting.sol";
 import "../interfaces/modules/IAEDMinting.sol";
+import "./base/ModuleBase.sol";
+import "../libraries/LibAdmin.sol";
 
 /// @title AED Minting Module
 /// @dev Standalone minting module for the modular UUPS system
 contract AEDMintingModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
+    ModuleBase,
     IAEDMinting
 {
     using LibAppStorage for AppStorage;
@@ -98,11 +101,11 @@ contract AEDMintingModule is
     }
     
     // Module interface
-    function moduleId() external pure returns (bytes32) {
+    function moduleId() external pure override returns (bytes32) {
         return keccak256("AEDMinting");
     }
     
-    function moduleName() external pure returns (string memory) {
+    function moduleName() external pure override returns (string memory) {
         return "AEDMinting";
     }
 } 

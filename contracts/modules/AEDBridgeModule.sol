@@ -4,15 +4,19 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
+import "../core/AEDConstants.sol";
 import "../libraries/LibAppStorage.sol";
 import "../interfaces/modules/IAEDBridge.sol";
+import "./base/ModuleBase.sol";
 
 /// @title AED Bridge Module
 /// @dev Standalone bridge module for the modular UUPS system
 contract AEDBridgeModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
-    IAEDBridge
+    IAEDBridge,
+    AEDConstants,
+    ModuleBase
 {
     using LibAppStorage for AppStorage;
     

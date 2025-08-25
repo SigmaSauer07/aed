@@ -4,15 +4,19 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
+import "../core/AEDConstants.sol";
 import "../libraries/LibAppStorage.sol";
 import "../interfaces/modules/IAEDEnhancements.sol";
+import "./base/ModuleBase.sol";
 
 /// @title AED Enhancements Module
 /// @dev Standalone enhancements module for the modular UUPS system
 contract AEDEnhancementsModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
-    IAEDEnhancements
+    IAEDEnhancements,
+    AEDConstants,
+    ModuleBase
 {
     using LibAppStorage for AppStorage;
     

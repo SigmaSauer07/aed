@@ -4,16 +4,20 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
+import "../core/AEDConstants.sol";
 import "../libraries/LibAppStorage.sol";
 import "../libraries/LibAdmin.sol";
 import "../interfaces/modules/IAEDAdmin.sol";
+import "./base/ModuleBase.sol";
 
 /// @title AED Admin Module
 /// @dev Standalone admin module for the modular UUPS system
 contract AEDAdminModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
-    IAEDAdmin
+    IAEDAdmin,
+    AEDConstants,
+    ModuleBase
 {
     using LibAppStorage for AppStorage;
     using LibAdmin for AppStorage;
@@ -23,9 +27,7 @@ contract AEDAdminModule is
         __UUPSUpgradeable_init();
         
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(LibAdmin.ADMIN_ROLE, admin);
-        _grantRole(LibAdmin.FEE_MANAGER_ROLE, admin);
-        _grantRole(LibAdmin.TLD_MANAGER_ROLE, admin);
+        _grantRole(ADMIN_ROLE, admin);
     }
     
     // UUPS upgrade authorization
@@ -39,19 +41,21 @@ contract AEDAdminModule is
         LibAdmin.updateFee(feeType, newAmount);
     }
 
-    function updateFeeRecipient(address newRecipient) external override onlyRole(LibAdmin.ADMIN_ROLE) {
-        LibAdmin.updateFeeRecipient(newRecipient);
+    function updateFeeRecipient(address newRecipient) external override onlyRole(ADMIN_ROLE) {
+        LibAppStorage.appStorage().feeCollector = newRecipient;
+        emit FeeRecipientUpdated(newRecipient);
     }
     
     function configureTLD(string calldata tld, bool isActive, uint256 price) external override onlyRole(LibAdmin.TLD_MANAGER_ROLE) {
         LibAdmin.configureTLD(tld, isActive, price);
     }
     
-    function updateSubdomainSettings(uint256 newMax, uint256 newBasePrice, uint256 newMultiplier) external override onlyRole(LibAdmin.ADMIN_ROLE) {
-        AppStorage storage store = LibAppStorage.appStorage();
-        store.futureUint256[0] = newMax;
-        store.futureUint256[1] = newBasePrice;
-        store.futureUint256[2] = newMultiplier;
+    function updateSubdomainSettings(uint256 newMax, uint256 newBasePrice, uint256 newMultiplier) external override onlyRole(ADMIN_ROLE) {
+        AppStorage storage s = LibAppStorage.appStorage();
+        s.maxSubdomains = newMax;
+        s.subdomainBasePrice = newBasePrice;
+        s.subdomainMultiplier = newMultiplier;
+        emit SubdomainSettingsUpdated(newMax, newBasePrice, newMultiplier);
     }
     
     function getFee(string calldata feeType) external view override returns (uint256) {
@@ -62,20 +66,22 @@ contract AEDAdminModule is
         return LibAppStorage.appStorage().validTlds[tld];
     }
     
-    function grantRole(bytes32 role, address account) external onlyRole(LibAdmin.ADMIN_ROLE) {
-        LibAdmin.grantRole(role, account);
+    function grantRole(bytes32 role, address account) external override onlyRole(ADMIN_ROLE) {
+        _grantRole(role, account);
     }
     
-    function revokeRole(bytes32 role, address account) external onlyRole(LibAdmin.ADMIN_ROLE) {
-        LibAdmin.revokeRole(role, account);
+    function revokeRole(bytes32 role, address account) external override onlyRole(ADMIN_ROLE) {
+        _revokeRole(role, account);
     }
     
-    function pause() external onlyRole(LibAdmin.ADMIN_ROLE) {
-        LibAdmin.pauseContract();
+    function pause() external override onlyRole(ADMIN_ROLE) {
+        LibAppStorage.appStorage().paused = true;
+        emit ContractPaused();
     }
     
-    function unpause() external onlyRole(LibAdmin.ADMIN_ROLE) {
-        LibAdmin.unpauseContract();
+    function unpause() external override onlyRole(ADMIN_ROLE) {
+        LibAppStorage.appStorage().paused = false;
+        emit ContractUnpaused();
     }
     
     // Module interface

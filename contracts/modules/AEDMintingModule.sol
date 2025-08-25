@@ -4,16 +4,20 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
+import "../core/AEDConstants.sol";
 import "../libraries/LibAppStorage.sol";
 import "../libraries/LibMinting.sol";
 import "../interfaces/modules/IAEDMinting.sol";
+import "./base/ModuleBase.sol";
 
 /// @title AED Minting Module
 /// @dev Standalone minting module for the modular UUPS system
 contract AEDMintingModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
-    IAEDMinting
+    IAEDMinting,
+    AEDConstants,
+    ModuleBase
 {
     using LibAppStorage for AppStorage;
     using LibMinting for AppStorage;
@@ -23,7 +27,7 @@ contract AEDMintingModule is
         __UUPSUpgradeable_init();
         
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(LibAdmin.ADMIN_ROLE, admin);
+        _grantRole(ADMIN_ROLE, admin);
     }
     
     // UUPS upgrade authorization

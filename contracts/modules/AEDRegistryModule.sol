@@ -4,15 +4,19 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
+import "../core/AEDConstants.sol";
 import "../libraries/LibAppStorage.sol";
 import "../interfaces/modules/IAEDRegistry.sol";
+import "./base/ModuleBase.sol";
 
 /// @title AED Registry Module
 /// @dev Standalone registry module for the modular UUPS system
 contract AEDRegistryModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
-    IAEDRegistry
+    IAEDRegistry,
+    AEDConstants,
+    ModuleBase
 {
     using LibAppStorage for AppStorage;
     

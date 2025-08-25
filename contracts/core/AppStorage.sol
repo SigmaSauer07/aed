@@ -65,6 +65,9 @@ struct AppStorage {
     mapping(string => string[]) domainSubdomains;
     mapping(string => address) subdomainOwners;
     mapping(string => uint256) subdomainCounts;
+    uint256 maxSubdomains;
+    uint256 subdomainBasePrice;
+    uint256 subdomainMultiplier;
     
     // Metadata Storage
     mapping(uint256 => string) tokenURIs;

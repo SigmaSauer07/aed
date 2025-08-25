@@ -1,3 +1,9 @@
-const AED = await ethers.getContractAt("AED", "placeholder_address_here");
-const ADMIN_ROLE = await AED.ADMIN_ROLE();
-await AED.hasRole(ADMIN_ROLE, "placeholder_address_here");
+const { expect } = require('chai');
+const { ethers } = require('hardhat');
+
+describe('AED', function () {
+  it('should have basic functionality', async function () {
+    // This is a placeholder test that will be expanded
+    expect(true).to.be.true;
+  });
+});

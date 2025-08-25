@@ -8,7 +8,13 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 1, // Lower runs value for smaller contract size
+        details: {
+          yul: true, // Enable Yul optimizer
+          yulDetails: {
+            optimizerSteps: "u",
+          },
+        },
       },
       viaIR: true, // Enable IR optimizer to fix stack too deep errors
       evmVersion: "cancun"

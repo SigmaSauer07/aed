@@ -4,16 +4,20 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "../core/AppStorage.sol";
+import "../core/AEDConstants.sol";
 import "../libraries/LibAppStorage.sol";
 import "../libraries/LibMetadata.sol";
 import "../interfaces/modules/IAEDMetadata.sol";
+import "./base/ModuleBase.sol";
 
 /// @title AED Metadata Module
 /// @dev Standalone metadata module for the modular UUPS system
 contract AEDMetadataModule is 
     UUPSUpgradeable,
     AccessControlUpgradeable,
-    IAEDMetadata
+    IAEDMetadata,
+    AEDConstants,
+    ModuleBase
 {
     using LibAppStorage for AppStorage;
     using LibMetadata for AppStorage;
@@ -54,11 +58,11 @@ contract AEDMetadataModule is
     }
     
     // Module interface
-    function moduleId() external pure returns (bytes32) {
-        return keccak256("AEDMetadata");
+    function moduleId() external pure override returns (bytes32) {
+        return keccak256("AED_METADATA");
     }
     
-    function moduleName() external pure returns (string memory) {
-        return "AEDMetadata";
+    function moduleName() external pure override returns (string memory) {
+        return "AED Metadata";
     }
 } 

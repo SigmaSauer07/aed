@@ -36,7 +36,7 @@ async function main() {
   // Log deployment info
   const timestamp = new Date().toISOString();
   const networkName = network.name;
-  const output = `${networkName} - ${timestamp}\nProxy: ${proxyAddress}\nImplementation: ${implementationAddress}\n\n`;
+  const output = `${networkName} - ${timestamp}\nProxy: ${proxyAddress}\nImplementation: ${proxyAddress}\n\n`;
   fs.appendFileSync("./deployedAddress.txt", output, "utf8");
 
   console.log("✅ AED deployed to:", proxyAddress);

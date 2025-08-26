@@ -1,0 +1,80 @@
+{
+  "successful": [
+    {
+      "domain": "sigmasauer07.aed",
+      "tokenId": "12",
+      "cost": "2.0",
+      "txHash": "0xeda3c79be3a82576ea4e321ee1d7e0bc9b18f4c8e57b5c43ad963e08bb97a19a"
+    },
+    {
+      "domain": "sigmasauer07.alsa",
+      "tokenId": "13",
+      "cost": "2.0",
+      "txHash": "0x7742c3ecd6708f747fac1803433bee2e795f28e2f4e250cc3c5ab0a376c350fc"
+    },
+    {
+      "domain": "sigmasauer07.07",
+      "tokenId": "0",
+      "cost": "2.0",
+      "txHash": "0xc13fdc3329b8595fdf052bc0c53f55f33e3acd21064f8a8f816c052e3dbd784a"
+    },
+    {
+      "domain": "echo.aed",
+      "tokenId": "15",
+      "cost": "2.0",
+      "txHash": "0x5c1cab57b95ef83b1141a7fe2211cddb55535f855ca1957d84f8fe4fd317689f"
+    },
+    {
+      "domain": "echo.alsa",
+      "tokenId": "16",
+      "cost": "2.0",
+      "txHash": "0x9cce317f7e17ff9787a7206596459919287ed836d23b7f7c42ae853d16506b82"
+    },
+    {
+      "domain": "echo.07",
+      "tokenId": "17",
+      "cost": "2.0",
+      "txHash": "0x9d62ef515c81d8659979cc253dcb6990ee8327c9680080b7388cd9d4a6aa6b94"
+    },
+    {
+      "domain": "alsania.aed",
+      "tokenId": "18",
+      "cost": "2.0",
+      "txHash": "0x3f8148573f25cc07d5b4d805a9050b7a482316f012fed7c2d30b92d1197424e5"
+    },
+    {
+      "domain": "alsania.alsa",
+      "tokenId": "19",
+      "cost": "2.0",
+      "txHash": "0x15e684e3af1f1709e97e86e85c694f362026b3dbb4f1c72374b3c31dfb169587"
+    },
+    {
+      "domain": "alsania.07",
+      "tokenId": "20",
+      "cost": "2.0",
+      "txHash": "0xbd587c251a14dcf0f4da7c67a457333f46004fa04e78bca8a8130ac9a94ac1e4"
+    },
+    {
+      "domain": "test.sigmasauer07.aed",
+      "tokenId": "21",
+      "cost": "0.0",
+      "txHash": "0x989f500f2df73e5d24d9422acf74981554934ff32d6014768692ae5bc3b88688",
+      "type": "subdomain"
+    },
+    {
+      "domain": "web.echo.alsa",
+      "tokenId": "22",
+      "cost": "0.0",
+      "txHash": "0xd6e380f00bab90400edf151ad5a557016fb494aa29e47ce44f4c7026bcab0953",
+      "type": "subdomain"
+    },
+    {
+      "domain": "app.alsania.07",
+      "tokenId": "23",
+      "cost": "0.0",
+      "txHash": "0x22672dda918a06231f729558c8c32979cba913d641236aa46ce222b6b6034f91",
+      "type": "subdomain"
+    }
+  ],
+  "failed": []
+}

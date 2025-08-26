@@ -1,8 +1,8 @@
-const { ethers, network } = require("hardhat");
+const { ethers, upgrades, network } = require("hardhat");
 const fs = require("fs");
 
 async function main() {
-  console.log("🚀 Starting AED Simple Deployment...");
+  console.log("🚀 Starting AED Temporary Deployment...");
   console.log("Network:", network.name);
   
   // Get the first signer as both admin and fee collector
@@ -24,32 +24,24 @@ async function main() {
   try {
     console.log("\n🔄 Deploying AED Implementation...");
     
-    // Deploy AED Implementation
-    const AEDImplementation = await ethers.getContractFactory("AEDMinimal");
-    const aedImplementation = await AEDImplementation.deploy();
-    await aedImplementation.waitForDeployment();
+    // Deploy AED Implementation using UUPS upgrades
+    const AEDImplementation = await ethers.getContractFactory("AEDImplementationLite");
     
-    const implementationAddress = await aedImplementation.getAddress();
-    console.log("🔧 Implementation deployed:", implementationAddress);
-    
-    // Deploy proxy
-    console.log("📦 Deploying proxy...");
-    const AED = await ethers.getContractFactory("AED");
-    
-    // Encode initialization data
-    const initData = aedImplementation.interface.encodeFunctionData(
-      "initialize",
-      [name, symbol, paymentWallet, initialAdmin]
+    console.log("📦 Deploying proxy with implementation...");
+    const aed = await upgrades.deployProxy(
+      AEDImplementation,
+      [name, symbol, paymentWallet, initialAdmin],
+      {
+        initializer: "initialize",
+        kind: "uups",
+        timeout: 300000,
+        pollingInterval: 5000,
+      }
     );
-    
-    const aedProxy = await AED.deploy(implementationAddress, initData);
-    await aedProxy.waitForDeployment();
-    
-    const proxyAddress = await aedProxy.getAddress();
-    console.log("📍 Proxy deployed:", proxyAddress);
-    
-    // Connect to the proxy using implementation interface
-    const aed = aedImplementation.attach(proxyAddress);
+
+    await aed.waitForDeployment();
+    const proxyAddress = await aed.getAddress();
+    const implementationAddress = await upgrades.erc1967.getImplementationAddress(proxyAddress);
 
     console.log("\n✅ Deployment Successful!");
     console.log("📍 Proxy Address:", proxyAddress);
@@ -126,6 +118,7 @@ async function main() {
     console.log("\n📖 Next steps:");
     console.log("  1. Run domain minting tests");
     console.log("  2. Verify contract on block explorer");
+    console.log("  3. Update frontend configuration");
 
     return {
       proxy: proxyAddress,

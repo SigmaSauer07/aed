@@ -1,88 +1,144 @@
-const { ethers, upgrades } = require("hardhat");
+const { ethers, upgrades, network } = require("hardhat");
+const fs = require("fs");
+require("dotenv").config();
 
 async function main() {
-  console.log("🚀 Deploying AED Production System...");
+  console.log("🚀 Starting AED Production Deployment...");
+  console.log("Network:", network.name);
   
-  const [deployer] = await ethers.getSigners();
-  console.log("Deploying with account:", deployer.address);
-  console.log("Account balance:", ethers.formatEther(await deployer.provider.getBalance(deployer.address)));
+  // Load environment variables
+  const initialAdmin = process.env.ALSANIA_ADMIN;
+  const paymentWallet = process.env.ALSANIA_WALLET;
+  const name = "Alsania Enhanced Domains";
+  const symbol = "AED";
 
-  // Step 1: Deploy all required libraries
-  console.log("📚 Deploying libraries...");
-  
-  const LibMinting = await ethers.getContractFactory("LibMinting");
-  const libMinting = await LibMinting.deploy();
-  await libMinting.waitForDeployment();
-  console.log("LibMinting deployed to:", await libMinting.getAddress());
+  if (!initialAdmin || !paymentWallet) {
+    throw new Error("🚨 Missing ALSANIA_ADMIN or ALSANIA_WALLET in .env");
+  }
 
-  // Step 2: Deploy implementation with libraries linked
-  console.log("🏗️  Deploying AED Implementation...");
-  
-  const AEDImplementation = await ethers.getContractFactory("AEDImplementation", {
-    libraries: {
-      "contracts/libraries/LibMinting.sol:LibMinting": await libMinting.getAddress()
+  console.log("📋 Configuration:");
+  console.log("  Admin:", initialAdmin);
+  console.log("  Payment Wallet:", paymentWallet);
+  console.log("  Name:", name);
+  console.log("  Symbol:", symbol);
+
+  try {
+    console.log("\n🔄 Deploying AED Implementation...");
+    
+    // Deploy AED Implementation using UUPS upgrades
+    const AEDImplementation = await ethers.getContractFactory("AEDImplementationLite");
+    
+    console.log("📦 Deploying proxy with implementation...");
+    const aed = await upgrades.deployProxy(
+      AEDImplementation,
+      [name, symbol, paymentWallet, initialAdmin],
+      {
+        initializer: "initialize",
+        kind: "uups",
+        timeout: 300000,
+        pollingInterval: 5000,
+      }
+    );
+
+    await aed.waitForDeployment();
+    const proxyAddress = await aed.getAddress();
+    const implementationAddress = await upgrades.erc1967.getImplementationAddress(proxyAddress);
+
+    console.log("\n✅ Deployment Successful!");
+    console.log("📍 Proxy Address:", proxyAddress);
+    console.log("🔧 Implementation Address:", implementationAddress);
+    
+    // Verify initial configuration
+    console.log("\n🔍 Verifying deployment...");
+    const deployedName = await aed.name();
+    const deployedSymbol = await aed.symbol();
+    const feeCollector = await aed.getFeeCollector();
+    const isAdminSet = await aed.hasRole(await aed.ADMIN_ROLE(), initialAdmin);
+    
+    console.log("  Name:", deployedName);
+    console.log("  Symbol:", deployedSymbol);
+    console.log("  Fee Collector:", feeCollector);
+    console.log("  Admin Set:", isAdminSet);
+    
+    // Test TLD configuration
+    console.log("\n🌐 Verifying TLD Configuration...");
+    const freeTlds = ["aed", "alsa", "07"];
+    const paidTlds = ["alsania", "fx", "echo"];
+    
+    for (const tld of freeTlds) {
+      const isActive = await aed.isTLDActive(tld);
+      console.log(`  ${tld}: ${isActive ? "✅" : "❌"} (Free TLD)`);
     }
-  });
-
-  // Deploy using OpenZeppelin upgrades for automatic proxy management
-  const aed = await upgrades.deployProxy(
-    AEDImplementation,
-    [
-      "Alsania Enhanced Domains", // name
-      "AED",                      // symbol  
-      deployer.address,           // payment wallet (fee collector)
-      deployer.address            // admin
-    ],
-    { 
-      initializer: 'initialize',
-      kind: 'uups'
+    
+    for (const tld of paidTlds) {
+      const isActive = await aed.isTLDActive(tld);
+      console.log(`  ${tld}: ${isActive ? "✅" : "❌"} (Paid TLD)`);
     }
-  );
-  
-  await aed.waitForDeployment();
-  const aedAddress = await aed.getAddress();
-  
-  console.log("✅ AED Proxy deployed to:", aedAddress);
-  
-  // Get implementation address for verification
-  const implementationAddress = await upgrades.erc1967.getImplementationAddress(aedAddress);
-  console.log("📋 Implementation deployed to:", implementationAddress);
+    
+    // Test feature pricing
+    console.log("\n💰 Verifying Feature Pricing...");
+    const subdomainPrice = await aed.getFeaturePrice("subdomain");
+    const byoPrice = await aed.getFeaturePrice("byo");
+    
+    console.log(`  Subdomain Enhancement: ${ethers.formatEther(subdomainPrice)} ETH`);
+    console.log(`  BYO Upgrade: ${ethers.formatEther(byoPrice)} ETH`);
 
-  // Step 3: Verify deployment
-  console.log("🔍 Verifying deployment...");
-  
-  console.log("Name:", await aed.name());
-  console.log("Symbol:", await aed.symbol());
-  console.log("Next Token ID:", await aed.getNextTokenId());
-  console.log("Admin Role:", await aed.hasRole(await aed.ADMIN_ROLE(), deployer.address));
+    // Save deployment information
+    const timestamp = new Date().toISOString();
+    const deploymentInfo = {
+      network: network.name,
+      chainId: network.config.chainId,
+      timestamp: timestamp,
+      proxy: proxyAddress,
+      implementation: implementationAddress,
+      admin: initialAdmin,
+      feeCollector: paymentWallet,
+      name: name,
+      symbol: symbol,
+      freeTlds: freeTlds,
+      paidTlds: paidTlds,
+      features: {
+        subdomainPrice: ethers.formatEther(subdomainPrice),
+        byoPrice: ethers.formatEther(byoPrice)
+      }
+    };
 
-  // Step 4: Set up basic configuration
-  console.log("⚙️  Setting up configuration...");
-  
-  // TLD prices are already set in initialize, but we can adjust them here
-  // await aed.setTLDPrice("premium", ethers.parseEther("10"));
-  
-  console.log("🎉 Deployment completed successfully!");
-  console.log("📝 Summary:");
-  console.log("- Proxy Address:", aedAddress);
-  console.log("- Implementation Address:", implementationAddress);
-  console.log("- LibMinting Address:", await libMinting.getAddress());
-  console.log("- Deployer:", deployer.address);
-  
-  return {
-    proxy: aedAddress,
-    implementation: implementationAddress,
-    libMinting: await libMinting.getAddress(),
-    deployer: deployer.address
-  };
+    // Save to multiple formats
+    const outputText = `${network.name} - ${timestamp}\nProxy: ${proxyAddress}\nImplementation: ${implementationAddress}\n\n`;
+    fs.appendFileSync("./deployedAddress.txt", outputText, "utf8");
+    
+    const jsonFilename = `./deployment-${network.name}-${Date.now()}.json`;
+    fs.writeFileSync(jsonFilename, JSON.stringify(deploymentInfo, null, 2), "utf8");
+    
+    console.log("\n📝 Deployment logged to:");
+    console.log("  Text file: deployedAddress.txt");
+    console.log("  JSON file:", jsonFilename);
+
+    console.log("\n🎉 AED deployment completed successfully!");
+    console.log("\n📖 Next steps:");
+    console.log("  1. Verify contract on block explorer");
+    console.log("  2. Test domain registration");
+    console.log("  3. Update frontend configuration");
+    console.log("  4. Deploy frontend applications");
+
+    return {
+      proxy: proxyAddress,
+      implementation: implementationAddress,
+      contract: aed
+    };
+
+  } catch (error) {
+    console.error("\n❌ Deployment failed:", error);
+    throw error;
+  }
 }
 
-main()
-  .then((result) => {
-    console.log("Deployment result:", result);
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error("Deployment failed:", error);
-    process.exit(1);
+// Execute if called directly
+if (require.main === module) {
+  main().catch((error) => {
+    console.error("❌ Deployment script failed:", error);
+    process.exitCode = 1;
   });
+}
+
+module.exports = main;

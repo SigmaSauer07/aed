@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { ethers } = require('hardhat');
+const { ethers, upgrades } = require('hardhat');
 
 describe('AED Deployment', function () {
   let aed, aedImplementation;
@@ -8,38 +8,26 @@ describe('AED Deployment', function () {
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
 
-    // Deploy only the required library for AEDImplementation
-    const LibMinting = await ethers.getContractFactory('LibMinting');
-    const libMinting = await LibMinting.deploy();
-    await libMinting.waitForDeployment();
-
-    // Deploy implementation with library link
-    const AEDImplementation = await ethers.getContractFactory('AEDImplementation', {
-      libraries: {
-        'contracts/libraries/LibMinting.sol:LibMinting': await libMinting.getAddress()
-      }
-    });
-    aedImplementation = await AEDImplementation.deploy();
-    await aedImplementation.waitForDeployment();
-
-    // Deploy proxy
-    const AED = await ethers.getContractFactory('AED');
-    const initData = aedImplementation.interface.encodeFunctionData(
-      'initialize',
-      ['Alsania Enhanced Domains', 'AED', owner.address, owner.address]
+    // Deploy AED Implementation using UUPS upgrades (no libraries needed for Lite version)
+    const AEDImplementation = await ethers.getContractFactory('AEDImplementationLite');
+    
+    // Deploy with UUPS proxy
+    aed = await upgrades.deployProxy(
+        AEDImplementation,
+        ["Alsania Enhanced Domains", "AED", owner.address, owner.address],
+        {
+            initializer: "initialize",
+            kind: "uups"
+        }
     );
-
-    aed = await AED.deploy(await aedImplementation.getAddress(), initData);
+    
     await aed.waitForDeployment();
-
-    // Connect to proxy with implementation interface
-    aed = aedImplementation.attach(await aed.getAddress());
   });
 
   it('Should deploy and initialize correctly', async function () {
     expect(await aed.name()).to.equal('Alsania Enhanced Domains');
     expect(await aed.symbol()).to.equal('AED');
-    expect(await aed.getNextTokenId()).to.equal(1);
+    // Note: getNextTokenId() is not exposed in the Lite version
   });
 
   it('Should have admin role configured', async function () {

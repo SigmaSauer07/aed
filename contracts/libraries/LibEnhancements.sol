@@ -132,7 +132,7 @@ library LibEnhancements {
         LibAppStorage.appStorage().enhancementPrices[featureName] = price;
     }
     
-    function addFeature(string calldata featureName, uint256 price, uint256 flag) internal {
+    function addFeature(string calldata featureName, uint256 price, uint256 /* flag */) internal {
         AppStorage storage s = LibAppStorage.appStorage();
         s.enhancementPrices[featureName] = price;
         // Feature flag handling would be implemented here

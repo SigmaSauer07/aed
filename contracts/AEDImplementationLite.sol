@@ -14,7 +14,7 @@ import "./libraries/LibReverse.sol";
 import "./libraries/LibEnhancements.sol";
 import "./core/AEDConstants.sol";
 
-contract AEDImplementation is 
+contract AEDImplementationLite is 
     UUPSUpgradeable,
     ERC721Upgradeable,
     AccessControlUpgradeable,
@@ -92,7 +92,7 @@ contract AEDImplementation is
         override 
     {}
     
-    // ===== DOMAIN MINTING FUNCTIONS =====
+    // ===== CORE DOMAIN FUNCTIONS =====
     
     function registerDomain(
         string calldata name,
@@ -118,35 +118,6 @@ contract AEDImplementation is
     
     function calculateSubdomainFee(uint256 parentId) external view returns (uint256) {
         return LibMinting.calculateSubdomainFee(parentId);
-    }
-    
-    function batchRegisterDomains(
-        string[] calldata names,
-        string[] calldata tlds,
-        bool[] calldata withSubdomains
-    ) external payable returns (uint256[] memory) {
-        uint256[] memory tokenIds = LibMinting.batchRegisterDomains(names, tlds, withSubdomains);
-        
-        // Calculate and process batch payment
-        uint256 totalCost = 0;
-        for (uint256 i = 0; i < names.length; i++) {
-            totalCost += _calculateDomainCost(tlds[i], withSubdomains[i]);
-        }
-        
-        require(msg.value >= totalCost, "Insufficient payment");
-        LibAppStorage.appStorage().totalRevenue += totalCost;
-        
-        // Send to fee collector
-        if (totalCost > 0) {
-            payable(LibAppStorage.appStorage().feeCollector).transfer(totalCost);
-        }
-        
-        // Refund excess
-        if (msg.value > totalCost) {
-            payable(msg.sender).transfer(msg.value - totalCost);
-        }
-        
-        return tokenIds;
     }
     
     // ===== METADATA FUNCTIONS =====
@@ -191,16 +162,8 @@ contract AEDImplementation is
     
     // ===== ENHANCEMENT FUNCTIONS =====
     
-    function purchaseFeature(uint256 tokenId, string calldata featureName) external payable {
-        LibEnhancements.purchaseFeature(tokenId, featureName);
-    }
-    
     function enableSubdomainFeature(uint256 tokenId) external payable {
         LibEnhancements.enableSubdomains(tokenId);
-    }
-    
-    function upgradeExternalDomain(string calldata externalDomain) external payable {
-        LibEnhancements.upgradeExternalDomain(externalDomain);
     }
     
     function getFeaturePrice(string calldata featureName) external view returns (uint256) {
@@ -209,10 +172,6 @@ contract AEDImplementation is
     
     function isFeatureEnabled(uint256 tokenId, string calldata featureName) external view returns (bool) {
         return LibEnhancements.isFeatureEnabled(tokenId, featureName);
-    }
-    
-    function getAvailableFeatures() external pure returns (string[] memory) {
-        return LibEnhancements.getAvailableFeatures();
     }
     
     // ===== ADMIN FUNCTIONS =====
@@ -229,31 +188,12 @@ contract AEDImplementation is
         LibAdmin.configureTLD(tld, isActive, price);
     }
     
-    function setFeaturePrice(string calldata featureName, uint256 price) external onlyAdmin {
-        LibEnhancements.setFeaturePrice(featureName, price);
-    }
-    
-    function addFeature(string calldata featureName, uint256 price, uint256 flag) external onlyAdmin {
-        LibEnhancements.addFeature(featureName, price, flag);
-    }
-    
     function pause() external onlyAdmin {
         LibAdmin.pauseContract();
     }
     
     function unpause() external onlyAdmin {
         LibAdmin.unpauseContract();
-    }
-    
-    // Override role functions to use our library
-    function grantRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
-        super.grantRole(role, account);
-        LibAdmin.grantRole(role, account);
-    }
-    
-    function revokeRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
-        super.revokeRole(role, account);
-        LibAdmin.revokeRole(role, account);
     }
     
     // ===== VIEW FUNCTIONS =====
@@ -265,10 +205,6 @@ contract AEDImplementation is
     
     function getUserDomains(address user) external view returns (string[] memory) {
         return LibAppStorage.appStorage().userDomains[user];
-    }
-    
-    function getTotalRevenue() external view returns (uint256) {
-        return LibAppStorage.appStorage().totalRevenue;
     }
     
     function getFeeCollector() external view returns (address) {
@@ -309,43 +245,9 @@ contract AEDImplementation is
         return LibAppStorage.appStorage().balances[owner];
     }
     
-    function approve(address to, uint256 tokenId) public override {
-        address owner = ownerOf(tokenId);
-        require(to != owner, "Approval to current owner");
-        require(
-            msg.sender == owner || isApprovedForAll(owner, msg.sender),
-            "Not owner nor approved"
-        );
-        
-        _approve(to, tokenId);
-    }
-    
-    function getApproved(uint256 tokenId) public view override returns (address) {
-        require(_tokenExists(tokenId), "Token does not exist");
-        return LibAppStorage.appStorage().tokenApprovals[tokenId];
-    }
-    
-    function setApprovalForAll(address operator, bool approved) public override {
-        require(operator != msg.sender, "Approve to caller");
-        _setApprovalForAll(msg.sender, operator, approved);
-    }
-    
-    function isApprovedForAll(address owner, address operator) public view override returns (bool) {
-        return LibAppStorage.appStorage().operatorApprovals[owner][operator];
-    }
-    
     function transferFrom(address from, address to, uint256 tokenId) public override {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
         _customTransfer(from, to, tokenId);
-    }
-    
-    function safeTransferFromSingle(address from, address to, uint256 tokenId) public {
-        safeTransferFromWithData(from, to, tokenId, "");
-    }
-    
-    function safeTransferFromWithData(address from, address to, uint256 tokenId, bytes memory data) public {
-        require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
-        _customSafeTransfer(from, to, tokenId, data);
     }
     
     // ===== INTERNAL FUNCTIONS =====
@@ -367,15 +269,11 @@ contract AEDImplementation is
         require(s.owners[tokenId] == from, "Transfer from incorrect owner");
         require(to != address(0), "Transfer to zero address");
         
-        // Clear approvals
+        // Clear approvals and update ownership
         delete s.tokenApprovals[tokenId];
-        
-        // Update balances
         s.balances[from]--;
         s.balances[to]++;
         s.owners[tokenId] = to;
-        
-        // Update domain owner
         s.domains[tokenId].owner = to;
         
         // Update user domain arrays
@@ -383,46 +281,8 @@ contract AEDImplementation is
         _removeFromUserDomains(from, domain);
         s.userDomains[to].push(domain);
         
-        // Handle reverse resolution updates
         LibReverse.handleDomainTransfer(from, to, domain);
-        
         emit Transfer(from, to, tokenId);
-    }
-    
-    function _approve(address to, uint256 tokenId) internal {
-        AppStorage storage s = LibAppStorage.appStorage();
-        s.tokenApprovals[tokenId] = to;
-        emit Approval(ownerOf(tokenId), to, tokenId);
-    }
-    
-    function _setApprovalForAll(address owner, address operator, bool approved) internal override {
-        require(owner != operator, "Approve to caller");
-        AppStorage storage s = LibAppStorage.appStorage();
-        s.operatorApprovals[owner][operator] = approved;
-        emit ApprovalForAll(owner, operator, approved);
-    }
-    
-    function _customSafeTransfer(address from, address to, uint256 tokenId, bytes memory data) internal {
-        _customTransfer(from, to, tokenId);
-        require(_checkOnERC721Received(from, to, tokenId, data), "Transfer to non ERC721Receiver");
-    }
-    
-    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes memory data) private returns (bool) {
-        if (to.code.length > 0) {
-            try IERC721Receiver(to).onERC721Received(msg.sender, from, tokenId, data) returns (bytes4 retval) {
-                return retval == IERC721Receiver.onERC721Received.selector;
-            } catch (bytes memory reason) {
-                if (reason.length == 0) {
-                    revert("Transfer to non ERC721Receiver");
-                } else {
-                    assembly {
-                        revert(add(32, reason), mload(reason))
-                    }
-                }
-            }
-        } else {
-            return true;
-        }
     }
     
     function _removeFromUserDomains(address user, string memory domain) internal {
@@ -431,7 +291,6 @@ contract AEDImplementation is
         
         for (uint256 i = 0; i < userDomains.length; i++) {
             if (keccak256(bytes(userDomains[i])) == keccak256(bytes(domain))) {
-                // Move last element to current position and pop
                 userDomains[i] = userDomains[userDomains.length - 1];
                 userDomains.pop();
                 break;
@@ -445,12 +304,10 @@ contract AEDImplementation is
         require(msg.value >= totalCost, "Insufficient payment");
         LibAppStorage.appStorage().totalRevenue += totalCost;
         
-        // Send to fee collector
         if (totalCost > 0) {
             payable(LibAppStorage.appStorage().feeCollector).transfer(totalCost);
         }
         
-        // Refund excess
         if (msg.value > totalCost) {
             payable(msg.sender).transfer(msg.value - totalCost);
         }
@@ -462,12 +319,10 @@ contract AEDImplementation is
         
         LibAppStorage.appStorage().totalRevenue += cost;
         
-        // Send to fee collector
         if (cost > 0) {
             payable(LibAppStorage.appStorage().feeCollector).transfer(cost);
         }
         
-        // Refund excess
         if (msg.value > cost) {
             payable(msg.sender).transfer(msg.value - cost);
         }
@@ -477,12 +332,10 @@ contract AEDImplementation is
         AppStorage storage store = LibAppStorage.appStorage();
         uint256 totalCost = 0;
         
-        // Add TLD cost
         if (!store.freeTlds[tld]) {
             totalCost += store.tldPrices[tld];
         }
         
-        // Add enhancement cost
         if (withEnhancements) {
             totalCost += store.enhancementPrices["subdomain"];
         }
@@ -490,7 +343,6 @@ contract AEDImplementation is
         return totalCost;
     }
     
-    // Support interface detection
     function supportsInterface(bytes4 interfaceId)
         public
         view

@@ -1,0 +1,112 @@
+{
+  "successful": [
+    {
+      "domain": "sigmasayer07.alsania",
+      "tokenId": "1",
+      "cost": "3.0",
+      "txHash": "0x1c10bb79cba140a3570ed3ab2026a465f0e0d2dafb9997c866a219eef75a10d4"
+    },
+    {
+      "domain": "sigmasayer07.fx",
+      "tokenId": "2",
+      "cost": "3.0",
+      "txHash": "0xa4da8d82b829fb049d8c4345633e9ed0a931db230d08fa62f97802322508d0b6"
+    },
+    {
+      "domain": "sigmasayer07.echo",
+      "tokenId": "3",
+      "cost": "3.0",
+      "txHash": "0xa91b6de75e7bae863fa25bc1318a13b82045add1e37f1789f57aa046753c3d7d"
+    },
+    {
+      "domain": "echo.alsania",
+      "tokenId": "4",
+      "cost": "3.0",
+      "txHash": "0x45bf1e2ae718f22665f1fe39477df35654b006c42be2d2b2e488c2f432f8803d"
+    },
+    {
+      "domain": "echo.fx",
+      "tokenId": "5",
+      "cost": "3.0",
+      "txHash": "0x04d6a18e0efd71b23ed77b09c699cee3e99d775a83a935eb040e5fd392218d9a"
+    },
+    {
+      "domain": "echo.echo",
+      "tokenId": "6",
+      "cost": "3.0",
+      "txHash": "0x3db94dacf12b7180f693b7821849032cc7904ed1df60257e84d1d29c0a83cdaf"
+    },
+    {
+      "domain": "alsania.alsania",
+      "tokenId": "7",
+      "cost": "3.0",
+      "txHash": "0x4b9ebb3ee97299112bbad44664e8f392850e3a44c082ef25c10ad9ec871c0c4d"
+    },
+    {
+      "domain": "alsania.fx",
+      "tokenId": "8",
+      "cost": "3.0",
+      "txHash": "0xbbc22123963d4babc0c0feda76a7d56783d9617853c81fdf1fe238d4980a8518"
+    },
+    {
+      "domain": "alsania.echo",
+      "tokenId": "9",
+      "cost": "3.0",
+      "txHash": "0xea86dbcedc1c93a9dba3db1ba8130e1d346a0fcadd7749b842f41e5c45e1ddfd"
+    }
+  ],
+  "failed": [
+    {
+      "domain": "sigmasayer07.aed",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "sigmasayer07.alsa",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "sigmasayer07.07",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "echo.aed",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "echo.alsa",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "echo.07",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "alsania.aed",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "alsania.alsa",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "alsania.07",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    }
+  ],
+  "subdomains": [
+    {
+      "subdomain": "web.echo.alsania",
+      "parent": "echo.alsania",
+      "tokenId": "10",
+      "cost": "0.0",
+      "txHash": "0x964d1c6118a3aad1fa980960982dbecfd5bd0aba7beeeb1b1998202f80ee3339"
+    },
+    {
+      "subdomain": "app.alsania.fx",
+      "parent": "alsania.fx",
+      "tokenId": "11",
+      "cost": "0.0",
+      "txHash": "0x9d591adc43aa7a5a92e5728c426e15bd927a12565a2491ea8fa45707c7020935"
+    }
+  ]
+}

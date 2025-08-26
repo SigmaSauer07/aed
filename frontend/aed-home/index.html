@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alsania Enhanced Domains - Web3 Domain Names</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&family=Orbitron:wght@600;700&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/ah.css">
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.8.0/dist/ethers.umd.min.js"></script>
+    <script src="js/index.js"></script>
+    <script src=".com/@metamask/detect-provider/dist/detect-provider.min.js"></script>
+  <style>
+    
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="nav-container">
+      <a href="#" class="logo">Alsania Enhanced Domains</a>
+      <nav class="nav-menu">
+        <a href="#home" class="nav-link">Home</a>
+        <a href="#domains" class="nav-link">Domains</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+        <a href="#about" class="nav-link">About</a>
+        <a href="#contact" class="nav-link">Contact</a>
+      </nav>
+      <button class="wallet-btn">Connect Wallet</button>
+      <div class="mobile-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <h1 class="hero-title glow-animation">The Future of Web3 Domains</h1>
+      <p class="hero-subtitle">Secure, Decentralized, Enhanced</p>
+      <p class="hero-description">
+        Join the next generation of internet identity with Alsania Enhanced Domains. 
+        Own your digital presence with blockchain-powered domain names that never expire and give you complete control.
+      </p>
+      <div class="cta-buttons">
+        <a href="#domains" class="cta-primary">Get Your Domain</a>
+        <a href="#features" class="cta-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Domain Registration Section -->
+  <section class="domains" id="domains">
+    <div class="container">
+      <h2>Register New Domain</h2>
+      
+      <div class="domain-input-group">
+        <label for="domainName">Domain Name:</label>
+        <input type="text" id="domainName" placeholder="Enter your domain name">
+      </div>
+
+      <div class="tld-container">
+        <div class="tld-group">
+          <label for="freeTld">Free TLDs <span class="free-badge">FREE</span></label>
+          <select id="freeTld">
+            <option value="">Select Free TLD</option>
+            <option value="aed">.aed</option>
+            <option value="alsa">.alsa</option>
+            <option value="07">.07</option>
+          </select>
+        </div>
+
+        <div class="tld-group">
+          <label for="featuredTld">Featured TLDs <span class="featured-badge">PREMIUM</span></label>
+          <select id="featuredTld">
+            <option value="">Select Featured TLD</option>
+            <option value="alsania">.alsania</option>
+            <option value="fx">.fx</option>
+            <option value="echo">.echo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="checkbox-group">
+        <label>
+          <span>Premium TLD's only $1. Bonus: Unlock early access to beta features!</span>
+        </label>
+      </div>
+
+      <div class="total-display">
+        <div>Registration Total: <span id="registerTotal">$0 MATIC</span></div>
+      </div>
+
+      <button id="registerBtn" onclick="registerDomain()">Register Domain</button>
+    </div>
+  </section>
+    
+  <!-- Domain Enhancement Section -->
+  <section class="enhancements" id="enhancements">
+    <div class="container">
+      <h2>Enhance Your Domain</h2>
+      <p class="info-text">Already own a domain? Add subdomain minting capability to unlock new possibilities.</p>
+      
+      <div class="domain-input-group">
+        <label for="existingDomain">Domain Name or Token ID:</label>
+        <input type="text" id="existingDomain" placeholder="e.g., mydomain.alsania or Token ID: 123">
+      </div>
+
+      <div class="cost-info">
+        <div class="small-text">
+          <strong>Enhancement Pricing:</strong><br>
+          • Alsania Native TLDs (.aed, .alsa, .07, .alsania, .fx, .echo): $2 MATIC<br>
+          • Third-party/External Domains: $5 MATIC
+        </div>
+      </div>
+
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" id="enhanceSubdomain">
+          <span>Add Subdomain Minting Ability</span>
+        </label>
+      </div>
+
+      <div class="total-display">
+        <div>Enhancement Total: <span id="enhanceTotal">$0 MATIC</span></div>
+      </div>
+
+      <button id="enhanceBtn" onclick="enhanceDomain()">Enhance Now</button>
+    </div>
+   </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="features-container">
+      <h2 class="section-title">Why Choose Alsania Enhanced Domains?</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3 class="feature-title">Blockchain Security</h3>
+          <p class="feature-description">Your domain is secured by blockchain technology, ensuring complete ownership and protection against censorship.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <h3 class="feature-title">Web3 Integration</h3>
+          <p class="feature-description">Seamlessly integrate with dApps, wallets, and the entire Web3 ecosystem for maximum functionality.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3 class="feature-title">Lightning Fast</h3>
+          <p class="feature-description">Built on high-performance blockchain infrastructure for instant resolution and minimal transaction fees.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3 class="feature-title">Easy Management</h3>
+          <p class="feature-description">Intuitive dashboard to manage all your domains, subdomains, and settings in one place.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3 class="feature-title">No Renewal Fees</h3>
+          <p class="feature-description">Pay once and own forever. No hidden fees or surprise renewal charges.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <h3 class="feature-title">Future-Ready</h3>
+          <p class="feature-description">Built for the decentralized web of tomorrow with continuous updates and new features.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing" id="pricing">
+    <div class="pricing-container">
+      <h2 class="section-title">Simple, Transparent Pricing</h2>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3 class="pricing-title">Basic Domain</h3>
+          <div class="pricing-price">0.5 MATIC</div>
+          <ul class="pricing-features">
+            <li>Standard domain registration</li>
+            <li>Basic Web3 integration</li>
+            <li>Community support</li>
+            <li>Standard resolution speed</li>
+          </ul>
+          <button class="pricing-btn">Get Started</button>
+        </div>
+        <div class="pricing-card featured">
+          <h3 class="pricing-title">Enhanced Domain</h3>
+          <div class="pricing-price">1.0 MATIC</div>
+          <ul class="pricing-features">
+            <li>Premium domain registration</li>
+            <li>Advanced Web3 features</li>
+            <li>Priority support</li>
+            <li>Fast resolution</li>
+            <li>Subdomain creation</li>
+          </ul>
+          <button class="pricing-btn">Choose Plan</button>
+        </div>

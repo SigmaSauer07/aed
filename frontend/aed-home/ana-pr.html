@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alsania Enhanced Domains - Web3 Domain Names</title>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&family=Orbitron:wght@600;700&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+  <style>
+    /* Minimal styling for new features */
+    .search-container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .search-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .search-input {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 16px;
+    }
+    
+    .search-btn, .check-btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    
+    .search-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .check-btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    
+    .search-btn:hover, .check-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    .search-results {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .domain-suggestion {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      margin: 5px 0;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .domain-name {
+      font-weight: 600;
+      color: #64b5f6;
+    }
+    
+    .domain-status {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .available {
+      background: #4caf50;
+      color: white;
+    }
+    
+    .taken {
+      background: #f44336;
+      color: white;
+    }
+    
+    .premium {
+      background: #ff9800;
+      color: white;
+    }
+    
+    .bulk-container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .bulk-textarea {
+      width: 100%;
+      height: 100px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      font-size: 14px;
+      resize: vertical;
+    }
+    
+    .analytics-container {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+    
+    .analytics-card {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .analytics-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #64b5f6;
+      margin-bottom: 5px;
+    }
+    
+    .analytics-label {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .quick-select {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    
+    .quick-select-btn {
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      color: white;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    .quick-select-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+  </style>
+</head>
+<body>
+  <!-- Status message container -->
+  <div id="statusMessage" class="status-message"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="nav-container">
+      <a href="#" class="logo">Alsania Enhanced Domains</a>
+      <nav class="nav-menu">
+        <a href="#home" class="nav-link">Home</a>
+        <a href="#search" class="nav-link">Search</a>
+        <a href="#domains" class="nav-link">Domains</a>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#pricing" class="nav-link">Pricing</a>
+        <a href="#about" class="nav-link">About</a>
+        <a href="#contact" class="nav-link">Contact</a>
+      </nav>
+      <button class="wallet-btn" id="walletBtn">Connect Wallet</button>
+      <div class="mobile-menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero" id="home">
+    <div class="hero-content">
+      <h1 class="hero-title glow-animation">The Future of Web3 Domains</h1>
+      <p class="hero-subtitle">Secure, Decentralized, Enhanced</p>
+      <p class="hero-description">
+        Join the next generation of internet identity with Alsania Enhanced Domains.
+        Own your digital presence with blockchain-powered domain names that never expire and give you complete control.
+      </p>
+      <div class="cta-buttons">
+        <a href="#search" class="cta-primary">Search Domains</a>
+        <a href="#features" class="cta-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Enhanced Search Section -->
+  <section class="search-section" id="search">
+    <div class="container">
+      <h2>Search & Check Domain Availability</h2>
+      
+      <!-- Single Domain Search -->
+      <div class="search-container">
+        <h3>Single Domain Search</h3>
+        <div class="search-group">
+          <input type="text" id="searchInput" class="search-input" placeholder="Enter domain name (e.g., mycompany)">
+          <button id="searchBtn" class="search-btn">Search</button>
+          <button id="checkBtn" class="check-btn">Check Availability</button>
+        </div>
+        
+        <div class="quick-select">
+          <span style="color: rgba(255, 255, 255, 0.8); margin-right: 10px;">Quick TLD Select:</span>
+          <button class="quick-select-btn" onclick="selectTLD('all')">All TLDs</button>
+          <button class="quick-select-btn" onclick="selectTLD('free')">Free Only</button>
+          <button class="quick-select-btn" onclick="selectTLD('premium')">Premium Only</button>
+        </div>
+        
+        <div id="searchResults" class="search-results" style="display: none;"></div>
+      </div>
+
+      <!-- Bulk Domain Search -->
+      <div class="bulk-container">
+        <h3>Bulk Domain Check</h3>
+        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 15px;">
+          Enter multiple domain names (one per line) to check availability across all TLDs:
+        </p>
+        <textarea id="bulkInput" class="bulk-textarea" placeholder="mydomain1&#10;mydomain2&#10;mydomain3"></textarea>
+        <button id="bulkCheckBtn" class="check-btn" style="margin-top: 15px;">Check All Domains</button>
+        <div id="bulkResults" class="search-results" style="display: none;"></div>
+      </div>
+
+      <!-- Domain Analytics -->
+      <div class="analytics-container">
+        <h3>Domain Analytics</h3>
+        <div class="analytics-grid">
+          <div class="analytics-card">
+            <div class="analytics-value" id="totalDomains">0</div>
+            <div class="analytics-label">Total Domains</div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-value" id="availableDomains">0</div>
+            <div class="analytics-label">Available</div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-value" id="takenDomains">0</div>
+            <div class="analytics-label">Taken</div>
+          </div>
+          <div class="analytics-card">
+            <div class="analytics-value" id="premiumDomains">0</div>
+            <div class="analytics-label">Premium</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Domain Registration Section -->
+  <section class="domains" id="domains">
+    <div class="container">
+      <h2>Register New Domain</h2>
+
+      <div class="domain-input-group">
+        <label for="domainName">Domain Name:</label>
+        <input type="text" id="domainName" placeholder="Enter your domain name">
+      </div>
+
+      <div class="tld-container">
+        <div class="tld-group">
+          <label for="freeTld">Free TLDs <span class="free-badge">FREE</span></label>
+          <select id="freeTld">
+            <option value="">Select Free TLD</option>
+            <option value="aed">.aed</option>
+            <option value="alsa">.alsa</option>
+            <option value="07">.07</option>
+          </select>
+        </div>
+
+        <div class="tld-group">
+          <label for="featuredTld">Featured TLDs <span class="featured-badge">PREMIUM</span></label>
+          <select id="featuredTld">
+            <option value="">Select Featured TLD</option>
+            <option value="alsania">.alsania</option>
+            <option value="fx">.fx</option>
+            <option value="echo">.echo</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" id="enhSubdomain">
+          <span>Add Subdomain Minting Ability (+$2 MATIC)</span>
+        </label>
+      </div>
+
+      <div class="total-display">
+        <div>Registration Total: <span id="registerTotal">$0 MATIC</span></div>
+      </div>
+
+      <button id="registerBtn">Register Domain</button>
+    </div>
+  </section>
+
+  <!-- Domain Enhancement Section -->
+  <section class="enhancements" id="enhancements">
+    <div class="container">
+      <h2>Enhance Your Domain</h2>
+      <p class="info-text">Already own a domain? Add subdomain minting capability to unlock new possibilities.</p>
+
+      <div class="domain-input-group">
+        <label for="existingDomain">Domain Name or Token ID:</label>
+        <input type="text" id="existingDomain" placeholder="e.g., mydomain.alsania or Token ID: 123">
+      </div>
+
+      <div class="cost-info">
+        <div class="small-text">
+          <strong>Enhancement Pricing:</strong><br>
+          • Alsania Native TLDs (.aed, .alsa, .07, .alsania, .fx, .echo): $2 MATIC<br>
+          • Third-party/External Domains: $5 MATIC
+        </div>
+      </div>
+
+      <div class="checkbox-group">
+        <label>
+          <input type="checkbox" id="enhanceSubdomain">
+          <span>Add Subdomain Minting Ability</span>
+        </label>
+      </div>
+
+      <div class="total-display">
+        <div>Enhancement Total: <span id="enhanceTotal">$0 MATIC</span></div>
+      </div>
+
+      <button id="enhanceBtn">Enhance Now</button>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="features-container">
+      <h2 class="section-title">Why Choose Alsania Enhanced Domains?</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3 class="feature-title">Blockchain Security</h3>
+          <p class="feature-description">Your domain is secured by blockchain technology, ensuring complete ownership and protection against censorship.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <h3 class="feature-title">Web3 Integration</h3>
+          <p class="feature-description">Seamlessly integrate with dApps, wallets, and the entire Web3 ecosystem for maximum functionality.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3 class="feature-title">Lightning Fast</h3>
+          <p class="feature-description">Built on high-performance blockchain infrastructure for instant resolution and minimal transaction fees.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <h3 class="feature-title">Easy Management</h3>
+          <p class="feature-description">Intuitive dashboard to manage all your domains, subdomains, and settings in one place.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <h3 class="feature-title">No Renewal Fees</h3>
+          <p class="feature-description">Pay once and own forever. No hidden fees or surprise renewal charges.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🚀</div>
+          <h3 class="feature-title">Future-Ready</h3>
+          <p class="feature-description">Built for the decentralized web of tomorrow with continuous updates and new features.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Section -->
+  <section class="pricing" id="pricing">
+    <div class="pricing-container">
+      <h2 class="section-title">Simple, Transparent Pricing</h2>
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3 class="pricing-title">Basic Domain</h3>
+          <div class="pricing-price">FREE</div>
+          <ul class="pricing-features">
+            <li>Standard domain registration</li>
+            <li>Basic Web3 integration</li>
+            <li>Community support</li>
+            <li>Standard resolution speed</li>
+          </ul>
+          <button class="pricing-btn">Get Started</button>
+        </div>
+        <div class="pricing-card featured">
+          <h3 class="pricing-title">Enhanced Domain</h3>
+          <div class="pricing-price">$1 MATIC</div>
+          <ul class="pricing-features">
+            <li>Premium domain registration</li>
+            <li>Advanced Web3 features</li>
+            <li>Priority support</li>
+            <li>Fast resolution</li>
+            <li>Subdomain creation</li>
+          </ul>
+          <button class="pricing-btn">Choose Plan</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Configuration
+    const CONFIG = {
+      CONTRACT_ADDRESS: '0x3Bf795D47f7B32f36cbB1222805b0E0c5EF066f1',
+      ALSANIA_TLDS: ['aed', 'alsa', '07', 'alsania', 'fx', 'echo'],
+      FREE_TLDS: ['aed', 'alsa', '07'],
+      PREMIUM_TLDS: ['alsania', 'fx', 'echo'],
+      PRICES: {
+        FREE_TLD: 0,
+        FEATURED_TLD: 1,
+        SUBDOMAIN_ENHANCEMENT: 2,
+        EXTERNAL_DOMAIN_ENHANCEMENT: 5
+      },
+      DURATION: 3153600000, // 100 years in seconds
+      GAS_MULTIPLIER: 1.2
+    };
+
+    // Global state
+    let provider = null;
+    let signer = null;
+    let contract = null;
+    let userAddress = null;
+    let isConnecting = false;
+    let searchHistory = [];
+    let domainCache = new Map();
+
+    // Enhanced ABI with additional functions
+    const CONTRACT_ABI = [
+      "function registerDomain(string name, string tld, uint256 subFee, bool enhance, uint256 duration) external payable",
+      "function purchaseFeature(uint256 tokenId, uint256 featureCode) external payable",
+      "function getTLDPrice(string tld) external view returns (uint256)",
+      "function balanceOf(address owner) external view returns (uint256)",
+      "function ownerOf(uint256 tokenId) external view returns (address)",
+      "function isDomainAvailable(string name, string tld) external view returns (bool)",
+      "function getDomainInfo(string name, string tld) external view returns (address owner, uint256 tokenId, bool hasSubdomains)",
+      "function totalSupply() external view returns (uint256)"
+    ];
+
+    // Utility functions
+    function showStatus(message, type = 'success') {
+      const statusEl = document.getElementById('statusMessage');
+      statusEl.textContent = message;
+      statusEl.className = `status-message ${type} show`;
+
+      setTimeout(() => {
+        statusEl.classList.remove('show');
+      }, 5000);
+    }
+
+    function setButtonLoading(buttonId, isLoading) {
+      const button = document.getElementById(buttonId);
+      if (isLoading) {
+        button.innerHTML = '<div class="loading-spinner"></div>Processing...';
+        button.disabled = true;
+      } else {
+        button.disabled = false;
+        if (buttonId === 'registerBtn') {
+          button.innerHTML = 'Register Domain';
+        } else if (buttonId === 'enhanceBtn') {
+          button.innerHTML = 'Enhance Now';
+        } else if (buttonId === 'walletBtn') {
+          button.innerHTML = userAddress ?
+            `${userAddress.slice(0, 6)}...${userAddress.slice(-4)}` :
+            'Connect Wallet';
+        } else if (buttonId === 'searchBtn') {
+          button.innerHTML = 'Search';
+        } else if (buttonId === 'checkBtn') {
+          button.innerHTML = 'Check Availability';
+        } else if (buttonId === 'bulkCheckBtn') {
+          button.innerHTML = 'Check All Domains';
+        }
+      }
+    }
+
+    function validateDomainName(name) {
+      if (!name || name.length < 2) {
+        return { valid: false, message: 'Domain name must be at least 2 characters long' };
+      }
+      if (name.length > 63) {
+        return { valid: false, message: 'Domain name must be less than 64 characters' };
+      }
+      if (!/^[a-zA-Z0-9-]+$/.test(name)) {
+        return { valid: false, message: 'Domain name can only contain letters, numbers, and hyphens' };
+      }
+      if (name.startsWith('-') || name.endsWith('-')) {
+        return { valid: false, message: 'Domain name cannot start or end with a hyphen' };
+      }
+      return { valid: true };
+    }
+
+    function isAlsaniaNativeDomain(domain) {
+      return CONFIG.ALSANIA_TLDS.some(tld =>
+        domain.toLowerCase().includes(`.${tld}`)
+      );
+    }
+
+    function formatError(error) {
+      if (error.reason) return error.reason;
+      if (error.message) {
+        if (error.message.includes('user rejected')) {
+          return 'Transaction was rejected by user';
+        }
+        if (error.message.includes('insufficient funds')) {
+          return 'Insufficient funds for transaction';
+        }
+        if (error.message.includes('gas')) {
+          return 'Gas estimation failed. Please try again.';
+        }
+        return error.message;
+      }
+      return 'An unknown error occurred';
+    }
+
+    // New Search Functions
+    async function searchDomains(domainName, tldFilter = 'all') {
+      if (!domainName) {
+        showStatus('Please enter a domain name', 'warning');
+        return;
+      }
+
+      const validation = validateDomainName(domainName);
+      if (!validation.valid) {
+        showStatus(validation.message, 'warning');
+        return;
+      }
+
+      setButtonLoading('searchBtn', true);
+      
+      try {
+        const resultsEl = document.getElementById('searchResults');
+        resultsEl.innerHTML = '';
+        resultsEl.style.display = 'block';
+
+        let tldsToCheck = CONFIG.ALSANIA_TLDS;
+        
+        if (tldFilter === 'free') {
+          tldsToCheck = CONFIG.FREE_TLDS;
+        } else if (tldFilter === 'premium') {
+          tldsToCheck = CONFIG.PREMIUM_TLDS;
+        }
+
+        const results = [];
+        
+        for (const tld of tldsToCheck) {
+          const fullDomain = `${domainName}.${tld}`;
+          const cacheKey = fullDomain.toLowerCase();
+          
+          let availability;
+          if (domainCache.has(cacheKey)) {
+            availability = domainCache.get(cacheKey);
+          } else {
+            // Simulate availability check (replace with actual contract call)
+            availability = await checkDomainAvailability(domainName, tld);
+            domainCache.set(cacheKey, availability);
+          }
+          
+          results.push({
+            domain: fullDomain,
+            tld: tld,
+            available: availability.available,
+            price: CONFIG.FREE_TLDS.includes(tld) ? 0 : CONFIG.PRICES.FEATURED_TLD,
+            type: CONFIG.FREE_TLDS.includes(tld) ? 'free' : 'premium'
+          });
+        }
+
+        displaySearchResults(results);
+        updateAnalytics(results);
+        
+        // Add to search history
+        searchHistory.unshift({
+          query: domainName,
+          timestamp: new Date(),
+          results: results.length
+        });
+        
+        if (searchHistory.length > 10) {
+          searchHistory.pop();
+        }
+
+      } catch (error) {
+        console.error('Search error:', error);
+        showStatus(`Search failed: ${formatError(error)}`, 'error');
+      } finally {
+        setButtonLoading('searchBtn', false);
+      }
+    }
+
+    async function checkDomainAvailability(domainName, tld) {
+      try {
+        if (contract) {
+          const available = await contract.isDomainAvailable(domainName, tld);
+          return { available, owner: null };
+        } else {
+          // Simulate availability for demo purposes
+          const hash = domainName.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+          }, 0);
+          const available = Math.abs(hash) % 3 !== 0; // ~66% available
+          return { available, owner: available ? null : '0x1234...5678' };
+        }
+      } catch (error) {
+        console.error('Availability check error:', error);
+        return { available: false, owner: null };
+      }
+    }
+
+    function displaySearchResults(results) {
+      const resultsEl = document.getElementById('searchResults');
+      
+      if (results.length === 0) {
+        resultsEl.innerHTML = '<p style="color: rgba(255, 255, 255, 0.8);">No results found.</p>';
+        return;
+      }
+
+      let html = '<h4 style="margin-bottom: 15px; color: #64b5f6;">Search Results:</h4>';
+      
+      results.forEach(result => {
+        const statusClass = result.available ? 'available' : 'taken';
+        const statusText = result.available ? 'Available' : 'Taken';
+        const priceText = result.price === 0 ? 'FREE' : `${result.price} MATIC`;
+        
+        html += `
+          <div class="domain-suggestion">
+            <div>
+              <span class="domain-name">${result.domain}</span>
+              <span style="color: rgba(255, 255, 255, 0.6); margin-left: 10px; font-size: 12px;">
+                ${result.type === 'free' ? 'Free' : 'Premium'} - ${priceText}
+              </span>
+            </div>
+            <div>
+              <span class="domain-status ${statusClass}">${statusText}</span>
+              ${result.available ? `<button onclick="selectDomainForRegistration('${result.domain.split('.')[0]}', '${result.tld}')" style="margin-left: 10px; padding: 4px 8px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">Select</button>` : ''}
+            </div>
+          </div>
+        `;
+      });
+      
+      resultsEl.innerHTML = html;
+    }
+
+    function selectDomainForRegistration(domainName, tld) {
+      document.getElementById('domainName').value = domainName;
+      
+      // Clear both selects first
+      document.getElementById('freeTld').value = '';
+      document.getElementById('featuredTld').value = '';
+      
+      // Select appropriate TLD
+      if (CONFIG.FREE_TLDS.includes(tld)) {
+        document.getElementById('freeTld').value = tld;
+      } else {
+        document.getElementById('featuredTld').value = tld;
+      }
+      
+      updateRegisterTotal();
+      
+      // Scroll to registration section
+      document.getElementById('domains').scrollIntoView({ behavior: 'smooth' });
+      
+      showStatus(`Domain ${domainName}.${tld} selected for registration!`, 'success');
+    }
+
+    async function bulkCheckDomains() {
+      const bulkInput = document.getElementById('bulkInput').value.trim();
+      if (!bulkInput) {
+        showStatus('Please enter domain names to check', 'warning');
+        return;
+      }
+
+      const domainNames = bulkInput.split('\n').map(name => name.trim()).filter(name => name);
+      if (domainNames.length === 0) {
+        showStatus('Please enter valid domain names', 'warning');
+        return;
+      }
+
+      setButtonLoading('bulkCheckBtn', true);
+      
+      try {
+        const resultsEl = document.getElementById('bulkResults');
+        resultsEl.innerHTML = '<p style="color: #64b5f6;">Checking domains...</p>';
+        resultsEl.style.display = 'block';
+
+        const allResults = [];
+        
+        for (const domainName of domainNames) {
+          const validation = validateDomainName(domainName);
+          if (!validation.valid) {
+            continue;
+          }
+
+          for (const tld of CONFIG.ALSANIA_TLDS) {
+            const availability = await checkDomainAvailability(domainName, tld);
+            allResults.push({
+              domain: `${domainName}.${tld}`,
+              tld: tld,
+              available: availability.available,
+              price: CONFIG.FREE_TLDS.includes(tld) ? 0 : CONFIG.PRICES.FEATURED_TLD,
+              type: CONFIG.FREE_TLDS.includes(tld) ? 'free' : 'premium'
+            });

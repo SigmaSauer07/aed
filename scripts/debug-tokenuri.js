@@ -52,8 +52,16 @@ async function main() {
   // Step 4: Try tokenURI
   console.log("\n🔍 Step 4: Testing tokenURI...");
   try {
-    const tokenURI = await aed.tokenURI(1);
-    console.log("✅ Token URI retrieved:", tokenURI.substring(0, 100) + "...");
+    // Get user's first domain instead of assuming tokenId=1
+    const userDomains = await aed.getUserDomains(deployer.address);
+    if (userDomains.length > 0) {
+      const firstDomain = userDomains[0];
+      const firstTokenId = await aed.getTokenIdByDomain(firstDomain);
+      const tokenURI = await aed.tokenURI(firstTokenId);
+      console.log(`✅ Token URI for ${firstDomain} (tokenId: ${firstTokenId}):`, tokenURI.substring(0, 100) + "...");
+    } else {
+      console.log("⚠️  No domains found for this user");
+    }
     
     // Decode the base64 to see the actual JSON
     if (tokenURI.startsWith("data:application/json;base64,")) {

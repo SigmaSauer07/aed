@@ -1,10 +1,11 @@
 const { ethers } = require("hardhat");
+const { getLatestAddresses } = require("./utils");
 
 async function main() {
     console.log("🔍 Testing Current AED Deployment on Amoy...\n");
-    
-    // Get the deployed contract address
-    const addresses = require("../amoy-upgradeable-addresses.json");
+
+    // Get the deployed contract address using consistent resolution
+    const addresses = getLatestAddresses();
     const proxyAddress = addresses.proxy;
     
     console.log("📋 Contract Addresses:");
@@ -47,10 +48,12 @@ async function main() {
             // Get domain info if registered
             if (isRegistered) {
                 try {
-                    const domainInfo = await contract.getDomainInfo(i + 1); // Assuming tokenId = index + 1
+                    // Get the actual tokenId from contract instead of assuming index + 1
+                    const tokenId = await contract.getTokenIdByDomain(domain);
+                    const domainInfo = await contract.getDomainInfo(tokenId);
                     console.log(`     Owner: ${domainInfo.owner}`);
                     console.log(`     TLD: ${domainInfo.tld}`);
-                    console.log(`     Expires: ${new Date(domainInfo.expiresAt * 1000).toISOString()}`);
+                    console.log(`     Expires: ${new Date(Number(domainInfo.expiresAt) * 1000).toISOString()}`);
                 } catch (error) {
                     console.log(`     Error getting domain info: ${error.message}`);
                 }
@@ -61,8 +64,11 @@ async function main() {
         if (userDomains.length > 0) {
             console.log("\n🖼️  Testing TokenURI for first domain:");
             try {
-                const tokenURI = await contract.tokenURI(1);
-                console.log(`TokenURI: ${tokenURI.substring(0, 100)}...`);
+                // Get the actual tokenId for the first domain
+                const firstDomain = userDomains[0];
+                const firstTokenId = await contract.getTokenIdByDomain(firstDomain);
+                const tokenURI = await contract.tokenURI(firstTokenId);
+                console.log(`TokenURI for ${firstDomain} (tokenId: ${firstTokenId}): ${tokenURI.substring(0, 100)}...`);
                 
                 // Decode base64 JSON
                 const jsonData = tokenURI.replace("data:application/json;base64,", "");

@@ -112,7 +112,9 @@
             updates and exclusive invites.
         </p>
         <form id="signupForm" class="signup-form">
-            <input type="email" id="signupEmail" placeholder="Enter your email" required />
+            <label for="signupEmail" class="sr-only">Email address for beta waitlist</label>
+            <input type="email" id="signupEmail" name="email" placeholder="Enter your email" autocomplete="email" required aria-describedby="emailHelp" />
+            <div id="emailHelp" class="sr-only">Enter your email address to join our beta waitlist and receive updates</div>
             <button type="submit" class="cta-button">Join Waitlist</button>
         </form>
         <div id="signupMessage" class="signup-message"></div>

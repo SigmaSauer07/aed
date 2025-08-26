@@ -12,8 +12,9 @@ async function main() {
   if (balance === 0n) {
     console.log("\n❌ No funds available!");
     console.log("🔗 Get testnet MATIC from:");
-    console.log("   - Amoy Faucet: https://www.amoy.polygonscan.com/faucet");
     console.log("   - Polygon Faucet: https://faucet.polygon.technology/");
+    console.log("   - QuickNode Amoy Faucet: https://faucet.quicknode.com/polygon/amoy");
+    console.log("   - Alchemy Polygon Faucet: https://www.alchemy.com/faucets/polygon-amoy");
     console.log("   - Or use a different account with funds");
   } else {
     console.log("\n✅ Sufficient funds available for deployment!");

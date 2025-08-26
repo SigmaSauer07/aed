@@ -6,8 +6,14 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Minting with account:", deployer.address);
   
-  // Contract addresses from Amoy deployment
-  const addresses = require("../amoy-upgradeable-addresses.json");
+  // Load addresses from deployment
+  let addresses;
+  if (fs.existsSync('amoy-addresses-secure.json')) {
+    addresses = JSON.parse(fs.readFileSync('amoy-addresses-secure.json', 'utf8'));
+  } else {
+    // Fallback to upgradeable addresses
+    addresses = require("../amoy-upgradeable-addresses.json");
+  }
   const AED_PROXY_ADDRESS = addresses.proxy;
   
   // Connect to the AED contract

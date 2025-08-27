@@ -7,6 +7,8 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "./core/AppStorage.sol";
 import "./libraries/LibAppStorage.sol";
 import "./core/AEDConstants.sol";
+import "@openzeppelin/contracts/utils/Base64.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract AEDMinimal is 
     UUPSUpgradeable,
@@ -14,6 +16,9 @@ contract AEDMinimal is
     AccessControlUpgradeable,
     AEDConstants
 {
+    // ERC-4906 metadata update events for marketplaces
+    event MetadataUpdate(uint256 _tokenId);
+    event BatchMetadataUpdate(uint256 _fromTokenId, uint256 _toTokenId);
     using LibAppStorage for AppStorage;
     
     modifier onlyAdmin() {
@@ -62,6 +67,8 @@ contract AEDMinimal is
     }
     
     function _authorizeUpgrade(address) internal onlyRole(DEFAULT_ADMIN_ROLE) override {}
+    
+
     
     // Core domain registration
     function registerDomain(
@@ -186,6 +193,11 @@ contract AEDMinimal is
         return LibAppStorage.appStorage().userDomains[user];
     }
     
+    function getDomainInfo(uint256 tokenId) external view returns (Domain memory) {
+        require(LibAppStorage.appStorage().owners[tokenId] != address(0), "Token does not exist");
+        return LibAppStorage.appStorage().domains[tokenId];
+    }
+    
     function getFeaturePrice(string calldata feature) external view returns (uint256) {
         return LibAppStorage.appStorage().enhancementPrices[feature];
     }
@@ -215,19 +227,70 @@ contract AEDMinimal is
     
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         require(LibAppStorage.appStorage().owners[tokenId] != address(0), "Token does not exist");
-        string memory domain = LibAppStorage.appStorage().tokenIdToDomain[tokenId];
-        return string(abi.encodePacked("https://api.alsania.io/metadata/", domain));
+        AppStorage storage s = LibAppStorage.appStorage();
+
+        // 1) Per-token override (e.g., ipfs://CID/123.json or https://host/123.json)
+        if (bytes(s.tokenURIs[tokenId]).length > 0) {
+            return s.tokenURIs[tokenId];
+        }
+        // Preload info for path logic
+        string memory domain = s.tokenIdToDomain[tokenId];
+        Domain memory domainInfo = s.domains[tokenId];
+
+        // 2) External base URI configured: return baseURI + (domain|sub)/<tokenId>.json
+        if (bytes(s.baseURI).length > 0) {
+            string memory folder = domainInfo.isSubdomain ? "sub/" : "domain/";
+            return string(abi.encodePacked(s.baseURI, folder, _toString(tokenId), ".json"));
+        }
+
+        // 3) Fallback: on-chain base64 JSON (wallets that support data: URIs)
+
+        // Choose default image if none set
+        string memory imageURI = bytes(s.imageURIs[tokenId]).length > 0
+            ? s.imageURIs[tokenId]
+            : (domainInfo.isSubdomain
+                ? "https://moccasin-obvious-mongoose-68.mypinata.cloud/ipfs/bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/subdomain_background.png"
+                : "https://moccasin-obvious-mongoose-68.mypinata.cloud/ipfs/bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/domain_background.png");
+
+        string memory json = string(abi.encodePacked(
+            '{"name":"', domain, '",',
+            '"description":"Alsania Enhanced Domain - ', domain, '",',
+            '"image":"', imageURI, '",',
+            '"external_url":"https://alsania.io/domain/', domain, '",',
+            '"attributes":[',
+                '{"trait_type":"TLD","value":"', domainInfo.tld, '"},',
+                '{"trait_type":"Subdomains","value":', _toString(domainInfo.subdomainCount), '},',
+                '{"trait_type":"Type","value":"', domainInfo.isSubdomain ? "Subdomain" : "Domain", '"},',
+                '{"trait_type":"Features Enabled","value":', _toString(_getFeatureCount(tokenId)), '}',
+            ']}'
+        ));
+        return string(abi.encodePacked("data:application/json;base64,", Base64.encode(bytes(json))));
+    }
+
+    // Admin: set external baseURI (e.g., https://gateway.pinata.cloud/ipfs/<CID>/ )
+    function setBaseURI(string calldata newBaseURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        LibAppStorage.appStorage().baseURI = newBaseURI;
+        emit BatchMetadataUpdate(1, type(uint256).max);
+    }
+
+    // Admin: set per-token URI override
+    function setTokenURI(uint256 tokenId, string calldata newURI) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(LibAppStorage.appStorage().owners[tokenId] != address(0), "Token does not exist");
+        LibAppStorage.appStorage().tokenURIs[tokenId] = newURI;
+        emit MetadataUpdate(tokenId);
     }
     
     // Admin functions
     function setProfileURI(uint256 tokenId, string calldata uri) external {
         require(LibAppStorage.appStorage().owners[tokenId] == msg.sender, "Not owner");
         LibAppStorage.appStorage().profileURIs[tokenId] = uri;
+        emit MetadataUpdate(tokenId);
     }
     
     function setImageURI(uint256 tokenId, string calldata uri) external {
         require(LibAppStorage.appStorage().owners[tokenId] == msg.sender, "Not owner");
         LibAppStorage.appStorage().imageURIs[tokenId] = uri;
+        emit MetadataUpdate(tokenId);
     }
     
     function setReverse(string calldata domain) external {
@@ -289,4 +352,85 @@ contract AEDMinimal is
     function supportsInterface(bytes4 interfaceId) public view override(ERC721Upgradeable, AccessControlUpgradeable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
+    
+    // Helper functions for metadata
+    function _generateDefaultImage(string memory domain, bool isSubdomain) internal pure returns (string memory) {
+    // Alsania brand colors
+    // Midnight Navy (Core Background): #0A2472
+        // Neon Green (Core Accent): #39FF14
+        string memory bgColor = isSubdomain ? "#071A52" : "#0A2472"; // darker blue for subdomains, core navy for domains
+        string memory textColor = "#39FF14"; // Neon green (brand)
+    
+    string memory svg = string(abi.encodePacked(
+    '<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">',
+    '<rect width="400" height="400" fill="', bgColor, '"/>',
+    '<rect x="20" y="20" width="360" height="360" fill="none" stroke="', textColor, '" stroke-width="2"/>',
+    '<text x="200" y="180" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle" fill="', textColor, '">',
+    _truncateString(domain, 24),
+    '</text>',
+    '<text x="200" y="220" font-family="monospace" font-size="12" text-anchor="middle" fill="', textColor, '">',
+    isSubdomain ? "Subdomain" : "Domain",
+    '</text>',
+    '<text x="200" y="250" font-family="monospace" font-size="10" text-anchor="middle" fill="#888">',
+    'Alsania Enhanced Domain',
+    '</text>',
+    '</svg>'
+    ));
+    
+    return string(abi.encodePacked(
+        "data:image/svg+xml;base64,",
+            Base64.encode(bytes(svg))
+        ));
+    }
+    
+    function _getFeatureCount(uint256 tokenId) internal view returns (uint256) {
+        AppStorage storage s = LibAppStorage.appStorage();
+        uint256 features = s.domainFeatures[tokenId];
+        uint256 count = 0;
+        
+        // Count bits set in features
+        while (features > 0) {
+            if (features & 1 == 1) {
+                count++;
+            }
+            features >>= 1;
+        }
+        
+        return count;
+    }
+    
+    function _toString(uint256 value) internal pure returns (string memory) {
+        if (value == 0) {
+            return "0";
+        }
+        uint256 temp = value;
+        uint256 digits;
+        while (temp != 0) {
+            digits++;
+            temp /= 10;
+        }
+        bytes memory buffer = new bytes(digits);
+        while (value != 0) {
+            digits -= 1;
+            buffer[digits] = bytes1(uint8(48 + uint256(value % 10)));
+            value /= 10;
+        }
+        return string(buffer);
+    }
+    
+    function _truncateString(string memory str, uint256 maxLength) internal pure returns (string memory) {
+        bytes memory strBytes = bytes(str);
+        if (strBytes.length <= maxLength) {
+            return str;
+        }
+        
+        bytes memory truncated = new bytes(maxLength - 3);
+        for (uint256 i = 0; i < maxLength - 3; i++) {
+            truncated[i] = strBytes[i];
+        }
+        
+        return string(abi.encodePacked(truncated, "..."));
+    }
+    
+
 }

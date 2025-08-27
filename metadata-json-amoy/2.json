@@ -1,0 +1,24 @@
+{
+  "name": "sub.bgcheck.alsania",
+  "description": "Alsania Enhanced Domain - sub.bgcheck.alsania",
+  "external_url": "https://alsania.io/domain/sub.bgcheck.alsania",
+  "image": "https://moccasin-obvious-mongoose-68.mypinata.cloud/ipfs/bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/subdomain_background.png",
+  "attributes": [
+    {
+      "trait_type": "TLD",
+      "value": "bgcheck.alsania"
+    },
+    {
+      "trait_type": "Subdomains",
+      "value": 0
+    },
+    {
+      "trait_type": "Type",
+      "value": "Subdomain"
+    },
+    {
+      "trait_type": "Features Enabled",
+      "value": 1
+    }
+  ]
+}

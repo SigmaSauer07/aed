@@ -1,0 +1,15 @@
+{
+  "proxy": "0xbA048371f2cCA1dDfC0eC3F3058381D02A41398D",
+  "results": [
+    {
+      "name": "bgcheck.alsania",
+      "tokenId": "1",
+      "path": "metadata-json-amoy/1.json"
+    },
+    {
+      "name": "sub.bgcheck.alsania",
+      "tokenId": "2",
+      "path": "metadata-json-amoy/2.json"
+    }
+  ]
+}

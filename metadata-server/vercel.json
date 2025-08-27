@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "metadata-server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "metadata-server.js"
+    }
+  ],
+  "functions": {
+    "metadata-server.js": {
+      "maxDuration": 30
+    }
+  }
+}

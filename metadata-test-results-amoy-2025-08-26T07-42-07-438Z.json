@@ -1,0 +1,47 @@
+{
+  "domains": [
+    {
+      "domain": "echo.fx",
+      "tokenId": "2",
+      "cost": "3.0",
+      "txHash": "0x19bf695aefb61ce84364efa87b83cea1fd2a069f74a0c290df3d3f361fde6ea1"
+    },
+    {
+      "domain": "alsania.echo",
+      "tokenId": "3",
+      "cost": "3.0",
+      "txHash": "0xb6a50f57fe94ecf62491789ca95e5d9bcd6c27c4befb2d05ff4685b6756fb20e"
+    }
+  ],
+  "subdomains": [],
+  "metadataTests": [],
+  "failed": [
+    {
+      "domain": "sigmasauer07.aed",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "sigmasauer07.alsania",
+      "error": "execution reverted: Token does not exist"
+    },
+    {
+      "domain": "echo.alsa",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    },
+    {
+      "domain": "alsania.07",
+      "error": "Cannot mix BigInt and other types, use explicit conversions"
+    }
+  ],
+  "testSummary": {
+    "totalDomains": 2,
+    "totalSubdomains": 0,
+    "metadataTests": 0,
+    "successfulMetadata": 0,
+    "withImages": 0,
+    "withSVG": 0,
+    "failedOperations": 4
+  },
+  "contractAddress": "0xFC81A3Ab2A7112da7E8721b95703DFA05a381071",
+  "timestamp": "2025-08-26T07:42:07.438Z"
+}

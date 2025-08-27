@@ -3,10 +3,11 @@
 // Reads on-chain data (name, type, image/profile overrides) and returns JSON
 
 import express from 'express';
+import { ethers } from 'ethers';
 
 // CONFIG via env
 const RPC_URL = process.env.AMOY_RPC || process.env.RPC_URL;
-const CONTRACT = process.env.CONTRACT_ADDRESS; // e.g. 0x3Bf795D47f7B32f36cbB1222805b0E0c5EF066f1
+const CONTRACT = process.env.CONTRACT_ADDRESS; // e.g. 0xd0E5EB4C244d0e641ee10EAd309D3F6DC627F63E
 
 // Load ABI (minimal subset)
 const ABI = [
@@ -35,9 +36,6 @@ async function initializeContract() {
    }
 
    try {
-      // Import ethers dynamically to avoid issues
-      const { ethers } = await import('ethers');
-
       provider = new ethers.JsonRpcProvider(RPC_URL);
       contract = new ethers.Contract(CONTRACT, ABI, provider);
 

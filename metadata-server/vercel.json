@@ -14,11 +14,9 @@
   ],
   "functions": {
     "metadata-server.js": {
-      "maxDuration": 30,
-      "memory": 1024
+      "maxDuration": 30
     }
   },
-  "regions": ["fra1", "cdg1"],
   "headers": [
     {
       "source": "/(.*)\\.json",

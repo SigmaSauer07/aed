@@ -70,6 +70,7 @@ struct AppStorage {
     mapping(uint256 => string) tokenURIs;
     mapping(uint256 => string) profileURIs;
     mapping(uint256 => string) imageURIs;
+    string globalDescription; // Admin-set description for all domain metadata
     
     // Reverse Resolution Storage
     mapping(address => string) reverseRecords;

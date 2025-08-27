@@ -67,6 +67,15 @@ contract AEDAdmin is ModuleBase {
     function unpause() external onlyAdmin {
         LibAdmin.unpauseContract();
     }
+
+    function setGlobalDescription(string calldata description) external onlyAdmin {
+        AppStorage storage s = LibAppStorage.appStorage();
+        s.globalDescription = description;
+    }
+
+    function getGlobalDescription() external view returns (string memory) {
+        return LibAppStorage.appStorage().globalDescription;
+    }
     
     function moduleId() external pure override returns (bytes32) {
         return keccak256("AED_ADMIN");

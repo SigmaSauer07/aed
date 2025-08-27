@@ -115,3 +115,5 @@ The server automatically reads:
 - 1GB memory allocation
 - Caching headers for metadata endpoints
 - Regional deployment (Europe) for lower latency
+
+deploying to vercel

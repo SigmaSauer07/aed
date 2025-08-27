@@ -24,7 +24,7 @@
 - **Always write tests.** Unit, integration, and end-to-end tests required.
 - **Never leak secrets.** Keep private keys offline and encrypted.
 - **Use consistent naming conventions.** Follow established standards.
-- **Keep codebase organized.** Use clear folder structures and modular components.
+- **Keep codebase organized.** Use clear folder structures and modular components. **Remove unused/deprecated files/folders but never delete a file or folder**, if a file needs to be removed completely, put it in the "Deprecated" folder. if there is not a "Deprecated" folder in the project repo, create it and add the unused files/folders as needed
 - **Avoid magic numbers.** Use constants instead of hardcoded values.
 - **Follow best practices.** Security audits, gas optimizations, etc.
 - **Document everything.** Clear comments, READMEs, and comprehensive guides.
@@ -57,7 +57,7 @@
 
 ## 📊 5. MONETIZATION & FEES
 - Users must **never guess fees or prices.**
-- Pricing must be **fixed**, transparent, and only set by admins.
+- Pricing must be **fixed** for users, transparent, and only set by admins.
 - Domains, enhancements, NFTs, and tokens must show **exact gas + product fee** before confirming.
 - Only approved wallets (e.g., `0x78dB...`) may receive funds unless changed by admin role.
 
@@ -103,6 +103,6 @@
 - If uncertain: **ask before you act.**
 - Alsania agents should be loyal, smart, secure, and **built with soul**.
 
-## ✅ Embed Signature (Optional)
+## ✅ Embed Signature
 # Aligned with the Alsania AI Protocol v1.0
-# For Sigma. Powered by Echo.
+# Imagined by Sigma. Powered by Echo.

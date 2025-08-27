@@ -1,22 +1,47 @@
 // ===== Configuration =====
 const CONTRACT_ADDRESS = '0x3Bf795D47f7B32f36cbB1222805b0E0c5EF066f1';
-const AED_ABI = [js/aedABI.json]
-
+let AED_ABI = null; // Will be loaded dynamically
 let provider, signer, contract, selectedMultiplier = 2;
+
+// ===== Load ABI =====
+async function loadABI() {
+   try {
+      const response = await fetch('./js/aedABI.json');
+      const abiData = await response.json();
+      AED_ABI = abiData.abi;
+      console.log('ABI loaded successfully');
+   } catch (error) {
+      console.error('Failed to load ABI:', error);
+   }
+}
 
 // ===== Wallet Connect / Disconnect =====
 async function connectWallet() {
-  if (!window.ethereum) return alert("Install MetaMask!");
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  signer = provider.getSigner();
-  contract = new ethers.Contract(CONTRACT_ADDRESS, AED_ABI, signer);
-  const addr = await signer.getAddress();
+   if (!window.ethereum) return alert("Install MetaMask!");
+   if (!AED_ABI) {
+      await loadABI();
+      if (!AED_ABI) return alert("Failed to load contract ABI");
+   }
 
-  document.getElementById("walletStatus").innerText = `Connected: ${addr.slice(0,6)}...${addr.slice(-4)}`;
-  const btn = document.getElementById("connectBtn");
-  btn.textContent = "Disconnect";
-  btn.onclick = disconnectWallet;
+   provider = new ethers.providers.Web3Provider(window.ethereum);
+   await provider.send("eth_requestAccounts", []);
+   signer = provider.getSigner();
+   contract = new ethers.Contract(CONTRACT_ADDRESS, AED_ABI, signer);
+   const addr = await signer.getAddress();
+
+   document.getElementById("walletStatus").innerText = `Connected: ${addr.slice(0,6)}...${addr.slice(-4)}`;
+   const btn = document.getElementById("connectBtn");
+   btn.textContent = "Disconnect";
+   btn.onclick = disconnectWallet;
+
+   // Make contract available globally for other components
+   window.contract = contract;
+   window.signer = signer;
+
+   // Load global description if manager is available
+   if (window.globalDescriptionManager) {
+      window.globalDescriptionManager.loadCurrentDescription();
+   }
 }
 
 function disconnectWallet() {
@@ -157,10 +182,51 @@ async function updateSubdomainTiered() {
   status.innerText = `✅ Tiered pricing set: ${base} × ${selectedMultiplier}`;
 }
 
+// ===== Component Loading =====
+async function loadComponents() {
+   // Load Global Description Component
+   const globalDescContent = document.getElementById('global-description-content');
+   if (globalDescContent) {
+      try {
+         const response = await fetch('./components/global-description.html');
+         const html = await response.text();
+         globalDescContent.innerHTML = html;
+
+         // Load CSS if not already loaded
+         if (!document.querySelector('link[href="./css/global-description.css"]')) {
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = './css/global-description.css';
+            document.head.appendChild(link);
+         }
+
+         // Load JavaScript
+         const script = document.createElement('script');
+         script.src = './js/global-description.js';
+         script.type = 'text/javascript';
+         document.head.appendChild(script);
+
+         console.log('Global Description component loaded');
+      } catch (error) {
+         console.error('Failed to load Global Description component:', error);
+      }
+   }
+}
+
 // ===== Initialization =====
-document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("connectBtn").onclick = connectWallet;
-  document.getElementById("updateSubdomainTieredBtn").onclick = updateSubdomainTiered;
+document.addEventListener("DOMContentLoaded", async () => {
+   // Load ABI first
+   await loadABI();
+
+   // Load components
+   await loadComponents();
+
+   // Set up event listeners
+   const connectBtn = document.getElementById("connectBtn");
+   const updateBtn = document.getElementById("updateSubdomainTieredBtn");
+
+   if (connectBtn) connectBtn.onclick = connectWallet;
+   if (updateBtn) updateBtn.onclick = updateSubdomainTiered;
 
   const display = document.getElementById("multiplierDisplay");
   const dropdown = document.getElementById("multiplierDropdown");

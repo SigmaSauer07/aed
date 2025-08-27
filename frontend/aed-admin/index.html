@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AED Admin Dashboard</title>
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/global-description.css">
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans&family=Orbitron:wght@600&family=Rajdhani:wght@500&display=swap" rel="stylesheet">
   <style>
 
@@ -25,6 +26,7 @@
     <!-- Navigation Tabs -->
     <div class="nav-tabs">
       <div class="nav-tab active" data-tab="overview">📊 Overview</div>
+      <div class="nav-tab" data-tab="global-description">📝 Global Description</div>
       <div class="nav-tab" data-tab="roles">👥 Roles</div>
       <div class="nav-tab" data-tab="tlds">🌐 TLDs</div>
       <div class="nav-tab" data-tab="fees">💰 Fees</div>
@@ -81,6 +83,13 @@
           </div>
           <div id="contractStatus" class="status-display"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Global Description Tab -->
+    <div class="tab-content" id="global-description">
+      <div id="global-description-content">
+        <!-- Content will be loaded here by component-loader.js -->
       </div>
     </div>
 

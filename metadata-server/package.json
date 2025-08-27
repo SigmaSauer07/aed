@@ -9,6 +9,11 @@
   },
   "scripts": {
     "dev": "node metadata-server.js",
-    "start": "node metadata-server.js"
+    "start": "node metadata-server.js",
+    "build": "echo 'No build step required'",
+    "vercel-deploy": "vercel --prod"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

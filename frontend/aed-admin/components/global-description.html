@@ -1,0 +1,35 @@
+<div class="global-description-container">
+    <div class="global-description-card">
+        <div class="global-description-header">
+            <div class="global-description-icon">📝</div>
+            <div>
+                <h3 class="global-description-title">Global Description</h3>
+                <p class="global-description-subtitle">Set a description that appears on all domain and subdomain metadata</p>
+            </div>
+        </div>
+
+        <form class="global-description-form">
+            <textarea
+                id="global-desc-input"
+                class="global-description-textarea"
+                placeholder="Enter a global description that will appear on all domain and subdomain metadata. This description will be visible to users when they view NFT details on marketplaces like OpenSea."
+                maxlength="1000"
+            ></textarea>
+
+            <div class="global-description-actions">
+                <button type="button" id="set-global-description-btn" class="global-description-button">
+                    Update Description
+                </button>
+            </div>
+
+            <div id="global-description-status" class="global-description-status"></div>
+        </form>
+
+        <div class="global-description-preview">
+            <h4 class="global-description-preview-title">Preview:</h4>
+            <div class="global-description-preview-card">
+                <p id="description-preview" class="preview-description">No description set</p>
+            </div>
+        </div>
+    </div>
+</div>

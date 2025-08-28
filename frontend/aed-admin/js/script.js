@@ -1,5 +1,5 @@
 // ===== Configuration =====
-const CONTRACT_ADDRESS = '0x3Bf795D47f7B32f36cbB1222805b0E0c5EF066f1';
+const CONTRACT_ADDRESS = '0x8dc59aA8e9AA8B9fd01AF747608B4a28b728F539'; // Updated Amoy proxy address
 let AED_ABI = null; // Will be loaded dynamically
 let provider, signer, contract, selectedMultiplier = 2;
 
@@ -23,13 +23,13 @@ async function connectWallet() {
       if (!AED_ABI) return alert("Failed to load contract ABI");
    }
 
-   provider = new ethers.providers.Web3Provider(window.ethereum);
+   provider = new ethers.BrowserProvider(window.ethereum);
    await provider.send("eth_requestAccounts", []);
-   signer = provider.getSigner();
+   signer = await provider.getSigner();
    contract = new ethers.Contract(CONTRACT_ADDRESS, AED_ABI, signer);
    const addr = await signer.getAddress();
 
-   document.getElementById("walletStatus").innerText = `Connected: ${addr.slice(0,6)}...${addr.slice(-4)}`;
+   document.getElementById("walletAddress").innerText = `Connected: ${addr.slice(0,6)}...${addr.slice(-4)}`;
    const btn = document.getElementById("connectBtn");
    btn.textContent = "Disconnect";
    btn.onclick = disconnectWallet;
@@ -46,13 +46,14 @@ async function connectWallet() {
 
 function disconnectWallet() {
   provider = signer = contract = null;
-  document.getElementById("walletStatus").innerText = "Wallet: Not connected";
+  document.getElementById("walletAddress").innerText = "Wallet: Not connected";
   const btn = document.getElementById("connectBtn");
   btn.textContent = "Connect Wallet";
   btn.onclick = connectWallet;
 }
 
-window.addEventListener('load', connect);
+// Remove this line as connect function doesn't exist
+// window.addEventListener('load', connect);
 
 async function registerDomain(){
   const name = val('domainName');
@@ -213,6 +214,29 @@ async function loadComponents() {
    }
 }
 
+// ===== Tab Navigation =====
+function setupTabNavigation() {
+   const tabs = document.querySelectorAll('.nav-tab');
+   const contents = document.querySelectorAll('.tab-content');
+
+   tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+         const targetTab = tab.dataset.tab;
+         
+         // Remove active class from all tabs and contents
+         tabs.forEach(t => t.classList.remove('active'));
+         contents.forEach(c => c.classList.remove('active'));
+         
+         // Add active class to clicked tab and corresponding content
+         tab.classList.add('active');
+         const targetContent = document.getElementById(targetTab);
+         if (targetContent) {
+            targetContent.classList.add('active');
+         }
+      });
+   });
+}
+
 // ===== Initialization =====
 document.addEventListener("DOMContentLoaded", async () => {
    // Load ABI first
@@ -220,6 +244,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
    // Load components
    await loadComponents();
+
+   // Setup tab navigation
+   setupTabNavigation();
 
    // Set up event listeners
    const connectBtn = document.getElementById("connectBtn");

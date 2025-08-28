@@ -6,9 +6,7 @@
   <title>Alsania Enhanced Domains - Web3 Domain Names</title>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&family=Orbitron:wght@600;700&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/ah.css">
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.8.0/dist/ethers.umd.min.js"></script>
-    <script src="js/index.js"></script>
-    <script src=".com/@metamask/detect-provider/dist/detect-provider.min.js"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
   <style>
     
   </style>
@@ -26,7 +24,8 @@
         <a href="#about" class="nav-link">About</a>
         <a href="#contact" class="nav-link">Contact</a>
       </nav>
-      <button class="wallet-btn">Connect Wallet</button>
+      <button class="wallet-btn" id="connectBtn">Connect Wallet</button>
+      <div class="wallet-status" id="wallet">Wallet: Not connected</div>
       <div class="mobile-menu">
         <span></span>
         <span></span>
@@ -85,7 +84,8 @@
 
       <div class="checkbox-group">
         <label>
-          <span>Premium TLD's only $1. Bonus: Unlock early access to beta features!</span>
+          <input type="checkbox" id="enhSubdomain">
+          <span>Add Subdomain Minting (+$2 MATIC)</span>
         </label>
       </div>
 
@@ -205,3 +205,17 @@
           </ul>
           <button class="pricing-btn">Choose Plan</button>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>&copy; 2024 Alsania Enhanced Domains. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/index.js"></script>
+</body>
+</html>

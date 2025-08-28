@@ -9,11 +9,12 @@
     "express": "^4.18.2"
   },
   "scripts": {
-    "dev": "node metadata-server.js",
-    "start": "node metadata-server.js",
-    "build": "echo 'No build step required'",
-    "vercel-deploy": "vercel --prod"
-  },
+   "dev": "node metadata-server.js",
+   "start": "node metadata-server.js",
+   "build": "echo 'No build step required'",
+   "vercel-deploy": "vercel --prod",
+   "test": "node -e \"console.log('Testing environment variables...'); console.log('RPC_URL:', process.env.AMOY_RPC ? 'Set' : 'NOT SET'); console.log('CONTRACT:', process.env.CONTRACT_ADDRESS ? 'Set' : 'NOT SET');\""
+ },
   "engines": {
     "node": ">=18.0.0"
   }

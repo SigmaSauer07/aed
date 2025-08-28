@@ -150,6 +150,53 @@ app.get('/debug', (req, res) => {
    res.json(debug);
 });
 
+// Test contract connectivity
+app.get('/test-contract', async (req, res) => {
+   try {
+      // Import ethers dynamically
+      const { ethers } = await import('ethers');
+
+      const provider = new ethers.JsonRpcProvider(process.env.AMOY_RPC);
+      const testContract = new ethers.Contract(process.env.CONTRACT_ADDRESS, ABI, provider);
+
+      // Try to get basic contract info
+      const tests = {
+         contractAddress: process.env.CONTRACT_ADDRESS,
+         rpcUrl: process.env.AMOY_RPC ? `${process.env.AMOY_RPC.substring(0, 30)}...` : 'NOT SET'
+      };
+
+      // Test different token IDs
+      const tokenTests = [];
+      for (let i = 1; i <= 5; i++) {
+         try {
+            const domain = await testContract.getDomainByTokenId(i);
+            tokenTests.push({ tokenId: i, domain, exists: true });
+         } catch (error) {
+            tokenTests.push({ tokenId: i, error: error.message, exists: false });
+         }
+      }
+
+      tests.tokens = tokenTests;
+
+      // Test global description
+      try {
+         const globalDesc = await testContract.getGlobalDescription();
+         tests.globalDescription = globalDesc;
+      } catch (error) {
+         tests.globalDescriptionError = error.message;
+      }
+
+      res.json(tests);
+   } catch (error) {
+      res.status(500).json({
+         error: 'Contract test failed',
+         details: error.message,
+         contractAddress: process.env.CONTRACT_ADDRESS,
+         rpcUrl: process.env.AMOY_RPC ? 'Set' : 'NOT SET'
+      });
+   }
+});
+
 // Export for Vercel
 export default app;
 

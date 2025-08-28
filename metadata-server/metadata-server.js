@@ -179,12 +179,25 @@ app.get('/test-contract', async (req, res) => {
 
       // Test different token IDs
       const tokenTests = [];
-      for (let i = 1; i <= 5; i++) {
+      for (let i = 1; i <= 15; i++) {
          try {
-            const domain = await testContract.getDomainByTokenId(i);
-            tokenTests.push({ tokenId: i, domain, exists: true });
+            const info = await testContract.getDomainInfo(i);
+            const domain = `${info.name}.${info.tld}`;
+            tokenTests.push({
+               tokenId: i,
+               domain,
+               name: info.name,
+               tld: info.tld,
+               owner: info.owner,
+               isSubdomain: info.isSubdomain,
+               exists: true
+            });
          } catch (error) {
-            tokenTests.push({ tokenId: i, error: error.message, exists: false });
+            tokenTests.push({
+               tokenId: i,
+               error: error.message,
+               exists: false
+            });
          }
       }
 

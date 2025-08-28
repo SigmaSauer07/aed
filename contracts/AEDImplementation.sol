@@ -295,6 +295,15 @@ contract AEDImplementation is
         return tokenId;
     }
     
+    function totalSupply() external view returns (uint256) {
+        AppStorage storage s = LibAppStorage.appStorage();
+        return s.nextTokenId - 1;
+    }
+    
+    function contractURI() external pure returns (string memory) {
+        return LibMetadata.contractURI();
+    }
+    
     // ===== ERC721 OVERRIDES =====
     
     function ownerOf(uint256 tokenId) public view override returns (address) {
@@ -339,11 +348,7 @@ contract AEDImplementation is
         _customTransfer(from, to, tokenId);
     }
     
-    function safeTransferFromSingle(address from, address to, uint256 tokenId) public {
-        safeTransferFromWithData(from, to, tokenId, "");
-    }
-    
-    function safeTransferFromWithData(address from, address to, uint256 tokenId, bytes memory data) public {
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
         _customSafeTransfer(from, to, tokenId, data);
     }

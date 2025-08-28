@@ -46,10 +46,11 @@ class GlobalDescriptionManager {
         }
     }
 
-    async setGlobalDescription() {
+    async updateGlobalSettings() {
         if (this.isLoading) return;
 
         const description = document.getElementById('global-desc-input')?.value || '';
+        const externalSiteUrl = document.getElementById('external-site-input')?.value || '';
 
         if (!description.trim()) {
             this.showStatus('Please enter a description', 'error');
@@ -69,21 +70,27 @@ class GlobalDescriptionManager {
         this.setButtonLoading(true);
 
         try {
-            this.showStatus('Updating global description...', 'info');
+            this.showStatus('Updating global settings...', 'info');
 
+            // Save external site URL to localStorage (since it's not stored on-chain)
+            if (externalSiteUrl.trim()) {
+                localStorage.setItem('aed-external-site-url', externalSiteUrl.trim());
+            }
+
+            // Update on-chain description
             const tx = await this.contract.setGlobalDescription(description);
             await tx.wait();
 
-            this.showStatus('✅ Global description updated successfully!', 'success');
+            this.showStatus('✅ Global settings updated successfully!', 'success');
 
-            // Reload the description to confirm
+            // Reload the settings to confirm
             setTimeout(() => {
                 this.loadCurrentDescription();
             }, 2000);
 
         } catch (error) {
-            console.error('Error updating description:', error);
-            let errorMessage = 'Failed to update description';
+            console.error('Error updating settings:', error);
+            let errorMessage = 'Failed to update settings';
 
             if (error.code === 4001) {
                 errorMessage = 'Transaction cancelled by user';
@@ -145,7 +152,7 @@ class GlobalDescriptionManager {
             if (loading) {
                 button.innerHTML = '<div class="spinner"></div> Updating...';
             } else {
-                button.innerHTML = 'Update Description';
+                button.innerHTML = 'Update Settings';
             }
         }
     }

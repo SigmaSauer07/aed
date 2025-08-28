@@ -1,5 +1,5 @@
 // ===== Configuration =====
-const CONTRACT_ADDRESS = '0x8dc59aA8e9AA8B9fd01AF747608B4a28b728F539'; // Updated Amoy proxy address
+const CONTRACT_ADDRESS = '0xd0E5EB4C244d0e641ee10EAd309D3F6DC627F63E'; // Latest Amoy proxy address
 let AED_ABI = null; // Will be loaded dynamically
 let provider, signer, contract, selectedMultiplier = 2;
 

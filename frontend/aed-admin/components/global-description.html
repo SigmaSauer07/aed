@@ -9,16 +9,31 @@
         </div>
 
         <form class="global-description-form">
-            <textarea
-                id="global-desc-input"
-                class="global-description-textarea"
-                placeholder="Enter a global description that will appear on all domain and subdomain metadata. This description will be visible to users when they view NFT details on marketplaces like OpenSea."
-                maxlength="1000"
-            ></textarea>
+            <div class="form-section">
+                <label for="global-desc-input" class="form-label">Global Description</label>
+                <textarea
+                    id="global-desc-input"
+                    class="global-description-textarea"
+                    placeholder="Enter a global description that will appear on all domain and subdomain metadata. This description will be visible to users when they view NFT details on marketplaces like OpenSea."
+                    maxlength="1000"
+                ></textarea>
+            </div>
+
+            <div class="form-section">
+                <label for="external-site-input" class="form-label">External Site URL</label>
+                <input
+                    type="url"
+                    id="external-site-input"
+                    class="external-site-input"
+                    placeholder="https://www.alsania-io.com/aed"
+                    value="https://www.alsania-io.com/aed"
+                />
+                <small class="form-help">This URL will be used as the external_url in NFT metadata</small>
+            </div>
 
             <div class="global-description-actions">
                 <button type="button" id="set-global-description-btn" class="global-description-button">
-                    Update Description
+                    Update Settings
                 </button>
             </div>
 

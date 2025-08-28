@@ -95,7 +95,7 @@ app.get('/domain/:tokenId.json', async (req, res) => {
       if (!contract) {
          const initialized = await initializeContract();
          if (!initialized) {
-            return res.status(500).json({ error: 'Contract not initialized' });
+            return res.status(500).json({ error: 'Contract not initialized', details: 'Check RPC_URL and CONTRACT_ADDRESS environment variables' });
          }
       }
 
@@ -105,7 +105,7 @@ app.get('/domain/:tokenId.json', async (req, res) => {
       res.send(JSON.stringify(json));
    } catch (e) {
       console.error('Domain metadata error:', e);
-      res.status(500).json({ error: 'failed' });
+      res.status(500).json({ error: 'failed', details: e.message });
    }
 });
 
@@ -114,7 +114,7 @@ app.get('/sub/:tokenId.json', async (req, res) => {
       if (!contract) {
          const initialized = await initializeContract();
          if (!initialized) {
-            return res.status(500).json({ error: 'Contract not initialized' });
+            return res.status(500).json({ error: 'Contract not initialized', details: 'Check RPC_URL and CONTRACT_ADDRESS environment variables' });
          }
       }
 
@@ -124,12 +124,30 @@ app.get('/sub/:tokenId.json', async (req, res) => {
       res.send(JSON.stringify(json));
    } catch (e) {
       console.error('Subdomain metadata error:', e);
-      res.status(500).json({ error: 'failed' });
+      res.status(500).json({ error: 'failed', details: e.message });
    }
 });
 
 app.get('/', (req, res) => {
    res.send('AED Metadata Server OK');
+});
+
+// Debug endpoint to check environment variables
+app.get('/debug', (req, res) => {
+   const debug = {
+      timestamp: new Date().toISOString(),
+      environment: {
+         RPC_URL_SET: !!process.env.AMOY_RPC,
+         CONTRACT_ADDRESS_SET: !!process.env.CONTRACT_ADDRESS,
+         RPC_URL_VALUE: process.env.AMOY_RPC ? `${process.env.AMOY_RPC.substring(0, 20)}...` : 'NOT SET',
+         CONTRACT_VALUE: process.env.CONTRACT_ADDRESS || 'NOT SET'
+      },
+      contract: {
+         initialized: !!contract,
+         globalDescription: globalDescription || 'None loaded'
+      }
+   };
+   res.json(debug);
 });
 
 // Export for Vercel

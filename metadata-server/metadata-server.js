@@ -63,38 +63,57 @@ async function buildJson(tokenId, isSub, globalDesc) {
    }
 
    try {
-      // Get the tokenURI from contract (this contains the metadata)
-      const tokenURI = await contract.tokenURI(tokenId);
+      // Get owner and basic info - these functions we know work
+      const owner = await contract.ownerOf(tokenId);
 
-      // If tokenURI is a data URI, parse it
-      if (tokenURI.startsWith('data:application/json;base64,')) {
-         const jsonString = Buffer.from(tokenURI.split(',')[1], 'base64').toString();
-         const metadata = JSON.parse(jsonString);
+      // Try to get tokenURI which contains the full metadata
+      let metadata = {};
+      try {
+         const tokenURI = await contract.tokenURI(tokenId);
 
-         // Add global description if available
-         if (globalDesc && globalDesc.length > 0) {
-            metadata.description = `${globalDesc}\n\n${metadata.description || ''}`;
+         // Parse the tokenURI if it's a data URI
+         if (tokenURI.startsWith('data:application/json;base64,')) {
+            const jsonString = Buffer.from(tokenURI.split(',')[1], 'base64').toString();
+            metadata = JSON.parse(jsonString);
+         } else if (tokenURI.startsWith('http')) {
+            // If it's a URL, we can't fetch it server-side, so use basic metadata
+            metadata = {
+               name: `AED Token #${tokenId}`,
+               description: globalDesc || "Alsania Enhanced Domain",
+               external_url: `https://alsania.io/token/${tokenId}`,
+               image: DOMAIN_BG
+            };
          }
-
-         return metadata;
-      } else {
-         // If tokenURI is a URL, return basic metadata
-         const owner = await contract.ownerOf(tokenId);
-         return {
+      } catch (tokenURIError) {
+         // If tokenURI fails, create basic metadata
+         metadata = {
             name: `AED Token #${tokenId}`,
             description: globalDesc || "Alsania Enhanced Domain",
             external_url: `https://alsania.io/token/${tokenId}`,
-            image: DOMAIN_BG,
-            attributes: [
-               { trait_type: 'Token ID', value: tokenId.toString() },
-               { trait_type: 'Owner', value: owner },
-               { trait_type: 'Type', value: isSub ? 'Subdomain' : 'Domain' }
-            ]
+            image: DOMAIN_BG
          };
       }
+
+      // Ensure we have basic required fields
+      if (!metadata.attributes) {
+         metadata.attributes = [];
+      }
+
+      // Add owner info to attributes
+      metadata.attributes.push({
+         trait_type: 'Owner',
+         value: owner
+      });
+
+      metadata.attributes.push({
+         trait_type: 'Token ID',
+         value: tokenId.toString()
+      });
+
+      return metadata;
+
    } catch (error) {
-      // Fallback metadata if tokenURI fails
-      const owner = await contract.ownerOf(tokenId);
+      // Ultimate fallback
       return {
          name: `AED Token #${tokenId}`,
          description: globalDesc || "Alsania Enhanced Domain",
@@ -102,7 +121,6 @@ async function buildJson(tokenId, isSub, globalDesc) {
          image: DOMAIN_BG,
          attributes: [
             { trait_type: 'Token ID', value: tokenId.toString() },
-            { trait_type: 'Owner', value: owner },
             { trait_type: 'Type', value: isSub ? 'Subdomain' : 'Domain' }
          ]
       };

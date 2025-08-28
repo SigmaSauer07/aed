@@ -65,58 +65,93 @@ async function buildJson(tokenId, isSub, globalDesc) {
    try {
       // Get owner - this function works
       const owner = await contract.ownerOf(tokenId);
+      console.log(`Building metadata for token ${tokenId}, owner: ${owner}`);
 
       // Get the contract's tokenURI which contains the domain metadata
       const tokenURI = await contract.tokenURI(tokenId);
+      console.log(`TokenURI for ${tokenId}:`, tokenURI ? tokenURI.substring(0, 100) + '...' : 'EMPTY');
 
       let metadata;
 
       // Parse the tokenURI if it's a data URI (contains domain info)
-      if (tokenURI.startsWith('data:application/json;base64,')) {
-         const jsonString = Buffer.from(tokenURI.split(',')[1], 'base64').toString();
-         metadata = JSON.parse(jsonString);
+      if (tokenURI && tokenURI.startsWith('data:application/json;base64,')) {
+         try {
+            const jsonString = Buffer.from(tokenURI.split(',')[1], 'base64').toString();
+            metadata = JSON.parse(jsonString);
+            console.log(`Parsed metadata for ${tokenId}:`, metadata);
 
-         // Use the correct background based on subdomain status
-         // Check if this is a subdomain by looking at the attributes or name
-         const isSubdomain = metadata.attributes?.some(attr =>
-            attr.trait_type === 'Type' && attr.value === 'Subdomain'
-         ) || metadata.name?.includes('.');
+            // Use the correct background based on subdomain status
+            // Check if this is a subdomain by looking at the attributes or name
+            const isSubdomain = metadata.attributes?.some(attr =>
+               attr.trait_type === 'Type' && attr.value === 'Subdomain'
+            ) || metadata.name?.includes('.');
 
-         // Update the image to use the correct background
-         metadata.image = isSubdomain ? SUB_BG : DOMAIN_BG;
+            // Update the image to use the correct background
+            metadata.image = isSubdomain ? SUB_BG : DOMAIN_BG;
 
-         // Add global description if set (don't override the domain-specific description)
-         if (globalDesc && globalDesc.length > 0 && metadata.description) {
-            metadata.description = `${globalDesc}\n\n${metadata.description}`;
+            // Add global description if set (don't override the domain-specific description)
+            if (globalDesc && globalDesc.length > 0 && metadata.description) {
+               metadata.description = `${globalDesc}\n\n${metadata.description}`;
+            }
+
+            // Add owner to attributes if not already present
+            if (!metadata.attributes.some(attr => attr.trait_type === 'Owner')) {
+               metadata.attributes.push({
+                  trait_type: 'Owner',
+                  value: owner
+               });
+            }
+
+            return metadata;
+         } catch (parseError) {
+            console.error(`Failed to parse tokenURI for ${tokenId}:`, parseError);
+            console.log('Raw tokenURI:', tokenURI);
          }
+      } else {
+         console.log(`TokenURI for ${tokenId} is not a valid data URI:`, tokenURI);
+      }
 
-         // Add owner to attributes if not already present
-         if (!metadata.attributes.some(attr => attr.trait_type === 'Owner')) {
-            metadata.attributes.push({
-               trait_type: 'Owner',
-               value: owner
-            });
-         }
+      // Try to construct domain name from other contract data
+      // Since the tokenURI didn't work, let's try to get domain info another way
+      try {
+         // Try to get basic contract data to construct a domain name
+         const contractName = await contract.name();
+         console.log(`Contract name: ${contractName}`);
 
-         return metadata;
+         // Create a meaningful domain name pattern
+         const domainName = `domain${tokenId}`;
 
-      } else if (tokenURI.startsWith('http')) {
-         // If it's a URL, we can't fetch it server-side
-         // This shouldn't happen for AED domains, but fallback just in case
          return {
-            name: `Unknown Domain #${tokenId}`,
+            name: domainName,
             description: globalDesc || "Alsania Enhanced Domain",
-            external_url: `https://alsania.io/token/${tokenId}`,
+            external_url: `https://alsania.io/domain/${domainName}`,
             image: isSub ? SUB_BG : DOMAIN_BG,
             attributes: [
                { trait_type: 'Token ID', value: tokenId.toString() },
                { trait_type: 'Owner', value: owner },
-               { trait_type: 'Type', value: isSub ? 'Subdomain' : 'Domain' }
+               { trait_type: 'Type', value: isSub ? 'Subdomain' : 'Domain' },
+               { trait_type: 'Contract', value: contractName }
             ]
          };
+      } catch (contractError) {
+         console.error(`Failed to get contract data for ${tokenId}:`, contractError);
       }
 
+      // Ultimate fallback
+      return {
+         name: `Domain #${tokenId}`,
+         description: globalDesc || "Alsania Enhanced Domain",
+         external_url: `https://alsania.io/token/${tokenId}`,
+         image: isSub ? SUB_BG : DOMAIN_BG,
+         attributes: [
+            { trait_type: 'Token ID', value: tokenId.toString() },
+            { trait_type: 'Owner', value: owner },
+            { trait_type: 'Type', value: isSub ? 'Subdomain' : 'Domain' }
+         ]
+      };
+
    } catch (error) {
+      console.error(`Error building metadata for ${tokenId}:`, error);
       // If everything fails, return minimal metadata
       return {
          name: `Domain #${tokenId}`,

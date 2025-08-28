@@ -1,5 +1,5 @@
 // ===== Configuration =====
-const CONTRACT_ADDRESS = '0xd0E5EB4C244d0e641ee10EAd309D3F6DC627F63E'; // Latest Amoy proxy address
+const CONTRACT_ADDRESS = '0x6452DCd7Bbee694223D743f09FF07c717Eeb34DF'; // Working AED contract
 let AED_ABI = null; // Will be loaded dynamically
 let provider, signer, contract, selectedMultiplier = 2;
 

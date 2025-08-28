@@ -6,7 +6,7 @@ import express from 'express';
 
 // CONFIG via env
 const RPC_URL = process.env.AMOY_RPC || process.env.RPC_URL;
-const CONTRACT = process.env.CONTRACT_ADDRESS || "0xd0E5EB4C244d0e641ee10EAd309D3F6DC627F63E"; // Latest deployment
+const CONTRACT = process.env.CONTRACT_ADDRESS || "0x6452DCd7Bbee694223D743f09FF07c717Eeb34DF"; // Working AED contract
 
 // Load ABI - Add getDomainInfo function to get actual domain data
 const ABI = [
@@ -125,7 +125,7 @@ async function buildJson(tokenId, isSub, globalDesc) {
       const metadata = {
          name: domainName,
          description: globalDesc || "Alsania Enhanced Domain",
-         external_url: `https://www.alsania-io.com/aed`,
+         external_url: `https://alsania.io/domain/${domainName}`,
          image: isSubdomain ? SUB_BG : DOMAIN_BG,
          attributes: [
             { trait_type: 'Token ID', value: tokenId.toString() },

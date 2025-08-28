@@ -12,11 +12,6 @@
       "dest": "metadata-server.js"
     }
   ],
-  "functions": {
-    "metadata-server.js": {
-      "maxDuration": 30
-    }
-  },
   "headers": [
     {
       "source": "/(.*)\\.json",

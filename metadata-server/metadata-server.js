@@ -36,6 +36,9 @@ async function initializeContract() {
    }
 
    try {
+      // Import ethers dynamically to avoid issues
+      const { ethers } = await import('ethers');
+
       provider = new ethers.JsonRpcProvider(RPC_URL);
       contract = new ethers.Contract(CONTRACT, ABI, provider);
 

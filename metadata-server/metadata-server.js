@@ -1,7 +1,7 @@
 // Simple dynamic metadata server (UD-style)
 // Serves /domain/:tokenId.json and /sub/:tokenId.json
 // Reads on-chain data (name, type, image/profile overrides) and returns JSON
-
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import express from 'express';
 
 // CONFIG via env

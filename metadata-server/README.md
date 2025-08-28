@@ -117,3 +117,4 @@ The server automatically reads:
 - Regional deployment (Europe) for lower latency
 
 deploying to vercel
+added vercel's <SpeedInsights/> badge to README

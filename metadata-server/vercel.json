@@ -9,22 +9,11 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "metadata-server.js"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)\\.json",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/json"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=300, s-maxage=3600"
-        }
-      ]
+      "dest": "metadata-server.js",
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=300, s-maxage=3600"
+      }
     }
   ]
 }

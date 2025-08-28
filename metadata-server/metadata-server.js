@@ -3,7 +3,6 @@
 // Reads on-chain data (name, type, image/profile overrides) and returns JSON
 
 import express from 'express';
-import { ethers } from 'ethers';
 
 // CONFIG via env
 const RPC_URL = process.env.AMOY_RPC || process.env.RPC_URL;

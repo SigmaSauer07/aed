@@ -8,12 +8,21 @@ import express from 'express';
 const RPC_URL = process.env.AMOY_RPC || process.env.RPC_URL;
 const CONTRACT = process.env.CONTRACT_ADDRESS; // e.g. 0xd0E5EB4C244d0e641ee10EAd309D3F6DC627F63E
 
-// Load ABI (minimal subset)
+// Load ABI (minimal subset) - Updated to match actual contract
 const ABI = [
    'function getTokenIdByDomain(string domain) view returns (uint256)',
-   'function getDomainByTokenId(uint256) view returns (string)',
    'function getDomainInfo(uint256) view returns (tuple(string name,string tld,string profileURI,string imageURI,uint256 subdomainCount,uint256 mintFee,uint64 expiresAt,bool feeEnabled,bool isSubdomain,address owner))',
    'function tokenURI(uint256) view returns (string)',
+   'function ownerOf(uint256) view returns (address)',
+   'function balanceOf(address) view returns (uint256)',
+   'function name() view returns (string)',
+   'function symbol() view returns (string)',
+   'function supportsInterface(bytes4) view returns (bool)',
+   'function getNextTokenId() view returns (uint256)',
+   'function isRegistered(string) view returns (bool)',
+   'function getUserDomains(address) view returns (string[])',
+   'function getTotalRevenue() view returns (uint256)',
+   'function registerDomain(string,address) payable',
    'function getGlobalDescription() view returns (string)',
 ];
 
@@ -61,8 +70,11 @@ async function buildJson(tokenId, isSub, globalDesc) {
       throw new Error('Contract not initialized');
    }
 
-   const domain = await contract.getDomainByTokenId(tokenId);
+   // Get domain info from contract
    const info = await contract.getDomainInfo(tokenId);
+
+   // Reconstruct full domain name from name + tld
+   const domain = `${info.name}.${info.tld}`;
 
    const image = info.imageURI && info.imageURI.length > 0 ? info.imageURI : (isSub ? SUB_BG : DOMAIN_BG);
    const attributes = [

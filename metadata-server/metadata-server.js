@@ -6,23 +6,14 @@ import express from 'express';
 
 // CONFIG via env
 const RPC_URL = process.env.AMOY_RPC || process.env.RPC_URL;
-const CONTRACT = process.env.CONTRACT_ADDRESS; // e.g. 0xd0E5EB4C244d0e641ee10EAd309D3F6DC627F63E
+const CONTRACT = process.env.CONTRACT_ADDRESS || "0x8dc59aA8e9AA8B9fd01AF747608B4a28b728F539"; // Working contract
 
-// Load ABI (minimal subset) - Updated to match actual contract
+// Load ABI - Simplified to match working contract functions
 const ABI = [
-   'function getTokenIdByDomain(string domain) view returns (uint256)',
-   'function getDomainInfo(uint256) view returns (tuple(string name,string tld,string profileURI,string imageURI,uint256 subdomainCount,uint256 mintFee,uint64 expiresAt,bool feeEnabled,bool isSubdomain,address owner))',
    'function tokenURI(uint256) view returns (string)',
    'function ownerOf(uint256) view returns (address)',
-   'function balanceOf(address) view returns (uint256)',
    'function name() view returns (string)',
    'function symbol() view returns (string)',
-   'function supportsInterface(bytes4) view returns (bool)',
-   'function getNextTokenId() view returns (uint256)',
-   'function isRegistered(string) view returns (bool)',
-   'function getUserDomains(address) view returns (string[])',
-   'function getTotalRevenue() view returns (uint256)',
-   'function registerDomain(string,address) payable',
    'function getGlobalDescription() view returns (string)',
 ];
 
@@ -55,7 +46,8 @@ async function initializeContract() {
          globalDescription = await contract.getGlobalDescription();
          console.log('Global description loaded:', globalDescription || 'None set');
       } catch (error) {
-         console.warn('Could not fetch global description:', error.message);
+         console.warn('Could not fetch global description (function may not exist):', error.message);
+         globalDescription = 'Alsania Enhanced Domain'; // Fallback
       }
 
       return true;
@@ -70,35 +62,51 @@ async function buildJson(tokenId, isSub, globalDesc) {
       throw new Error('Contract not initialized');
    }
 
-   // Get domain info from contract
-   const info = await contract.getDomainInfo(tokenId);
+   try {
+      // Get the tokenURI from contract (this contains the metadata)
+      const tokenURI = await contract.tokenURI(tokenId);
 
-   // Reconstruct full domain name from name + tld
-   const domain = `${info.name}.${info.tld}`;
+      // If tokenURI is a data URI, parse it
+      if (tokenURI.startsWith('data:application/json;base64,')) {
+         const jsonString = Buffer.from(tokenURI.split(',')[1], 'base64').toString();
+         const metadata = JSON.parse(jsonString);
 
-   const image = info.imageURI && info.imageURI.length > 0 ? info.imageURI : (isSub ? SUB_BG : DOMAIN_BG);
-   const attributes = [
-      { trait_type: 'TLD', value: info.tld },
-      { trait_type: 'Subdomains', value: Number(info.subdomainCount) },
-      { trait_type: 'Type', value: isSub ? 'Subdomain' : 'Domain' },
-      { trait_type: 'Features Enabled', value: 1 },
-   ];
+         // Add global description if available
+         if (globalDesc && globalDesc.length > 0) {
+            metadata.description = `${globalDesc}\n\n${metadata.description || ''}`;
+         }
 
-   // Build description with global description if set
-   const baseDescription = `Alsania Enhanced Domain - ${domain}`;
-   const description = globalDesc && globalDesc.length > 0
-      ? `${globalDesc}\n\n${baseDescription}`
-      : baseDescription;
-
-   const json = {
-      name: domain,
-      description,
-      external_url: `https://alsania.io/domain/${domain}`,
-      image,
-      profile_url: info.profileURI || '',
-      attributes,
-   };
-   return json;
+         return metadata;
+      } else {
+         // If tokenURI is a URL, return basic metadata
+         const owner = await contract.ownerOf(tokenId);
+         return {
+            name: `AED Token #${tokenId}`,
+            description: globalDesc || "Alsania Enhanced Domain",
+            external_url: `https://alsania.io/token/${tokenId}`,
+            image: DOMAIN_BG,
+            attributes: [
+               { trait_type: 'Token ID', value: tokenId.toString() },
+               { trait_type: 'Owner', value: owner },
+               { trait_type: 'Type', value: isSub ? 'Subdomain' : 'Domain' }
+            ]
+         };
+      }
+   } catch (error) {
+      // Fallback metadata if tokenURI fails
+      const owner = await contract.ownerOf(tokenId);
+      return {
+         name: `AED Token #${tokenId}`,
+         description: globalDesc || "Alsania Enhanced Domain",
+         external_url: `https://alsania.io/token/${tokenId}`,
+         image: DOMAIN_BG,
+         attributes: [
+            { trait_type: 'Token ID', value: tokenId.toString() },
+            { trait_type: 'Owner', value: owner },
+            { trait_type: 'Type', value: isSub ? 'Subdomain' : 'Domain' }
+         ]
+      };
+   }
 }
 
 // Routes

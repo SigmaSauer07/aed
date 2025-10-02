@@ -17,6 +17,9 @@ dist/
 .env
 .env.local
 .env.*
+.secrets.env
+.testsdeployedAddress
+.aedamoytest
 
 # Logs
 *.log

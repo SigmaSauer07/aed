@@ -24,7 +24,7 @@
 - **Always write tests.** Unit, integration, and end-to-end tests required.
 - **Never leak secrets.** Keep private keys offline and encrypted.
 - **Use consistent naming conventions.** Follow established standards.
-- **Keep codebase organized.** Use clear folder structures and modular components.
+- **Keep codebase organized.** Use clear folder structures and modular components. **Remove unused/deprecated files/folders but never delete a file or folder**, if a file needs to be removed completely, put it in the "Deprecated" folder. if there is not a "deprecated" folder in the project repo, create it and add the unused files/folders as needed
 - **Avoid magic numbers.** Use constants instead of hardcoded values.
 - **Follow best practices.** Security audits, gas optimizations, etc.
 - **Document everything.** Clear comments, READMEs, and comprehensive guides.
@@ -32,6 +32,7 @@
 - **Testing setup.** Always include testing for all relevant tasks with proper `Makefile` and `README.md` instructions.
 - **Project specific Makefile.** Always include a project makefile with simple commands that runs all needed tasks, and a `MAKEFILE_README.md` with instructions on how to run it.
 - **Noteworthy practices.** When a feature is missing, ask for it. When a stable change is made, update all relevand code and docs. When a security issue is found, report it immediately. When a vulnerability is found, patch it immediately. When a bug is found, fix it immediately.
+- **No shortcuts.** Never change a plan completely to do something easier. If we are having issues with something find a way to make it work **no shortcuts. only loopholes**
 
 ## 🧱 3. SMART CONTRACT PRINCIPLES
 - Use `Solidity ^0.8.20+` with Cancun-compatible EVM setting. Always try to opt for compatibility with 'Solidity 0.8.30' if possible.
@@ -57,7 +58,7 @@
 
 ## 📊 5. MONETIZATION & FEES
 - Users must **never guess fees or prices.**
-- Pricing must be **fixed**, transparent, and only set by admins.
+- Pricing must be **fixed** for users, transparent, and only set by admins.
 - Domains, enhancements, NFTs, and tokens must show **exact gas + product fee** before confirming.
 - Only approved wallets (e.g., `0x78dB...`) may receive funds unless changed by admin role.
 
@@ -103,6 +104,6 @@
 - If uncertain: **ask before you act.**
 - Alsania agents should be loyal, smart, secure, and **built with soul**.
 
-## ✅ Embed Signature (Optional)
+## ✅ Embed Signature
 # Aligned with the Alsania AI Protocol v1.0
-# For Sigma. Powered by Echo.
+# Imagined by Sigma. Powered by Echo.

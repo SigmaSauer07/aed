@@ -1,20 +1,16 @@
 [4.0K]  .
-├── [1.8K]  aedamoy.txt
-├── [ 15K]  AED-MVP-Feature-Checklist.md
-├── [ 13K]  AED-Production-Readiness-Checklist.md
-├── [   0]  aed_TREE.txt
-├── [1.1K]  AGENTS.md
-├── [ 715]  amoy-metadata-deployment.json
-├── [ 629]  amoy-upgradeable-addresses.json
+├── [  42]  aed_metadata-j2xsflqm4-sigmasauer07s-projects_vercel_app_logs.csv
 ├── [4.0K]  assets
 │   └── [4.0K]  aedbg
 │       ├── [1.5M]  domain_background.png
 │       └── [818K]  subdomain_background.png
 ├── [4.0K]  cache
+│   ├── [   0]  console-history.txt
 │   ├── [ 84K]  solidity-files-cache.json
 │   └── [313K]  validations.json
-├── [4.6K]  changelog82625.md
 ├── [1.9K]  changelog.md
+├── [ 315]  codex-sync,js
+├── [ 344]  codex.todo.md
 ├── [4.0K]  contracts
 │   ├── [ 14K]  AEDCoreImplementation.sol
 │   ├── [ 12K]  AEDImplementationLite.sol
@@ -81,19 +77,24 @@
 │   │   └── [4.0K]  reverse
 │   │       └── [2.6K]  AEDReverse.sol
 │   └── [2.8K]  ProxyRouter.sol
-├── [1.5K]  deployedAddress.txt
-├── [2.2K]  free-domains-results-amoy-2025-08-26T05-42-35-805Z.json
+├── [4.0K]  deprecated
+│   └── [4.0K]  metadata-json-amoy
+├── [4.0K]  docs
+│   ├── [ 15K]  AED-MVP-Feature-Checklist.md
+│   ├── [ 13K]  AED-Production-Readiness-Checklist.md
+│   ├── [4.6K]  docs_management.md
+│   └── [6.1K]  rules.md
 ├── [4.0K]  frontend
 │   ├── [4.0K]  aed-admin
 │   │   ├── [7.1K]  component-loader.js
 │   │   ├── [4.0K]  components
 │   │   │   ├── [4.5K]  footer.html
-│   │   │   ├── [1.5K]  global-description.html
+│   │   │   ├── [2.2K]  global-description.html
 │   │   │   └── [ 327]  header.html
 │   │   ├── [4.0K]  css
 │   │   │   ├── [ 10K]  ad.css
 │   │   │   ├── [2.6K]  footer.css
-│   │   │   ├── [3.9K]  global-description.css
+│   │   │   ├── [4.7K]  global-description.css
 │   │   │   ├── [6.6K]  header.css
 │   │   │   └── [3.5K]  style.css
 │   │   ├── [4.0K]  img
@@ -101,10 +102,10 @@
 │   │   │   └── [1.3M]  bg.png
 │   │   ├── [ 15K]  index.html
 │   │   └── [4.0K]  js
-│   │       ├── [123K]  aedABI.json
-│   │       ├── [4.8K]  global-description.js
+│   │       ├── [ 27K]  aedABI.json
+│   │       ├── [5.2K]  global-description.js
 │   │       ├── [9.0K]  header.js
-│   │       └── [8.8K]  script.js
+│   │       └── [9.7K]  script.js
 │   └── [4.0K]  aed-home
 │       ├── [7.1K]  component-loader.js
 │       ├── [4.0K]  components
@@ -120,12 +121,12 @@
 │       ├── [4.0K]  img
 │       │   ├── [671K]  AEDlogo.png
 │       │   └── [1.3M]  bg.png
-│       ├── [8.1K]  index.html
+│       ├── [8.3K]  index.html
 │       └── [4.0K]  js
-│           ├── [ 29K]  aedABI.json
+│           ├── [ 27K]  aedABI.json
 │           ├── [3.5K]  ai-chat.js
 │           ├── [9.0K]  header.js
-│           ├── [6.4K]  index.js
+│           ├── [6.6K]  index.js
 │           └── [1.6K]  wallet.js
 ├── [ 707]  hardhat.config.js
 ├── [4.0K]  legal
@@ -134,69 +135,30 @@
 │   ├── [9.5K]  Privacy-Policy.md
 │   └── [9.7K]  Terms-of-Service.md
 ├── [1.0K]  LICENSE
-├── [4.0K]  metadata-json-amoy
-│   ├── [ 595]  1.json
-│   ├── [ 621]  2.json
-│   └── [ 302]  index.json
 ├── [4.0K]  metadata-server
-│   ├── [4.0K]  metadata-server.js
-│   ├── [ 275]  package.json
-│   └── [ 280]  vercel.json
-├── [1.2K]  metadata-test-results-amoy-2025-08-26T07-42-07-438Z.json
-├── [1.2K]  metadata-test-results-amoy-2025-08-26T07-45-14-566Z.json
-├── [3.1K]  minting-results-amoy-2025-08-26T05-38-31-221Z.json
+│   ├── [ 12K]  metadata-server.js
+│   ├── [ 655]  package.json
+│   ├── [ 34K]  package-lock.json
+│   ├── [3.4K]  README.md
+│   └── [ 334]  vercel.json
 ├── [1.1K]  package.json
 ├── [342K]  package-lock.json
-├── [8.3K]  README.md
-├── [6.1K]  rules.md
 ├── [4.0K]  scripts
 │   ├── [1021]  check-balance.js
+│   ├── [3.5K]  check-contract-functions.js
 │   ├── [3.5K]  check-metadata.js
 │   ├── [ 784]  checkState.js
 │   ├── [3.7K]  debug-proxy.js
 │   ├── [4.0K]  debug-storage.js
 │   ├── [3.8K]  debug-tokenuri.js
-│   ├── [3.9K]  deploy-amoy-fixed.js
-│   ├── [3.0K]  deploy-amoy.js
-│   ├── [6.1K]  deploy-amoy-secure.js
-│   ├── [3.4K]  deploy-amoy-simple.js
-│   ├── [4.1K]  deploy-amoy-with-key.js
 │   ├── [1.6K]  deploy.js
-│   ├── [8.3K]  deploy-modular-uups.js
-│   ├── [4.8K]  deploy-production.js
-│   ├── [2.2K]  deploy-simple-amoy.js
-│   ├── [5.2K]  deploy-simple.js
-│   ├── [3.4K]  deploy-simplified.js
-│   ├── [4.9K]  deploy-temp.js
-│   ├── [3.1K]  deploy-upgradeable-amoy.js
-│   ├── [3.9K]  deploy-upgradeable.js
-│   ├── [5.3K]  deploy-with-metadata.js
-│   ├── [8.6K]  final-verification.js
+│   ├── [ 973]  generate-abi.js
 │   ├── [2.5K]  generate-metadata-json.js
-│   ├── [1008]  mint-check-ipfs.js
-│   ├── [5.4K]  mint-domains-amoy-fixed.js
-│   ├── [4.7K]  mint-domains-amoy.js
-│   ├── [4.1K]  mint-domains-amoy-simple.js
 │   ├── [4.2K]  mint-domains.js
-│   ├── [8.7K]  mint-domains-secure.js
-│   ├── [4.5K]  mint-domains-simple.js
-│   ├── [6.2K]  mint-free-domains.js
 │   ├── [3.1K]  mint-full-matrix.js
 │   ├── [ 696]  mintTest.js
-│   ├── [4.7K]  mint-to-upgradeable.js
-│   ├── [ 997]  quick-mint-and-check.js
-│   ├── [2.5K]  quick-test.js
-│   ├── [1.3K]  quick-verify-brand.js
-│   ├── [ 806]  set-base-uri.js
-│   ├── [1.8K]  simple-final-check.js
-│   ├── [4.3K]  test-current-deployment.js
-│   ├── [ 14K]  test-metadata-fixes.js
-│   ├── [8.5K]  test-minting.js
-│   ├── [4.0K]  test-tokenuri.js
 │   ├── [3.2K]  upgrade-implementation.js
-│   ├── [3.0K]  upgrade-multiple.js
 │   ├── [1.6K]  utils.js
-│   ├── [1.3K]  verify-default-images.js
 │   └── [ 378]  verify.js
 └── [4.0K]  test
     ├── [ 780]  AEDCoreTest.sol
@@ -206,4 +168,4 @@
     ├── [1.4K]  deployment.test.js
     └── [   0]  ModuleBase_test.sol
 
-38 directories, 169 files
+40 directories, 129 files

@@ -8,8 +8,8 @@ describe('AED Deployment', function () {
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
 
-    // Deploy AED Implementation using UUPS upgrades (no libraries needed for Lite version)
-    const AEDImplementation = await ethers.getContractFactory('AEDImplementationLite');
+    // Deploy AED Implementation using UUPS upgrades
+    const AEDImplementation = await ethers.getContractFactory('AEDImplementation');
     
     // Deploy with UUPS proxy
     aed = await upgrades.deployProxy(
@@ -27,7 +27,7 @@ describe('AED Deployment', function () {
   it('Should deploy and initialize correctly', async function () {
     expect(await aed.name()).to.equal('Alsania Enhanced Domains');
     expect(await aed.symbol()).to.equal('AED');
-    // Note: getNextTokenId() is not exposed in the Lite version
+    // Note: getNextTokenId() is tracked via AppStorage helper in production contract
   });
 
   it('Should have admin role configured', async function () {

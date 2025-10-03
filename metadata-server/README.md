@@ -74,8 +74,8 @@ Your metadata endpoints will be:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `AMOY_RPC` | Polygon Amoy RPC URL | `https://polygon-amoy.g.alchemy.com/v2/YOUR_KEY` |
-| `CONTRACT_ADDRESS` | AED contract PROXY address | `0xd0E5EB4C244d0e641........` |
+| `AMOY_RPC` or `RPC_URL` | Polygon Amoy RPC URL | `https://polygon-amoy.g.alchemy.com/v2/YOUR_KEY` |
+| `CONTRACT_ADDRESS` | AED proxy address | `0x6452DCd7Bbee694223D743f09FF07c717Eeb34DF` |
 
 ## Local Development
 
@@ -109,14 +109,9 @@ The server automatically reads:
 - Graceful fallbacks for missing data
 - Console logging for debugging
 
-## Performance Optimizations
+## Performance Notes
 
 - 30-second function timeout
 - 1GB memory allocation
-- Caching headers for metadata endpoints
+- Cache-control headers for metadata endpoints
 - Regional deployment (Europe) for lower latency
-
-
-vercel's <SpeedInsights/>
-deploying to vercel
-added vercel's <SpeedInsights/> badge to README

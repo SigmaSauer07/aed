@@ -25,6 +25,11 @@ library LibAdmin {
         AppStorage storage s = LibAppStorage.appStorage();
         uint256 oldFee = s.fees[feeType];
         s.fees[feeType] = newAmount;
+
+        if (s.featureExists[feeType]) {
+            s.enhancementPrices[feeType] = newAmount;
+        }
+
         emit FeeUpdated(feeType, oldFee, newAmount);
     }
 

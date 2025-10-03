@@ -240,11 +240,9 @@
           <div class="form-group">
             <label for="feeType">Fee Type:</label>
             <select id="feeType">
-              <option value="REGISTRATION_FEE">Registration Fee</option>
-              <option value="RENEWAL_FEE">Renewal Fee</option>
-              <option value="SUBDOMAIN_FEE">Subdomain Fee</option>
-              <option value="ENHANCEMENT_FEE">Enhancement Fee</option>
-              <option value="BRIDGE_FEE">Bridge Fee</option>
+              <option value="subdomainBase">Subdomain Base (MATIC)</option>
+              <option value="subdomainMultiplier">Subdomain Multiplier</option>
+              <option value="subdomainFreeMints">Subdomain Free Mints</option>
             </select>
           </div>
           <div class="form-row">
@@ -257,20 +255,10 @@
         <div class="panel">
           <h3><span class="panel-icon">📨</span>Fee Recipients</h3>
           <div class="form-group">
-            <label for="recipientFeeType">Fee Type:</label>
-            <select id="recipientFeeType">
-              <option value="REGISTRATION_FEE">Registration Fee</option>
-              <option value="RENEWAL_FEE">Renewal Fee</option>
-              <option value="SUBDOMAIN_FEE">Subdomain Fee</option>
-              <option value="ENHANCEMENT_FEE">Enhancement Fee</option>
-              <option value="BRIDGE_FEE">Bridge Fee</option>
-            </select>
-          </div>
-          <div class="form-group">
             <label for="recipientAddress">Recipient Address:</label>
             <input type="text" id="recipientAddress" placeholder="0x...">
           </div>
-          <button id="setRecipientBtn">Set Recipient</button>
+          <button id="setRecipientBtn">Set Fee Collector</button>
           <div id="recipientStatus" class="status-display"></div>
         </div>
 
@@ -327,6 +315,7 @@
           <h3><span class="panel-icon">📋</span>Current Fees</h3>
           <button id="loadFeesBtn">Load Current Fees</button>
           <div id="currentFees" class="status-display"></div>
+          <div id="featurePriceList" class="status-display"></div>
         </div>
       </div>
     </div>
@@ -357,7 +346,8 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.8.0/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.umd.min.js"></script>
+  <script src="../config.js"></script>
   <script src="js/script.js"></script>
   <script src="component-loader.js"></script>
 </body>

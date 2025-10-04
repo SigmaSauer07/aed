@@ -15,7 +15,12 @@ async function main() {
 
   const aed = await upgrades.deployProxy(
     AED,
-    [initialAdmin, paymentWallet], // initializer arguments
+    [
+      "Alsania Enhanced Domains", // ERC721 name
+      "AED",                       // ERC721 symbol
+      paymentWallet,               // fee collector
+      initialAdmin                 // admin
+    ],
     {
       initializer: "initialize",
       kind: "uups",

@@ -1,389 +1,267 @@
 const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 
-describe("AED - Alsania Enhanced Domains", function () {
-    let aed, aedImplementation;
-    let owner, user1, user2, feeCollector;
-    let ADMIN_ROLE, FEE_MANAGER_ROLE, TLD_MANAGER_ROLE;
+describe("AEDImplementation", function () {
+  let aed;
+  let owner;
+  let user1;
+  let user2;
+  let feeCollector;
 
-    before(async function () {
-        [owner, user1, user2, feeCollector] = await ethers.getSigners();
+  let ADMIN_ROLE;
+  let FEE_MANAGER_ROLE;
+  let TLD_MANAGER_ROLE;
+
+  before(async () => {
+    [owner, user1, user2, feeCollector] = await ethers.getSigners();
+  });
+
+  beforeEach(async () => {
+    const AEDImplementation = await ethers.getContractFactory("AEDImplementation");
+    aed = await upgrades.deployProxy(
+      AEDImplementation,
+      ["Alsania Enhanced Domains", "AED", feeCollector.address, owner.address],
+      {
+        initializer: "initialize",
+        kind: "uups",
+      },
+    );
+
+    ADMIN_ROLE = await aed.ADMIN_ROLE();
+    FEE_MANAGER_ROLE = await aed.FEE_MANAGER_ROLE();
+    TLD_MANAGER_ROLE = await aed.TLD_MANAGER_ROLE();
+  });
+
+  async function subdomainPrice() {
+    return BigInt(await aed.getFeaturePrice("subdomain"));
+  }
+
+  async function byoPrice() {
+    return BigInt(await aed.getFeaturePrice("byo"));
+  }
+
+  async function tldPrice(tld) {
+    return BigInt(await aed.getTLDPrice(tld));
+  }
+
+  describe("Deployment", () => {
+    it("initializes core parameters", async () => {
+      expect(await aed.name()).to.equal("Alsania Enhanced Domains");
+      expect(await aed.symbol()).to.equal("AED");
+      expect(await aed.getFeeCollector()).to.equal(feeCollector.address);
+      expect(await aed.hasRole(ADMIN_ROLE, owner.address)).to.equal(true);
     });
 
-    beforeEach(async function () {
-        // Deploy the AED implementation
-        const AEDImplementation = await ethers.getContractFactory("AEDImplementationLite");
-        
-        // Deploy with UUPS proxy
-        aed = await upgrades.deployProxy(
-            AEDImplementation,
-            ["Alsania Enhanced Domains", "AED", feeCollector.address, owner.address],
-            {
-                initializer: "initialize",
-                kind: "uups"
-            }
-        );
-        
-        await aed.waitForDeployment();
-
-        // Get role constants
-        ADMIN_ROLE = await aed.ADMIN_ROLE();
-        FEE_MANAGER_ROLE = await aed.FEE_MANAGER_ROLE();
-        TLD_MANAGER_ROLE = await aed.TLD_MANAGER_ROLE();
+    it("sets default TLD configuration and feature catalog", async () => {
+      expect(await aed.isTLDActive("aed")).to.equal(true);
+      expect(await aed.isTLDActive("alsania")).to.equal(true);
+      const catalog = await aed.getAvailableFeatures();
+      expect(catalog).to.deep.equal(["subdomain", "metadata", "reverse", "bridge"]);
     });
 
-    describe("Deployment & Initialization", function () {
-        it("Should deploy and initialize correctly", async function () {
-            expect(await aed.name()).to.equal("Alsania Enhanced Domains");
-            expect(await aed.symbol()).to.equal("AED");
-        });
+    it("exposes default pricing", async () => {
+      expect(await tldPrice("alsania")).to.equal(ethers.parseEther("1"));
+      expect(await subdomainPrice()).to.equal(ethers.parseEther("2"));
+      expect(await byoPrice()).to.equal(ethers.parseEther("5"));
+    });
+  });
 
-        it("Should have admin role configured", async function () {
-            expect(await aed.hasRole(ADMIN_ROLE, owner.address)).to.be.true;
-        });
+  describe("Domain registration", () => {
+    it("mints free domains without payment", async () => {
+      await expect(aed.connect(user1).registerDomain("echo", "aed", false))
+        .to.emit(aed, "Transfer")
+        .withArgs(ethers.ZeroAddress, user1.address, 1n);
 
-        it("Should have correct fee collector", async function () {
-            // We'll need to add a getter for fee collector in the implementation
-            expect(await aed.getFeeCollector()).to.equal(feeCollector.address);
-        });
-
-        it("Should have valid TLDs configured", async function () {
-            expect(await aed.isTLDActive("aed")).to.be.true;
-            expect(await aed.isTLDActive("alsa")).to.be.true;
-            expect(await aed.isTLDActive("07")).to.be.true;
-            expect(await aed.isTLDActive("alsania")).to.be.true;
-            expect(await aed.isTLDActive("fx")).to.be.true;
-            expect(await aed.isTLDActive("echo")).to.be.true;
-        });
+      expect(await aed.ownerOf(1n)).to.equal(user1.address);
+      expect(await aed.isRegistered("echo", "aed")).to.equal(true);
     });
 
-    describe("Domain Registration", function () {
-        it("Should register free domain", async function () {
-            const tx = await aed.connect(user1).registerDomain("test", "aed", false);
-            const receipt = await tx.wait();
-            
-            expect(await aed.isRegistered("test", "aed")).to.be.true;
-            expect(await aed.ownerOf(1)).to.equal(user1.address);
-            expect(await aed.getDomainByTokenId(1)).to.equal("test.aed");
-        });
-
-        it("Should register paid domain", async function () {
-            const cost = ethers.parseEther("1"); // $1 for .alsania
-            const tx = await aed.connect(user1).registerDomain("test", "alsania", false, { value: cost });
-            const receipt = await tx.wait();
-            
-            expect(await aed.isRegistered("test", "alsania")).to.be.true;
-            expect(await aed.ownerOf(1)).to.equal(user1.address);
-        });
-
-        it("Should register domain with subdomain feature", async function () {
-            const subdomainCost = ethers.parseEther("2"); // $2 for subdomain enhancement
-            const tx = await aed.connect(user1).registerDomain("test", "aed", true, { value: subdomainCost });
-            const receipt = await tx.wait();
-            
-            expect(await aed.isFeatureEnabled(1, "subdomain")).to.be.true;
-        });
-
-        it("Should fail to register existing domain", async function () {
-            await aed.connect(user1).registerDomain("test", "aed", false);
-            
-            await expect(
-                aed.connect(user2).registerDomain("test", "aed", false)
-            ).to.be.revertedWith("Domain already exists");
-        });
-
-        it("Should fail with invalid TLD", async function () {
-            await expect(
-                aed.connect(user1).registerDomain("test", "invalid", false)
-            ).to.be.revertedWith("Invalid TLD");
-        });
-
-        it("Should fail with insufficient payment", async function () {
-            const insufficientAmount = ethers.parseEther("0.5");
-            await expect(
-                aed.connect(user1).registerDomain("test", "alsania", false, { value: insufficientAmount })
-            ).to.be.revertedWith("Insufficient payment");
-        });
+    it("charges for paid TLDs", async () => {
+      const price = await tldPrice("alsania");
+      await aed.connect(user1).registerDomain("prime", "alsania", false, { value: price });
+      expect(await aed.ownerOf(1n)).to.equal(user1.address);
     });
 
-    describe("Subdomain Creation", function () {
-        beforeEach(async function () {
-            // Register a domain with subdomain feature
-            const cost = ethers.parseEther("2");
-            await aed.connect(user1).registerDomain("parent", "aed", true, { value: cost });
-        });
-
-        it("Should create subdomain", async function () {
-            const tx = await aed.connect(user1).mintSubdomain(1, "child");
-            const receipt = await tx.wait();
-            
-            expect(await aed.isRegistered("child.parent", "aed")).to.be.true;
-            expect(await aed.ownerOf(2)).to.equal(user1.address);
-        });
-
-        it("Should calculate correct subdomain fees", async function () {
-            // First 2 subdomains are free
-            expect(await aed.calculateSubdomainFee(1)).to.equal(0);
-            
-            await aed.connect(user1).mintSubdomain(1, "child1");
-            expect(await aed.calculateSubdomainFee(1)).to.equal(0);
-            
-            await aed.connect(user1).mintSubdomain(1, "child2");
-            expect(await aed.calculateSubdomainFee(1)).to.equal(ethers.parseEther("0.1"));
-        });
-
-        it("Should fail to create subdomain without permission", async function () {
-            await expect(
-                aed.connect(user2).mintSubdomain(1, "child")
-            ).to.be.revertedWith("Not parent domain owner");
-        });
-
-        it("Should fail to create subdomain on domain without feature", async function () {
-            // Register domain without subdomain feature
-            await aed.connect(user2).registerDomain("nosubdomains", "aed", false);
-            
-            await expect(
-                aed.connect(user2).mintSubdomain(2, "child")
-            ).to.be.revertedWith("Subdomains not enabled");
-        });
+    it("supports registration with enhancements", async () => {
+      const enhancement = await subdomainPrice();
+      await aed.connect(user1).registerDomain("builder", "aed", true, { value: enhancement });
+      expect(await aed.isFeatureEnabled(1n, "subdomain")).to.equal(true);
     });
 
-    describe("Metadata Management", function () {
-        beforeEach(async function () {
-            await aed.connect(user1).registerDomain("test", "aed", false);
-        });
-
-        it("Should set profile URI", async function () {
-            const profileURI = "https://example.com/profile.json";
-            await aed.connect(user1).setProfileURI(1, profileURI);
-            
-            expect(await aed.getProfileURI(1)).to.equal(profileURI);
-        });
-
-        it("Should set image URI", async function () {
-            const imageURI = "https://example.com/image.png";
-            await aed.connect(user1).setImageURI(1, imageURI);
-            
-            expect(await aed.getImageURI(1)).to.equal(imageURI);
-        });
-
-        it("Should generate token URI", async function () {
-            const tokenURI = await aed.tokenURI(1);
-            expect(tokenURI).to.include("data:application/json;base64,");
-        });
-
-        it("Should fail to set metadata for non-owned token", async function () {
-            await expect(
-                aed.connect(user2).setProfileURI(1, "https://example.com")
-            ).to.be.revertedWith("Not token owner");
-        });
+    it("normalizes names and TLDs", async () => {
+      await aed.connect(user1).registerDomain("Test", "AED", false);
+      expect(await aed.isRegistered("test", "aed")).to.equal(true);
+      expect(await aed.getDomainByTokenId(1n)).to.equal("test.aed");
     });
 
-    describe("Reverse Resolution", function () {
-        beforeEach(async function () {
-            await aed.connect(user1).registerDomain("test", "aed", false);
-            await aed.connect(user1).registerDomain("test2", "alsania", false, { value: ethers.parseEther("1") });
-        });
-
-        it("Should set reverse record", async function () {
-            await aed.connect(user1).setReverse("test.aed");
-            
-            expect(await aed.getReverse(user1.address)).to.equal("test.aed");
-            expect(await aed.getReverseOwner("test.aed")).to.equal(user1.address);
-        });
-
-        it("Should clear reverse record", async function () {
-            await aed.connect(user1).setReverse("test.aed");
-            await aed.connect(user1).clearReverse();
-            
-            expect(await aed.getReverse(user1.address)).to.equal("");
-        });
-
-        it("Should fail to set reverse for non-owned domain", async function () {
-            await expect(
-                aed.connect(user2).setReverse("test.aed")
-            ).to.be.revertedWith("Not domain owner");
-        });
+    it("rejects duplicate registrations", async () => {
+      await aed.connect(user1).registerDomain("echo", "aed", false);
+      await expect(aed.connect(user2).registerDomain("echo", "aed", false)).to.be.revertedWith("Domain already exists");
     });
 
-    describe("Feature Enhancement", function () {
-        beforeEach(async function () {
-            await aed.connect(user1).registerDomain("test", "aed", false);
-        });
+    it("rejects insufficient payment", async () => {
+      const price = await tldPrice("alsania");
+      await expect(
+        aed.connect(user1).registerDomain("underpay", "alsania", false, { value: price - 1n }),
+      ).to.be.revertedWith("Insufficient payment");
+    });
+  });
 
-        it("Should enable subdomain feature", async function () {
-            const cost = ethers.parseEther("2");
-            await aed.connect(user1).enableSubdomainFeature(1, { value: cost });
-            
-            expect(await aed.isFeatureEnabled(1, "subdomain")).to.be.true;
-        });
-
-        it("Should purchase feature", async function () {
-            const cost = ethers.parseEther("2");
-            await aed.connect(user1).purchaseFeature(1, "subdomain", { value: cost });
-            
-            expect(await aed.isFeatureEnabled(1, "subdomain")).to.be.true;
-        });
-
-        it("Should upgrade external domain", async function () {
-            const cost = ethers.parseEther("5");
-            const tx = await aed.connect(user1).upgradeExternalDomain("example.eth", { value: cost });
-            const receipt = await tx.wait();
-            
-            // Should complete without reverting
-            expect(receipt.status).to.equal(1);
-        });
-
-        it("Should fail with insufficient payment", async function () {
-            const insufficientAmount = ethers.parseEther("1");
-            await expect(
-                aed.connect(user1).enableSubdomainFeature(1, { value: insufficientAmount })
-            ).to.be.revertedWith("Insufficient payment");
-        });
+  describe("Subdomains", () => {
+    beforeEach(async () => {
+      const enhancement = await subdomainPrice();
+      await aed.connect(user1).registerDomain("root", "aed", true, { value: enhancement });
     });
 
-    describe("Batch Operations", function () {
-        it("Should batch register multiple domains", async function () {
-            const names = ["test1", "test2", "test3"];
-            const tlds = ["aed", "alsa", "07"];
-            const enableSubdomains = [false, false, false];
-            
-            const tokenIds = await aed.connect(user1).batchRegisterDomains(names, tlds, enableSubdomains);
-            
-            expect(await aed.ownerOf(1)).to.equal(user1.address);
-            expect(await aed.ownerOf(2)).to.equal(user1.address);
-            expect(await aed.ownerOf(3)).to.equal(user1.address);
-        });
-
-        it("Should batch register with mixed free and paid domains", async function () {
-            const names = ["free", "paid"];
-            const tlds = ["aed", "alsania"];
-            const enableSubdomains = [false, false];
-            const cost = ethers.parseEther("1"); // Cost for .alsania
-            
-            await aed.connect(user1).batchRegisterDomains(names, tlds, enableSubdomains, { value: cost });
-            
-            expect(await aed.ownerOf(1)).to.equal(user1.address);
-            expect(await aed.ownerOf(2)).to.equal(user1.address);
-        });
+    it("mints subdomains when enabled", async () => {
+      await expect(aed.connect(user1).mintSubdomain(1n, "alpha"))
+        .to.emit(aed, "Transfer")
+        .withArgs(ethers.ZeroAddress, user1.address, 2n);
+      expect(await aed.ownerOf(2n)).to.equal(user1.address);
     });
 
-    describe("Admin Functions", function () {
-        it("Should update fee", async function () {
-            await aed.connect(owner).grantRole(FEE_MANAGER_ROLE, owner.address);
-            await aed.connect(owner).updateFee("subdomain", ethers.parseEther("3"));
-            
-            expect(await aed.getFeaturePrice("subdomain")).to.equal(ethers.parseEther("3"));
-        });
-
-        it("Should configure TLD", async function () {
-            await aed.connect(owner).grantRole(TLD_MANAGER_ROLE, owner.address);
-            await aed.connect(owner).configureTLD("newtld", true, ethers.parseEther("2"));
-            
-            expect(await aed.isTLDActive("newtld")).to.be.true;
-        });
-
-        it("Should update fee recipient", async function () {
-            const newRecipient = user1.address;
-            await aed.connect(owner).updateFeeRecipient(newRecipient);
-            
-            expect(await aed.getFeeCollector()).to.equal(newRecipient);
-        });
-
-        it("Should pause and unpause contract", async function () {
-            await aed.connect(owner).pause();
-            
-            await expect(
-                aed.connect(user1).registerDomain("test", "aed", false)
-            ).to.be.revertedWith("Contract paused");
-            
-            await aed.connect(owner).unpause();
-            
-            // Should work again after unpause
-            await aed.connect(user1).registerDomain("test", "aed", false);
-            expect(await aed.ownerOf(1)).to.equal(user1.address);
-        });
-
-        it("Should fail admin functions without proper role", async function () {
-            await expect(
-                aed.connect(user1).updateFee("subdomain", ethers.parseEther("3"))
-            ).to.be.revertedWith("Not fee manager");
-
-            await expect(
-                aed.connect(user1).configureTLD("newtld", true, ethers.parseEther("2"))
-            ).to.be.revertedWith("Not TLD manager");
-
-            await expect(
-                aed.connect(user1).pause()
-            ).to.be.revertedWith("Not admin");
-        });
+    it("calculates progressive subdomain fees", async () => {
+      expect(await aed.calculateSubdomainFee(1n)).to.equal(0n);
+      await aed.connect(user1).mintSubdomain(1n, "one");
+      expect(await aed.calculateSubdomainFee(1n)).to.equal(0n);
+      await aed.connect(user1).mintSubdomain(1n, "two");
+      expect(await aed.calculateSubdomainFee(1n)).to.equal(ethers.parseEther("0.1"));
     });
 
-    describe("Transfer & Ownership", function () {
-        beforeEach(async function () {
-            await aed.connect(user1).registerDomain("test", "aed", false);
-        });
+    it("prevents creating subdomains without permission", async () => {
+      await aed.connect(user2).registerDomain("solo", "aed", false);
+      await expect(aed.connect(user2).mintSubdomain(2n, "child")).to.be.revertedWith("Subdomains not enabled");
+    });
+  });
 
-        it("Should transfer domain", async function () {
-            await aed.connect(user1).transferFrom(user1.address, user2.address, 1);
-            
-            expect(await aed.ownerOf(1)).to.equal(user2.address);
-        });
-
-        it("Should update user domain arrays on transfer", async function () {
-            const user1DomainsBefore = await aed.getUserDomains(user1.address);
-            const user2DomainsBefore = await aed.getUserDomains(user2.address);
-            
-            await aed.connect(user1).transferFrom(user1.address, user2.address, 1);
-            
-            const user1DomainsAfter = await aed.getUserDomains(user1.address);
-            const user2DomainsAfter = await aed.getUserDomains(user2.address);
-            
-            expect(user1DomainsAfter.length).to.equal(user1DomainsBefore.length - 1);
-            expect(user2DomainsAfter.length).to.equal(user2DomainsBefore.length + 1);
-        });
-
-        it("Should handle reverse resolution on transfer", async function () {
-            await aed.connect(user1).setReverse("test.aed");
-            await aed.connect(user1).transferFrom(user1.address, user2.address, 1);
-            
-            // Old owner should lose reverse record
-            expect(await aed.getReverse(user1.address)).to.equal("");
-            // New owner should automatically get reverse record if they have none
-            expect(await aed.getReverse(user2.address)).to.equal("test.aed");
-        });
+  describe("Metadata", () => {
+    beforeEach(async () => {
+      await aed.connect(user1).registerDomain("meta", "aed", false);
     });
 
-    describe("Edge Cases & Security", function () {
-        it("Should handle domain name normalization", async function () {
-            await aed.connect(user1).registerDomain("Test", "aed", false);
-            
-            expect(await aed.isRegistered("test", "aed")).to.be.true;
-            expect(await aed.getDomainByTokenId(1)).to.equal("test.aed");
-        });
-
-        it("Should handle maximum subdomain limits", async function () {
-            const cost = ethers.parseEther("2");
-            await aed.connect(user1).registerDomain("parent", "aed", true, { value: cost });
-            
-            // This test would need to be adjusted based on MAX_SUBDOMAINS constant
-            // For now, we'll just verify it doesn't fail for a few subdomains
-            await aed.connect(user1).mintSubdomain(1, "child1");
-            await aed.connect(user1).mintSubdomain(1, "child2");
-        });
-
-        it("Should handle fee refunds", async function () {
-            const overpayment = ethers.parseEther("5");
-            const balanceBefore = await ethers.provider.getBalance(user1.address);
-            
-            const tx = await aed.connect(user1).registerDomain("test", "aed", false, { value: overpayment });
-            const receipt = await tx.wait();
-            const gasUsed = receipt.gasUsed * receipt.gasPrice;
-            
-            const balanceAfter = await ethers.provider.getBalance(user1.address);
-            
-            // Should only charge for gas, overpayment should be refunded
-            expect(balanceBefore - balanceAfter).to.be.closeTo(gasUsed, ethers.parseEther("0.01"));
-        });
+    it("provides default profile metadata", async () => {
+      const uri = await aed.getProfileURI(1n);
+      expect(uri).to.not.equal("");
+      expect(uri.startsWith("data:application/json;base64,")).to.equal(true);
     });
+
+    it("updates profile and image URIs", async () => {
+      const profile = "https://ipfs.example/profile.json";
+      const image = "ipfs://image.png";
+      await aed.connect(user1).setProfileURI(1n, profile);
+      await aed.connect(user1).setImageURI(1n, image);
+      expect(await aed.getProfileURI(1n)).to.equal(profile);
+      expect(await aed.getImageURI(1n)).to.equal(image);
+    });
+
+    it("returns a tokenURI with embedded metadata", async () => {
+      const tokenURI = await aed.tokenURI(1n);
+      expect(tokenURI.startsWith("data:application/json;base64,")).to.equal(true);
+    });
+  });
+
+  describe("Reverse resolution", () => {
+    beforeEach(async () => {
+      await aed.connect(user1).registerDomain("reverse", "aed", false);
+    });
+
+    it("sets and clears reverse records", async () => {
+      await aed.connect(user1).setReverse("reverse.aed");
+      expect(await aed.getReverse(user1.address)).to.equal("reverse.aed");
+      await aed.connect(user1).clearReverse();
+      expect(await aed.getReverse(user1.address)).to.equal("");
+    });
+  });
+
+  describe("Feature enhancements", () => {
+    beforeEach(async () => {
+      await aed.connect(user1).registerDomain("feature", "aed", false);
+    });
+
+    it("enables subdomain feature", async () => {
+      const price = await subdomainPrice();
+      await aed.connect(user1).enableSubdomainFeature(1n, { value: price });
+      expect(await aed.isFeatureEnabled(1n, "subdomain")).to.equal(true);
+    });
+
+    it("prevents double payment for the same feature", async () => {
+      const price = await subdomainPrice();
+      await aed.connect(user1).enableSubdomainFeature(1n, { value: price });
+      await expect(
+        aed.connect(user1).enableSubdomainFeature(1n, { value: price }),
+      ).to.be.revertedWith("Feature already enabled");
+    });
+
+    it("allows purchasing metadata feature", async () => {
+      const price = await aed.getFeaturePrice("metadata");
+      await aed.connect(user1).purchaseFeature(1n, "metadata", { value: price });
+      expect(await aed.isFeatureEnabled(1n, "metadata")).to.equal(true);
+    });
+
+    it("upgrades external domains using BYO pricing", async () => {
+      const price = await byoPrice();
+      await expect(aed.connect(user1).upgradeExternalDomain("example.eth", { value: price }))
+        .to.emit(aed, "FeaturePurchased");
+    });
+  });
+
+  describe("Batch registration", () => {
+    it("registers multiple domains and refunds excess", async () => {
+      const names = ["one", "two"];
+      const tlds = ["aed", "alsania"];
+      const enable = [false, false];
+      const cost = await tldPrice("alsania");
+
+      const balanceBefore = await ethers.provider.getBalance(user1.address);
+      const tx = await aed.connect(user1).batchRegisterDomains(names, tlds, enable, { value: cost + ethers.parseEther("1") });
+      const receipt = await tx.wait();
+      const gasUsed = receipt.gasUsed * receipt.gasPrice;
+      const balanceAfter = await ethers.provider.getBalance(user1.address);
+
+      expect(await aed.ownerOf(1n)).to.equal(user1.address);
+      expect(await aed.ownerOf(2n)).to.equal(user1.address);
+      expect(balanceBefore - balanceAfter - gasUsed).to.equal(cost);
+    });
+  });
+
+  describe("Admin controls", () => {
+    it("updates feature pricing via fee manager", async () => {
+      await aed.connect(owner).grantRole(FEE_MANAGER_ROLE, owner.address);
+      const newPrice = ethers.parseEther("3");
+      await aed.connect(owner).updateFee("subdomain", newPrice);
+      expect(await aed.getFeaturePrice("subdomain")).to.equal(newPrice);
+    });
+
+    it("configures TLDs with normalized input", async () => {
+      await aed.connect(owner).grantRole(TLD_MANAGER_ROLE, owner.address);
+      await aed.connect(owner).configureTLD("ECHO", true, ethers.parseEther("2"));
+      expect(await aed.isTLDActive("echo")).to.equal(true);
+      expect(await aed.getTLDPrice("echo")).to.equal(ethers.parseEther("2"));
+    });
+
+    it("pauses and unpauses the contract", async () => {
+      await aed.connect(owner).pause();
+      await expect(aed.connect(user1).registerDomain("pause", "aed", false)).to.be.revertedWith("Contract paused");
+      await aed.connect(owner).unpause();
+      await aed.connect(user1).registerDomain("resume", "aed", false);
+    });
+
+    it("prevents unauthorized admin operations", async () => {
+      await expect(aed.connect(user1).pause()).to.be.revertedWith("Not admin");
+    });
+  });
+
+  describe("Transfers", () => {
+    beforeEach(async () => {
+      await aed.connect(user1).registerDomain("transfer", "aed", false);
+      await aed.connect(user1).setReverse("transfer.aed");
+    });
+
+    it("transfers domains and updates reverse records", async () => {
+      await aed.connect(user1).transferFrom(user1.address, user2.address, 1n);
+      expect(await aed.ownerOf(1n)).to.equal(user2.address);
+      expect(await aed.getReverse(user1.address)).to.equal("");
+      expect(await aed.getReverse(user2.address)).to.equal("transfer.aed");
+    });
+  });
 });

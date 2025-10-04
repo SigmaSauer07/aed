@@ -2,25 +2,25 @@ const { expect } = require('chai');
 const { ethers, upgrades } = require('hardhat');
 
 describe('AED Deployment', function () {
-  let aed, aedImplementation;
-  let owner, user1, user2;
+  let aed;
+  let owner;
+  let user1;
+  let user2;
 
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
 
-    // Deploy AED Implementation using UUPS upgrades (no libraries needed for Lite version)
-    const AEDImplementation = await ethers.getContractFactory('AEDImplementationLite');
-    
-    // Deploy with UUPS proxy
+    const AEDImplementation = await ethers.getContractFactory('AEDImplementation');
+
     aed = await upgrades.deployProxy(
-        AEDImplementation,
-        ["Alsania Enhanced Domains", "AED", owner.address, owner.address],
-        {
-            initializer: "initialize",
-            kind: "uups"
-        }
+      AEDImplementation,
+      ["Alsania Enhanced Domains", "AED", owner.address, owner.address],
+      {
+        initializer: "initialize",
+        kind: "uups"
+      }
     );
-    
+
     await aed.waitForDeployment();
   });
 
@@ -38,5 +38,11 @@ describe('AED Deployment', function () {
   it('Should have correct TLD configuration', async function () {
     expect(await aed.isTLDActive('aed')).to.be.true;
     expect(await aed.isTLDActive('alsania')).to.be.true;
+  });
+
+  it('Supports upgrading to a new implementation', async function () {
+    const AEDImplementationV2 = await ethers.getContractFactory('AEDImplementationV2Mock');
+    const upgraded = await upgrades.upgradeProxy(aed.getAddress(), AEDImplementationV2);
+    expect(await upgraded.version()).to.equal('v2-mock');
   });
 });

@@ -5,6 +5,7 @@ import "../core/AppStorage.sol";
 import "../core/AEDConstants.sol";
 import "./LibValidation.sol";
 import "./LibAppStorage.sol";
+import "./LibMetadata.sol";
 
 library LibMinting {
     using LibAppStorage for AppStorage;
@@ -24,17 +25,21 @@ library LibMinting {
         bool enableSubdomains
     ) internal returns (uint256) {
         AppStorage storage s = LibAppStorage.appStorage();
-        
+
         // Validate inputs
-        require(bytes(name).length >= MIN_NAME_LENGTH && 
+        require(bytes(name).length >= MIN_NAME_LENGTH &&
                 bytes(name).length <= MAX_NAME_LENGTH, "Invalid name length");
-        require(s.validTlds[tld], "Invalid TLD");
-        
+        require(LibValidation.isValidDomainName(name), "Invalid name characters");
+        require(LibValidation.isValidTLD(tld), "Invalid TLD");
+
+        string memory normalizedName = _normalizeLabel(name);
+        string memory normalizedTld = LibValidation.toLower(tld);
+        require(s.validTlds[normalizedTld], "Invalid TLD");
+
         // Normalize and check domain availability
-        string memory normalizedName = _normalizeName(name);
-        string memory fullDomain = string(abi.encodePacked(normalizedName, ".", tld));
+        string memory fullDomain = string(abi.encodePacked(normalizedName, ".", normalizedTld));
         require(!s.domainExists[fullDomain], "Domain already exists");
-        
+
         // Generate token ID
         // Cache nextTokenId locally and manually increment to save an extra SLOAD/STORE
         uint256 tokenId = s.nextTokenId;
@@ -50,29 +55,33 @@ library LibMinting {
         s.tokenIdToDomain[tokenId] = fullDomain;
         s.domainExists[fullDomain] = true;
         s.userDomains[msg.sender].push(fullDomain);
-        
+
         // Initialize domain struct
-        // TODO: Set sensible defaults for profileURI and imageURI (e.g. an IPFS link or baseURI)
-        // If you have specific default metadata or images, replace the empty strings below accordingly.
+        string memory defaultProfile = LibMetadata.defaultProfileURI(fullDomain, msg.sender);
+        string memory defaultImage = LibMetadata.defaultImageURI(false);
+
         s.domains[tokenId] = Domain({
             name: normalizedName,
-            tld: tld,
-            profileURI: "", // Set default profile URI here
-            imageURI: "",    // Set default image URI here
+            tld: normalizedTld,
+            profileURI: defaultProfile,
+            imageURI: defaultImage,
             subdomainCount: 0,
-            mintFee: 0,
+            mintFee: s.freeTlds[normalizedTld] ? 0 : s.tldPrices[normalizedTld],
             expiresAt: 0,
-            feeEnabled: false,
+            feeEnabled: enableSubdomains,
             isSubdomain: false,
             owner: msg.sender
         });
-        
+
+        s.profileURIs[tokenId] = defaultProfile;
+        s.imageURIs[tokenId] = defaultImage;
+
         // Enable subdomains if requested
         if (enableSubdomains) {
             s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
             s.enhancedDomains[fullDomain] = true;
         }
-        
+
         emit DomainRegistered(fullDomain, msg.sender, tokenId);
         return tokenId;
     }
@@ -88,15 +97,17 @@ library LibMinting {
         uint256 parentTokenId = s.domainToTokenId[parentDomain];
         require((s.domainFeatures[parentTokenId] & FEATURE_SUBDOMAINS) != 0, "Subdomains not enabled");
         require(s.owners[parentTokenId] == msg.sender, "Not parent domain owner");
-        
+
         // Validate subdomain limits
         require(s.subdomainCounts[parentDomain] < MAX_SUBDOMAINS, "Max subdomains reached");
-        
+
+        require(LibValidation.isValidDomainName(label), "Invalid name characters");
+
         // Create subdomain name
-        string memory normalizedLabel = _normalizeName(label);
+        string memory normalizedLabel = _normalizeLabel(label);
         string memory subdomainName = string(abi.encodePacked(normalizedLabel, ".", parentDomain));
         require(!s.domainExists[subdomainName], "Subdomain already exists");
-        
+
         // Generate token ID
         uint256 tokenId = s.nextTokenId;
         s.nextTokenId = tokenId + 1;
@@ -113,25 +124,32 @@ library LibMinting {
         s.domainSubdomains[parentDomain].push(subdomainName);
         s.subdomainOwners[subdomainName] = msg.sender;
         s.subdomainCounts[parentDomain]++;
-        
+
         // Update parent domain
         s.domains[parentTokenId].subdomainCount++;
-        
+
         // Initialize subdomain struct
-        // TODO: Provide sensible defaults for profileURI and imageURI for subdomains
+        string memory subdomainProfile = LibMetadata.defaultProfileURI(subdomainName, msg.sender);
+        string memory subdomainImage = LibMetadata.defaultImageURI(true);
+        uint256 currentFee = _currentSubdomainFee(s.subdomainCounts[parentDomain] - 1);
+        string memory parentTld = _extractTLD(parentDomain);
+
         s.domains[tokenId] = Domain({
             name: normalizedLabel,
-            tld: parentDomain,
-            profileURI: "", // Set default profile URI here
-            imageURI: "",    // Set default image URI here
+            tld: parentTld,
+            profileURI: subdomainProfile,
+            imageURI: subdomainImage,
             subdomainCount: 0,
-            mintFee: 0,
+            mintFee: currentFee,
             expiresAt: 0,
             feeEnabled: false,
             isSubdomain: true,
             owner: msg.sender
         });
-        
+
+        s.profileURIs[tokenId] = subdomainProfile;
+        s.imageURIs[tokenId] = subdomainImage;
+
         emit SubdomainCreated(subdomainName, parentDomain, msg.sender, tokenId);
         return tokenId;
     }
@@ -146,32 +164,63 @@ library LibMinting {
         AppStorage storage s = LibAppStorage.appStorage();
         string memory parentDomain = s.tokenIdToDomain[parentId];
         uint256 subdomainCount = s.subdomainCounts[parentDomain];
-        
+
         // First 2 subdomains are free, then $0.10 doubling
         if (subdomainCount < 2) {
             return 0;
         }
-        
-        uint256 baseFee = 0.1 ether;
-        uint256 multiplier = 2 ** (subdomainCount - 2);
-        return baseFee * multiplier;
+
+        return _currentSubdomainFee(subdomainCount);
     }
-    
-    function _normalizeName(string memory name) private pure returns (string memory) {
-        bytes memory nameBytes = bytes(name);
+
+    function _normalizeLabel(string memory label) private pure returns (string memory) {
+        bytes memory nameBytes = bytes(label);
         bytes memory normalized = new bytes(nameBytes.length);
-        
+
         for (uint256 i = 0; i < nameBytes.length; i++) {
             bytes1 char = nameBytes[i];
-            // Convert to lowercase
             if (char >= 0x41 && char <= 0x5A) {
                 normalized[i] = bytes1(uint8(char) + 32);
             } else {
                 normalized[i] = char;
             }
         }
-        
+
         return string(normalized);
+    }
+
+    function _currentSubdomainFee(uint256 existingCount) private pure returns (uint256) {
+        if (existingCount < 2) {
+            return 0;
+        }
+
+        uint256 baseFee = 0.1 ether;
+        uint256 multiplier = 2 ** (existingCount - 2);
+        return baseFee * multiplier;
+    }
+
+    function _extractTLD(string memory domain) private pure returns (string memory) {
+        bytes memory domainBytes = bytes(domain);
+        uint256 lastDot = domainBytes.length;
+
+        for (uint256 i = domainBytes.length; i > 0; i--) {
+            if (domainBytes[i - 1] == 0x2E) {
+                lastDot = i - 1;
+                break;
+            }
+        }
+
+        if (lastDot == domainBytes.length) {
+            return "";
+        }
+
+        uint256 tldLength = domainBytes.length - lastDot - 1;
+        bytes memory tldBytes = new bytes(tldLength);
+        for (uint256 i = 0; i < tldLength; i++) {
+            tldBytes[i] = domainBytes[lastDot + 1 + i];
+        }
+
+        return string(tldBytes);
     }
     
     function batchRegisterDomains(

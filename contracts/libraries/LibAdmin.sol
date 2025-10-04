@@ -4,6 +4,7 @@ pragma solidity ^0.8.30;
 import "../core/AEDConstants.sol";
 import "../core/AppStorage.sol";
 import "./LibAppStorage.sol";
+import "./LibValidation.sol";
 
 library LibAdmin {
     using LibAppStorage for AppStorage;
@@ -23,9 +24,15 @@ library LibAdmin {
     
     function updateFee(string calldata feeType, uint256 newAmount) internal {
         AppStorage storage s = LibAppStorage.appStorage();
-        uint256 oldFee = s.fees[feeType];
-        s.fees[feeType] = newAmount;
-        emit FeeUpdated(feeType, oldFee, newAmount);
+        string memory normalized = LibValidation.toLower(feeType);
+        uint256 oldFee = s.fees[normalized];
+        s.fees[normalized] = newAmount;
+
+        if (s.enhancementFlags[normalized] != 0) {
+            s.enhancementPrices[normalized] = newAmount;
+        }
+
+        emit FeeUpdated(normalized, oldFee, newAmount);
     }
 
     function updateFeeRecipient(address newRecipient) internal {
@@ -37,15 +44,19 @@ library LibAdmin {
     }
     
     function configureTLD(string calldata tld, bool isActive, uint256 price) internal {
+        require(LibValidation.isValidTLD(tld), "Invalid TLD");
+
         AppStorage storage s = LibAppStorage.appStorage();
-        s.validTlds[tld] = isActive;
+        string memory normalized = LibValidation.toLower(tld);
+        s.validTlds[normalized] = isActive;
         if (price > 0) {
-            s.tldPrices[tld] = price;
-            s.freeTlds[tld] = false;
+            s.tldPrices[normalized] = price;
+            s.freeTlds[normalized] = false;
         } else {
-            s.freeTlds[tld] = true;
+            s.tldPrices[normalized] = 0;
+            s.freeTlds[normalized] = true;
         }
-        emit TLDConfigured(tld, isActive, price);
+        emit TLDConfigured(normalized, isActive, price);
     }
     
     function grantRole(bytes32 role, address account) internal {

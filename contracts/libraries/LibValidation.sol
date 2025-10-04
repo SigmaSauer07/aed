@@ -74,7 +74,7 @@ library LibValidation {
     function normalizeDomainName(string memory name) internal pure returns (string memory) {
         bytes memory nameBytes = bytes(name);
         bytes memory normalized = new bytes(nameBytes.length);
-        
+
         for (uint256 i = 0; i < nameBytes.length; i++) {
             bytes1 char = nameBytes[i];
             // Convert uppercase to lowercase
@@ -84,8 +84,29 @@ library LibValidation {
                 normalized[i] = char;
             }
         }
-        
+
         return string(normalized);
+    }
+
+    /**
+     * @dev Converts an arbitrary string to lowercase.
+     * @param input The string to normalise
+     * @return lower The lowercase string
+     */
+    function toLower(string memory input) internal pure returns (string memory) {
+        bytes memory inputBytes = bytes(input);
+        bytes memory lower = new bytes(inputBytes.length);
+
+        for (uint256 i = 0; i < inputBytes.length; i++) {
+            bytes1 char = inputBytes[i];
+            if (char >= 0x41 && char <= 0x5A) {
+                lower[i] = bytes1(uint8(char) + 32);
+            } else {
+                lower[i] = char;
+            }
+        }
+
+        return string(lower);
     }
     
     /**

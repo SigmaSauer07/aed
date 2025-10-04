@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 library LibMetadata {
     using LibAppStorage for AppStorage;
     using Strings for uint256;
+    using Strings for address;
 
     // Default background images for domains and subdomains
     // These IPFS URIs point to pinned PNGs hosted on Pinata.  If you change the pin or host,
@@ -17,7 +18,24 @@ library LibMetadata {
     
     event ProfileURIUpdated(uint256 indexed tokenId, string uri);
     event ImageURIUpdated(uint256 indexed tokenId, string uri);
-    
+
+    function defaultProfileURI(string memory domain, address owner) internal pure returns (string memory) {
+        string memory json = string(abi.encodePacked(
+            '{"domain":"', domain, '",',
+            '"owner":"', Strings.toHexString(owner), '",',
+            '"description":"Alsania Enhanced Domain profile metadata"}'
+        ));
+
+        return string(abi.encodePacked(
+            "data:application/json;base64,",
+            Base64.encode(bytes(json))
+        ));
+    }
+
+    function defaultImageURI(bool isSubdomain) internal pure returns (string memory) {
+        return isSubdomain ? SUBDOMAIN_BG_URI : DOMAIN_BG_URI;
+    }
+
     function setProfileURI(uint256 tokenId, string calldata uri) internal {
         require(LibAppStorage.tokenExists(tokenId), "Token does not exist");
         AppStorage storage s = LibAppStorage.appStorage();

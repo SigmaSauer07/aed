@@ -162,19 +162,33 @@ library LibMetadata {
      * @dev Contract-level metadata
      * @return uri The contract URI
      */
-    function contractURI() internal pure returns (string memory) {
+    function contractURI() internal view returns (string memory) {
+        AppStorage storage s = LibAppStorage.appStorage();
+
+        string memory collectionName = bytes(s.name).length > 0
+            ? s.name
+            : "Alsania Enhanced Domains";
+
+        string memory description = bytes(s.globalDescription).length > 0
+            ? s.globalDescription
+            : "A comprehensive domain name system with enhanced features";
+
         string memory json = string(abi.encodePacked(
-            '{"name":"Alsania Enhanced Domains",',
-            '"description":"A comprehensive domain name system with enhanced features",',
+            '{"name":"', collectionName, '",',
+            '"description":"', description, '",',
             '"image":"https://api.alsania.io/contract-image.png",',
             '"external_link":"https://alsania.io",',
             '"seller_fee_basis_points":250,',
-            '"fee_recipient":"0x0000000000000000000000000000000000000000"}'
+            '"fee_recipient":"', _addressToString(s.feeCollector), '"}'
         ));
-        
+
         return string(abi.encodePacked(
             "data:application/json;base64,",
             Base64.encode(bytes(json))
         ));
+    }
+
+    function _addressToString(address account) private pure returns (string memory) {
+        return Strings.toHexString(uint256(uint160(account)), 20);
     }
 }

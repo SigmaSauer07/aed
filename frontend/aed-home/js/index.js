@@ -1,184 +1,376 @@
-const CONTRACT_ADDRESS = '0x6452DCd7Bbee694223D743f09FF07c717Eeb34DF'; // Working AED contract
-let provider, signer, AED;
+const DEFAULT_CONFIG = {
+  contractAddress: "0x6452DCd7Bbee694223D743f09FF07c717Eeb34DF",
+  network: {
+    name: "Polygon Amoy",
+    chainIdHex: "0x13882",
+    rpcUrl: "https://rpc-amoy.polygon.technology"
+  },
+  pricing: {
+    fallbackPremiumTld: "1",
+    fallbackSubdomain: "2",
+    fallbackByo: "5"
+  }
+};
 
-// Alsania native TLDs
-const ALSANIA_TLDS = ['aed', 'alsa', '07', 'alsania', 'fx', 'echo'];
+function deepMerge(base, override) {
+  const output = { ...base };
+  for (const key of Object.keys(override || {})) {
+    const value = override[key];
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      output[key] = deepMerge(base[key] || {}, value);
+    } else if (value !== undefined) {
+      output[key] = value;
+    }
+  }
+  return output;
+}
+
+const CONFIG = deepMerge(DEFAULT_CONFIG, window.AED_CONFIG || {});
+const CONTRACT_ADDRESS = CONFIG.contractAddress;
+const TARGET_CHAIN_ID_HEX = CONFIG.network.chainIdHex;
+const TARGET_CHAIN_ID = parseInt(TARGET_CHAIN_ID_HEX, 16);
+const TARGET_CHAIN_ID_BIGINT = BigInt(TARGET_CHAIN_ID);
+
+const ALSANIA_TLDS = ["aed", "alsa", "07", "alsania", "fx", "echo"];
+const FREE_TLDS = new Set(["aed", "alsa", "07"]);
+
+let provider;
+let signer;
+let AED;
+let readProvider = CONFIG.network.rpcUrl ? new ethers.JsonRpcProvider(CONFIG.network.rpcUrl) : null;
+let contractAbi;
+
+const pricingCache = new Map();
+
+async function loadAbi() {
+  if (!contractAbi) {
+    const response = await fetch("./js/aedABI.json");
+    const data = await response.json();
+    contractAbi = data.abi || data;
+  }
+  return contractAbi;
+}
+
+async function getReadContract() {
+  const abi = await loadAbi();
+  if (!readProvider && CONFIG.network.rpcUrl) {
+    readProvider = new ethers.JsonRpcProvider(CONFIG.network.rpcUrl);
+  }
+  const runner = signer || provider || readProvider;
+  if (!runner) {
+    throw new Error("No provider available for read operations");
+  }
+  return new ethers.Contract(CONTRACT_ADDRESS, abi, runner);
+}
+
+async function ensureCorrectNetwork() {
+  if (!provider) return;
+  const network = await provider.getNetwork();
+  if (network.chainId === TARGET_CHAIN_ID_BIGINT) {
+    return;
+  }
+
+  try {
+    await provider.send("wallet_switchEthereumChain", [{ chainId: TARGET_CHAIN_ID_HEX }]);
+  } catch (switchError) {
+    if (switchError.code === 4902) {
+      await provider.send("wallet_addEthereumChain", [{
+        chainId: TARGET_CHAIN_ID_HEX,
+        chainName: CONFIG.network.name,
+        rpcUrls: [CONFIG.network.rpcUrl],
+        nativeCurrency: { name: "MATIC", symbol: "MATIC", decimals: 18 }
+      }]);
+    } else {
+      throw switchError;
+    }
+  }
+}
 
 async function connectWallet() {
   try {
     if (!window.ethereum) {
-      alert("Please install MetaMask!");
+      alert("Please install MetaMask to continue.");
       return;
     }
 
     provider = new ethers.BrowserProvider(window.ethereum);
     await provider.send("eth_requestAccounts", []);
+    await ensureCorrectNetwork();
+
     signer = await provider.getSigner();
-    
-    // Load ABI
-    const response = await fetch('./js/aedABI.json');
-    const abiData = await response.json();
-    const abi = abiData.abi || abiData; // Handle different ABI formats
-    
+    const abi = await loadAbi();
     AED = new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
+
     const address = await signer.getAddress();
-    document.getElementById("wallet").innerText = "Wallet: " + address.slice(0, 6) + "..." + address.slice(-4);
-    
-    // Update button text
+    document.getElementById("wallet").innerText = `Wallet: ${address.slice(0, 6)}...${address.slice(-4)}`;
     document.getElementById("connectBtn").textContent = "Connected";
-    
+
     await updateRegisterTotal();
+    await updateEnhanceTotal();
   } catch (err) {
     console.error(err);
-    alert("Failed to connect wallet: " + err.message);
+    alert(`Failed to connect wallet: ${err.message}`);
+  }
+}
+
+function isNativeDomain(domain) {
+  const lower = domain.toLowerCase();
+  return ALSANIA_TLDS.some((tld) => lower.endsWith(`.${tld}`));
+}
+
+function fallbackTldPricing(tld) {
+  if (FREE_TLDS.has(tld)) {
+    return { price: 0n, isFree: true };
+  }
+
+  if (ALSANIA_TLDS.includes(tld)) {
+    return { price: ethers.parseEther(CONFIG.pricing.fallbackPremiumTld), isFree: false };
+  }
+
+  return { price: 0n, isFree: false };
+}
+
+function formatMatic(amountWei) {
+  try {
+    const formatted = Number.parseFloat(ethers.formatEther(amountWei ?? 0n));
+    return `$${formatted.toFixed(2)} MATIC`;
+  } catch (err) {
+    return "$0.00 MATIC";
+  }
+}
+
+async function resolveTldPricing(tld) {
+  if (!tld) {
+    return { price: 0n, isFree: true };
+  }
+
+  const cacheKey = `tld-${tld}`;
+  if (pricingCache.has(cacheKey)) {
+    return pricingCache.get(cacheKey);
+  }
+
+  try {
+    const contract = await getReadContract();
+    const [price, isFree] = await Promise.all([
+      contract.getTLDPrice(tld),
+      contract.isTLDFree(tld)
+    ]);
+    const payload = { price, isFree };
+    pricingCache.set(cacheKey, payload);
+    return payload;
+  } catch (err) {
+    console.warn(`Falling back to static pricing for ${tld}:`, err.message);
+    const payload = fallbackTldPricing(tld);
+    pricingCache.set(cacheKey, payload);
+    return payload;
+  }
+}
+
+async function getFeaturePriceValue(featureName) {
+  const cacheKey = `feature-${featureName}`;
+  if (pricingCache.has(cacheKey)) {
+    return pricingCache.get(cacheKey);
+  }
+
+  try {
+    const contract = await getReadContract();
+    const price = await contract.getFeaturePrice(featureName);
+    pricingCache.set(cacheKey, price);
+    return price;
+  } catch (err) {
+    console.warn(`Using fallback pricing for feature ${featureName}:`, err.message);
+    let fallback = "0";
+    if (featureName === "subdomain") {
+      fallback = CONFIG.pricing.fallbackSubdomain;
+    } else if (featureName === "byo") {
+      fallback = CONFIG.pricing.fallbackByo;
+    }
+    const price = ethers.parseEther(fallback);
+    pricingCache.set(cacheKey, price);
+    return price;
   }
 }
 
 async function updateRegisterTotal() {
-  const freeTld = document.getElementById("freeTld").value;
-  const featuredTld = document.getElementById("featuredTld").value;
-  const subEnh = document.getElementById("enhSubdomain").checked;
-  
-  let total = 0;
-  let selectedTld = freeTld || featuredTld;
-  
-  if (selectedTld && AED) {
-    try {
-      // For now, we'll use estimated prices since getTLDPrice might not exist
-      // Free TLDs = 0, Featured TLDs = estimated price
-      if (featuredTld) {
-        total = 5; // Estimated price for featured TLDs
+  const totalElement = document.getElementById("registerTotal");
+  if (!totalElement) return;
+
+  try {
+    const freeTldSelect = document.getElementById("freeTld");
+    const featuredTldSelect = document.getElementById("featuredTld");
+    const subdomainCheckbox = document.getElementById("enhSubdomain");
+
+    const selectedFree = freeTldSelect ? freeTldSelect.value : "";
+    const selectedFeatured = featuredTldSelect ? featuredTldSelect.value : "";
+    const selectedTld = selectedFree || selectedFeatured;
+    const wantsSubdomains = subdomainCheckbox ? subdomainCheckbox.checked : false;
+
+    let totalWei = 0n;
+
+    if (selectedTld) {
+      const tldInfo = await resolveTldPricing(selectedTld);
+      if (!tldInfo.isFree) {
+        totalWei += tldInfo.price;
       }
-      
-      if (subEnh) {
-        total += 2;
-      }
-    } catch (err) {
-      console.error("Error calculating price:", err);
     }
-  } else if (subEnh) {
-    total = 2;
+
+    if (wantsSubdomains) {
+      totalWei += await getFeaturePriceValue("subdomain");
+    }
+
+    totalElement.innerText = formatMatic(totalWei);
+  } catch (err) {
+    console.error("Failed to update registration total", err);
+    totalElement.innerText = "$0.00 MATIC";
   }
-  
-  document.getElementById("registerTotal").innerText = `$${total} MATIC`;
 }
 
-function updateEnhanceTotal() {
-  const domain = document.getElementById("existingDomain").value.trim();
-  const enhance = document.getElementById("enhanceSubdomain").checked;
-  
-  let total = 0;
-  
-  if (enhance && domain) {
-    // Check if it's an Alsania native domain
-    const isNative = ALSANIA_TLDS.some(tld => domain.toLowerCase().includes(`.${tld}`));
-    total = isNative ? 2 : 5;
+async function updateEnhanceTotal() {
+  const totalElement = document.getElementById("enhanceTotal");
+  if (!totalElement) return;
+
+  try {
+    const domainInput = document.getElementById("existingDomain");
+    const enhanceCheckbox = document.getElementById("enhanceSubdomain");
+
+    const domainValue = domainInput ? domainInput.value.trim() : "";
+    const wantsEnhancement = enhanceCheckbox ? enhanceCheckbox.checked : false;
+
+    let totalWei = 0n;
+
+    if (wantsEnhancement) {
+      const native = domainValue ? isNativeDomain(domainValue) : true;
+      const priceKey = native ? "subdomain" : "byo";
+      totalWei += await getFeaturePriceValue(priceKey);
+    }
+
+    totalElement.innerText = formatMatic(totalWei);
+  } catch (err) {
+    console.error("Failed to update enhancement total", err);
+    totalElement.innerText = "$0.00 MATIC";
   }
-  
-  document.getElementById("enhanceTotal").innerText = `$${total} MATIC`;
 }
 
 async function registerDomain() {
-  if (!AED) return alert(" Connect your wallet first.");
-  
-  const name = document.getElementById("domainName").value.trim();
-  const freeTld = document.getElementById("freeTld").value;
-  const featuredTld = document.getElementById("featuredTld").value;
-  const selectedTld = freeTld || featuredTld;
-  const enh = document.getElementById("enhSubdomain").checked;
-  
-  if (!name || !selectedTld) return alert(" Please enter a domain name and select a TLD");
-  
-  try {
-    // Calculate total fee
-    let tldPrice = 0n;
-    if (featuredTld) {
-      tldPrice = ethers.parseEther("1"); // Updated to $1 MATIC for featured TLDs
-    }
-    
-    const subFee = enh ? ethers.parseEther("2") : 0n;
-    const totalFee = tldPrice + subFee;
+  if (!AED) {
+    alert("Connect your wallet first.");
+    return;
+  }
 
-    // Use the correct function signature based on the contract
-    const tx = await AED.registerDomain(name, selectedTld, enh, {
-      value: totalFee
-    });
-    
+  const nameInput = document.getElementById("domainName");
+  const freeTldSelect = document.getElementById("freeTld");
+  const featuredTldSelect = document.getElementById("featuredTld");
+  const subdomainCheckbox = document.getElementById("enhSubdomain");
+
+  const name = nameInput ? nameInput.value.trim() : "";
+  const selectedFree = freeTldSelect ? freeTldSelect.value : "";
+  const selectedFeatured = featuredTldSelect ? featuredTldSelect.value : "";
+  const selectedTld = selectedFree || selectedFeatured;
+  const wantsSubdomains = subdomainCheckbox ? subdomainCheckbox.checked : false;
+
+  if (!name || !selectedTld) {
+    alert("Please enter a domain name and select a TLD.");
+    return;
+  }
+
+  try {
+    const tldInfo = await resolveTldPricing(selectedTld);
+    let totalFee = tldInfo.isFree ? 0n : tldInfo.price;
+
+    if (wantsSubdomains) {
+      totalFee += await getFeaturePriceValue("subdomain");
+    }
+
+    const overrides = totalFee > 0n ? { value: totalFee } : {};
+    const tx = await AED.registerDomain(name, selectedTld, wantsSubdomains, overrides);
     const receipt = await tx.wait();
-    alert(" Domain registered successfully! Tx: " + receipt.transactionHash);
-    
-    // Clear form
-    document.getElementById("domainName").value = "";
-    document.getElementById("freeTld").value = "";
-    document.getElementById("featuredTld").value = "";
-    document.getElementById("enhSubdomain").checked = false;
-    updateRegisterTotal();
-    
+
+    alert(`Domain registered successfully! Tx: ${receipt.hash}`);
+
+    if (nameInput) nameInput.value = "";
+    if (freeTldSelect) freeTldSelect.value = "";
+    if (featuredTldSelect) featuredTldSelect.value = "";
+    if (subdomainCheckbox) subdomainCheckbox.checked = false;
+
+    await updateRegisterTotal();
   } catch (err) {
     console.error(err);
-    alert(" Registration failed: " + (err.reason || err.message));
+    alert(`Registration failed: ${err.reason || err.message}`);
   }
 }
 
 async function enhanceDomain() {
-  if (!AED) return alert(" Connect your wallet first.");
-  
-  const domain = document.getElementById("existingDomain").value.trim();
-  const enhance = document.getElementById("enhanceSubdomain").checked;
-  
-  if (!domain) return alert(" Please enter a domain name or token ID");
-  if (!enhance) return alert(" Please select an enhancement");
-  
+  if (!AED) {
+    alert("Connect your wallet first.");
+    return;
+  }
+
+  const domainInput = document.getElementById("existingDomain");
+  const enhanceCheckbox = document.getElementById("enhanceSubdomain");
+
+  const domain = domainInput ? domainInput.value.trim() : "";
+  const wantsEnhancement = enhanceCheckbox ? enhanceCheckbox.checked : false;
+
+  if (!domain) {
+    alert("Please enter a domain name or token ID.");
+    return;
+  }
+
+  if (!wantsEnhancement) {
+    alert("Please select an enhancement.");
+    return;
+  }
+
   try {
-    // Determine if it's a token ID or domain name
     const isTokenId = /^\d+$/.test(domain);
     let tokenId;
-    
+
     if (isTokenId) {
       tokenId = BigInt(domain);
     } else {
       try {
-        // Try to get token ID from domain name
-        tokenId = await AED.getTokenIdByDomain(domain);
+        const contract = await getReadContract();
+        tokenId = await contract.getTokenIdByDomain(domain);
       } catch (err) {
-        alert("Could not find token ID for domain. Please use Token ID instead.");
+        alert("Could not resolve token ID for that domain. Please provide the Token ID directly.");
         return;
       }
     }
-    
-    // Calculate fee
-    const isNative = ALSANIA_TLDS.some(tld => domain.toLowerCase().includes(`.${tld}`));
-    const fee = ethers.parseEther(isNative ? "2" : "5");
-    
-    // Purchase subdomain feature
-    const tx = await AED.purchaseFeature(tokenId, "subdomain", { value: fee });
+
+    const native = isTokenId ? true : isNativeDomain(domain);
+    const featureKey = native ? "subdomain" : "byo";
+    const price = await getFeaturePriceValue(featureKey);
+    const overrides = price > 0n ? { value: price } : {};
+
+    let tx;
+    if (native) {
+      tx = await AED.purchaseFeature(tokenId, "subdomain", overrides);
+    } else {
+      tx = await AED.upgradeExternalDomain(domain, overrides);
+    }
+
     const receipt = await tx.wait();
-    
-    alert(" Domain enhanced successfully! Tx: " + receipt.transactionHash);
-    
-    // Clear form
-    document.getElementById("existingDomain").value = "";
-    document.getElementById("enhanceSubdomain").checked = false;
-    updateEnhanceTotal();
-    
+    alert(`Domain enhanced successfully! Tx: ${receipt.hash}`);
+
+    if (domainInput) domainInput.value = "";
+    if (enhanceCheckbox) enhanceCheckbox.checked = false;
+
+    await updateEnhanceTotal();
   } catch (err) {
     console.error(err);
-    alert(" Enhancement failed: " + (err.reason || err.message));
+    alert(`Enhancement failed: ${err.reason || err.message}`);
   }
 }
 
-// Event listeners
 window.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("connectBtn").onclick = connectWallet;
-  document.getElementById("registerBtn").onclick = registerDomain;
-  document.getElementById("enhanceBtn").onclick = enhanceDomain;
-  
-  // Update totals when selections change
-  // Add event listeners for TLD selection
+  document.getElementById("connectBtn").onclick = () => connectWallet();
+  document.getElementById("registerBtn").onclick = () => registerDomain();
+  document.getElementById("enhanceBtn").onclick = () => enhanceDomain();
+
   const freeTldSelect = document.getElementById("freeTld");
   const featuredTldSelect = document.getElementById("featuredTld");
-  const enhSubdomainCheck = document.getElementById("enhSubdomain");
-  const enhanceSubdomainCheck = document.getElementById("enhanceSubdomain");
+  const subdomainCheckbox = document.getElementById("enhSubdomain");
+  const enhanceCheckbox = document.getElementById("enhanceSubdomain");
   const existingDomainInput = document.getElementById("existingDomain");
 
   if (freeTldSelect) {
@@ -189,7 +381,7 @@ window.addEventListener("DOMContentLoaded", () => {
       updateRegisterTotal();
     };
   }
-  
+
   if (featuredTldSelect) {
     featuredTldSelect.onchange = () => {
       if (featuredTldSelect.value && freeTldSelect) {
@@ -198,17 +390,23 @@ window.addEventListener("DOMContentLoaded", () => {
       updateRegisterTotal();
     };
   }
-  
-  if (enhSubdomainCheck) {
-    enhSubdomainCheck.onchange = updateRegisterTotal;
+
+  if (subdomainCheckbox) {
+    subdomainCheckbox.onchange = () => updateRegisterTotal();
   }
-  
-  if (enhanceSubdomainCheck) {
-    enhanceSubdomainCheck.onchange = updateEnhanceTotal;
+
+  if (enhanceCheckbox) {
+    enhanceCheckbox.onchange = () => updateEnhanceTotal();
   }
-  
+
   if (existingDomainInput) {
-    existingDomainInput.oninput = updateEnhanceTotal;
+    existingDomainInput.oninput = () => updateEnhanceTotal();
   }
+
+  updateRegisterTotal();
+  updateEnhanceTotal();
 });
 
+window.connectWallet = connectWallet;
+window.registerDomain = registerDomain;
+window.enhanceDomain = enhanceDomain;

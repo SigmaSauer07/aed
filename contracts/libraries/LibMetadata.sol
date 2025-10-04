@@ -100,12 +100,12 @@ library LibMetadata {
             '<image href="', bgURI, '" x="0" y="0" width="400" height="400"/>',
             // overlay domain/subdomain text in neon green
             '<text x="200" y="250" font-family="\'Orbitron\', sans-serif" font-size="20" font-weight="bold" ',
-            'text-anchor="middle" fill="#39FF14">',
+            'text-anchor="middle" fill="#39ff14">',
             truncatedDomain,
             '</text>',
             // overlay type (Domain or Subdomain) below
             '<text x="200" y="290" font-family="\'Orbitron\', sans-serif" font-size="14" ',
-            'text-anchor="middle" fill="#39FF14">',
+            'text-anchor="middle" fill="#39ff14">',
             domainInfo.isSubdomain ? "Subdomain" : "Domain",
             '</text>',
             '</svg>'
@@ -149,7 +149,7 @@ library LibMetadata {
         
         // Count bits set in features
         while (features > 0) {
-            if (features & 1 == 1) {
+            if ((features & 1) == 1) {
                 count++;
             }
             features >>= 1;

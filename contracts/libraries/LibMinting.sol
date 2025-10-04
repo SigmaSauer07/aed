@@ -5,6 +5,7 @@ import "../core/AppStorage.sol";
 import "../core/AEDConstants.sol";
 import "./LibValidation.sol";
 import "./LibAppStorage.sol";
+import "./LibMetadata.sol";
 
 library LibMinting {
     using LibAppStorage for AppStorage;
@@ -51,16 +52,18 @@ library LibMinting {
         s.domainExists[fullDomain] = true;
         s.userDomains[msg.sender].push(fullDomain);
         
-        // Initialize domain struct
-        // TODO: Set sensible defaults for profileURI and imageURI (e.g. an IPFS link or baseURI)
-        // If you have specific default metadata or images, replace the empty strings below accordingly.
+        // Initialize domain struct with deterministic metadata defaults
+        string memory profileUriDefault = LibMetadata.defaultProfileURI(fullDomain, false);
+        string memory imageUriDefault = LibMetadata.defaultImageURI(fullDomain, false);
+        uint256 mintFee = s.freeTlds[tld] ? 0 : s.tldPrices[tld];
+
         s.domains[tokenId] = Domain({
             name: normalizedName,
             tld: tld,
-            profileURI: "", // Set default profile URI here
-            imageURI: "",    // Set default image URI here
+            profileURI: profileUriDefault,
+            imageURI: imageUriDefault,
             subdomainCount: 0,
-            mintFee: 0,
+            mintFee: mintFee,
             expiresAt: 0,
             feeEnabled: false,
             isSubdomain: false,
@@ -117,13 +120,14 @@ library LibMinting {
         // Update parent domain
         s.domains[parentTokenId].subdomainCount++;
         
-        // Initialize subdomain struct
-        // TODO: Provide sensible defaults for profileURI and imageURI for subdomains
+        string memory profileUriDefault = LibMetadata.defaultProfileURI(subdomainName, true);
+        string memory imageUriDefault = LibMetadata.defaultImageURI(subdomainName, true);
+
         s.domains[tokenId] = Domain({
             name: normalizedLabel,
             tld: parentDomain,
-            profileURI: "", // Set default profile URI here
-            imageURI: "",    // Set default image URI here
+            profileURI: profileUriDefault,
+            imageURI: imageUriDefault,
             subdomainCount: 0,
             mintFee: 0,
             expiresAt: 0,

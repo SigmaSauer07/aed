@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "./external/oz/access/AccessControl.sol";
 
 /// @title AED Module Registry
 /// @dev Manages module registration and routing in the modular UUPS system

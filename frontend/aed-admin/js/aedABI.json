@@ -1,1487 +1,658 @@
-{
-  "abi": [
-    {
-      "type": "error",
-      "name": "AccessControlBadConfirmation",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "AccessControlUnauthorizedAccount",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "account"
-        },
-        {
-          "type": "bytes32",
-          "name": "neededRole"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "AddressEmptyCode",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "target"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "DomainNotFound",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "ERC1967InvalidImplementation",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "implementation"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "ERC1967NonPayable",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "ERC721IncorrectOwner",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "sender"
-        },
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        },
-        {
-          "type": "address",
-          "name": "owner"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "ERC721InsufficientApproval",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "operator"
-        },
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "ERC721InvalidApprover",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "approver"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "ERC721InvalidOperator",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "operator"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "ERC721InvalidOwner",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "owner"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "ERC721InvalidReceiver",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "receiver"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "ERC721InvalidSender",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "sender"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "ERC721NonexistentToken",
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ]
-    },
-    {
-      "type": "error",
-      "name": "FailedCall",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "InsufficientFunds",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "InvalidInitialization",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "InvalidNameLength",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "InvalidTLD",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "ModuleNotFound",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "NotAuthorized",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "NotInitializing",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "UUPSUnauthorizedCallContext",
-      "inputs": []
-    },
-    {
-      "type": "error",
-      "name": "UUPSUnsupportedProxiableUUID",
-      "inputs": [
-        {
-          "type": "bytes32",
-          "name": "slot"
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "Approval",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "owner",
-          "indexed": true
-        },
-        {
-          "type": "address",
-          "name": "approved",
-          "indexed": true
-        },
-        {
-          "type": "uint256",
-          "name": "tokenId",
-          "indexed": true
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "ApprovalForAll",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "owner",
-          "indexed": true
-        },
-        {
-          "type": "address",
-          "name": "operator",
-          "indexed": true
-        },
-        {
-          "type": "bool",
-          "name": "approved",
-          "indexed": false
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "BatchMetadataUpdate",
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "_fromTokenId",
-          "indexed": false
-        },
-        {
-          "type": "uint256",
-          "name": "_toTokenId",
-          "indexed": false
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "Initialized",
-      "inputs": [
-        {
-          "type": "uint64",
-          "name": "version",
-          "indexed": false
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "MetadataUpdate",
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "_tokenId",
-          "indexed": false
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "RoleAdminChanged",
-      "inputs": [
-        {
-          "type": "bytes32",
-          "name": "role",
-          "indexed": true
-        },
-        {
-          "type": "bytes32",
-          "name": "previousAdminRole",
-          "indexed": true
-        },
-        {
-          "type": "bytes32",
-          "name": "newAdminRole",
-          "indexed": true
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "RoleGranted",
-      "inputs": [
-        {
-          "type": "bytes32",
-          "name": "role",
-          "indexed": true
-        },
-        {
-          "type": "address",
-          "name": "account",
-          "indexed": true
-        },
-        {
-          "type": "address",
-          "name": "sender",
-          "indexed": true
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "RoleRevoked",
-      "inputs": [
-        {
-          "type": "bytes32",
-          "name": "role",
-          "indexed": true
-        },
-        {
-          "type": "address",
-          "name": "account",
-          "indexed": true
-        },
-        {
-          "type": "address",
-          "name": "sender",
-          "indexed": true
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "Transfer",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "from",
-          "indexed": true
-        },
-        {
-          "type": "address",
-          "name": "to",
-          "indexed": true
-        },
-        {
-          "type": "uint256",
-          "name": "tokenId",
-          "indexed": true
-        }
-      ]
-    },
-    {
-      "type": "event",
-      "anonymous": false,
-      "name": "Upgraded",
-      "inputs": [
-        {
-          "type": "address",
-          "name": "implementation",
-          "indexed": true
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ADMIN_ROLE",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "bytes32",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "BRIDGE_MANAGER_ROLE",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "bytes32",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "DEFAULT_ADMIN_ROLE",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "bytes32",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ERROR_ALREADY_EXISTS",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ERROR_DOES_NOT_EXIST",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ERROR_EXPIRED",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ERROR_INSUFFICIENT_PAYMENT",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ERROR_INVALID_PARAMETER",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ERROR_INVALID_TOKEN",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ERROR_NOT_AUTHORIZED",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ERROR_PAUSED",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "FEATURE_BRIDGE",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "FEATURE_METADATA",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "FEATURE_REVERSE",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "FEATURE_SUBDOMAINS",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "FEE_MANAGER_ROLE",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "bytes32",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "MAX_NAME_LENGTH",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "MAX_SUBDOMAINS",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "MIN_NAME_LENGTH",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "TLD_MANAGER_ROLE",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "bytes32",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "UPGRADE_INTERFACE_VERSION",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "approve",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "to"
-        },
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "balanceOf",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "owner"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "calculateSubdomainFee",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "parentId"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "enableSubdomainFeature",
-      "constant": false,
-      "stateMutability": "payable",
-      "payable": true,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "getApproved",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "address",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "getDomainByTokenId",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "getDomainInfo",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "tuple",
-          "name": "",
-          "components": [
-            {
-              "type": "string",
-              "name": "name"
-            },
-            {
-              "type": "string",
-              "name": "tld"
-            },
-            {
-              "type": "string",
-              "name": "profileURI"
-            },
-            {
-              "type": "string",
-              "name": "imageURI"
-            },
-            {
-              "type": "uint256",
-              "name": "subdomainCount"
-            },
-            {
-              "type": "uint256",
-              "name": "mintFee"
-            },
-            {
-              "type": "uint64",
-              "name": "expiresAt"
-            },
-            {
-              "type": "bool",
-              "name": "feeEnabled"
-            },
-            {
-              "type": "bool",
-              "name": "isSubdomain"
-            },
-            {
-              "type": "address",
-              "name": "owner"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "getFeaturePrice",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "string",
-          "name": "feature"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "getFeeCollector",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "address",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "getReverse",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "addr"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "getRoleAdmin",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "bytes32",
-          "name": "role"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "bytes32",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "getTokenIdByDomain",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "string",
-          "name": "domain"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "getUserDomains",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "user"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "string[]",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "grantRole",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "bytes32",
-          "name": "role"
-        },
-        {
-          "type": "address",
-          "name": "account"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "hasRole",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "bytes32",
-          "name": "role"
-        },
-        {
-          "type": "address",
-          "name": "account"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "bool",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "initialize",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "string",
-          "name": "name"
-        },
-        {
-          "type": "string",
-          "name": "symbol"
-        },
-        {
-          "type": "address",
-          "name": "paymentWallet"
-        },
-        {
-          "type": "address",
-          "name": "admin"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "isApprovedForAll",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "owner"
-        },
-        {
-          "type": "address",
-          "name": "operator"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "bool",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "isFeatureEnabled",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        },
-        {
-          "type": "string",
-          "name": "feature"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "bool",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "isRegistered",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "string",
-          "name": "name"
-        },
-        {
-          "type": "string",
-          "name": "tld"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "bool",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "isTLDActive",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "string",
-          "name": "tld"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "bool",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "mintSubdomain",
-      "constant": false,
-      "stateMutability": "payable",
-      "payable": true,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "parentId"
-        },
-        {
-          "type": "string",
-          "name": "label"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "name",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "ownerOf",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "address",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "pause",
-      "constant": false,
-      "payable": false,
-      "inputs": [],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "proxiableUUID",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "bytes32",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "registerDomain",
-      "constant": false,
-      "stateMutability": "payable",
-      "payable": true,
-      "inputs": [
-        {
-          "type": "string",
-          "name": "name"
-        },
-        {
-          "type": "string",
-          "name": "tld"
-        },
-        {
-          "type": "bool",
-          "name": "withSubdomains"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "uint256",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "renounceRole",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "bytes32",
-          "name": "role"
-        },
-        {
-          "type": "address",
-          "name": "callerConfirmation"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "revokeRole",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "bytes32",
-          "name": "role"
-        },
-        {
-          "type": "address",
-          "name": "account"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "safeTransferFrom",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "from"
-        },
-        {
-          "type": "address",
-          "name": "to"
-        },
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "safeTransferFrom",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "from"
-        },
-        {
-          "type": "address",
-          "name": "to"
-        },
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        },
-        {
-          "type": "bytes",
-          "name": "data"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "setApprovalForAll",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "operator"
-        },
-        {
-          "type": "bool",
-          "name": "approved"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "setBaseURI",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "string",
-          "name": "newBaseURI"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "setImageURI",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        },
-        {
-          "type": "string",
-          "name": "uri"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "setProfileURI",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        },
-        {
-          "type": "string",
-          "name": "uri"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "setReverse",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "string",
-          "name": "domain"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "setTokenURI",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        },
-        {
-          "type": "string",
-          "name": "newURI"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "supportsInterface",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "bytes4",
-          "name": "interfaceId"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "bool",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "symbol",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "tokenURI",
-      "constant": true,
-      "stateMutability": "view",
-      "payable": false,
-      "inputs": [
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ],
-      "outputs": [
-        {
-          "type": "string",
-          "name": ""
-        }
-      ]
-    },
-    {
-      "type": "function",
-      "name": "transferFrom",
-      "constant": false,
-      "payable": false,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "from"
-        },
-        {
-          "type": "address",
-          "name": "to"
-        },
-        {
-          "type": "uint256",
-          "name": "tokenId"
-        }
-      ],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "unpause",
-      "constant": false,
-      "payable": false,
-      "inputs": [],
-      "outputs": []
-    },
-    {
-      "type": "function",
-      "name": "upgradeToAndCall",
-      "constant": false,
-      "stateMutability": "payable",
-      "payable": true,
-      "inputs": [
-        {
-          "type": "address",
-          "name": "newImplementation"
-        },
-        {
-          "type": "bytes",
-          "name": "data"
-        }
-      ],
-      "outputs": []
-    }
-  ]
-}
+[
+  {
+    "inputs": [
+      { "internalType": "string", "name": "name", "type": "string" },
+      { "internalType": "string", "name": "symbol", "type": "string" },
+      { "internalType": "address", "name": "paymentWallet", "type": "address" },
+      { "internalType": "address", "name": "admin", "type": "address" }
+    ],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "name", "type": "string" },
+      { "internalType": "string", "name": "tld", "type": "string" },
+      { "internalType": "bool", "name": "withSubdomains", "type": "bool" }
+    ],
+    "name": "registerDomain",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string[]", "name": "names", "type": "string[]" },
+      { "internalType": "string[]", "name": "tlds", "type": "string[]" },
+      { "internalType": "bool[]", "name": "withSubdomains", "type": "bool[]" }
+    ],
+    "name": "batchRegisterDomains",
+    "outputs": [
+      { "internalType": "uint256[]", "name": "", "type": "uint256[]" }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "parentId", "type": "uint256" },
+      { "internalType": "string", "name": "label", "type": "string" }
+    ],
+    "name": "mintSubdomain",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "parentId", "type": "uint256" }
+    ],
+    "name": "calculateSubdomainFee",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "internalType": "string", "name": "uri", "type": "string" }
+    ],
+    "name": "setProfileURI",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "internalType": "string", "name": "uri", "type": "string" }
+    ],
+    "name": "setImageURI",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "getProfileURI",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "getImageURI",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "tokenURI",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "domain", "type": "string" }
+    ],
+    "name": "setReverse",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "clearReverse",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "addr", "type": "address" }
+    ],
+    "name": "getReverse",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "domain", "type": "string" }
+    ],
+    "name": "getReverseOwner",
+    "outputs": [
+      { "internalType": "address", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "internalType": "string", "name": "featureName", "type": "string" }
+    ],
+    "name": "purchaseFeature",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "enableSubdomainFeature",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "externalDomain", "type": "string" }
+    ],
+    "name": "upgradeExternalDomain",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "featureName", "type": "string" }
+    ],
+    "name": "getFeaturePrice",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "internalType": "string", "name": "featureName", "type": "string" }
+    ],
+    "name": "isFeatureEnabled",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAvailableFeatures",
+    "outputs": [
+      { "internalType": "string[]", "name": "", "type": "string[]" }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "feeType", "type": "string" },
+      { "internalType": "uint256", "name": "newAmount", "type": "uint256" }
+    ],
+    "name": "updateFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "newRecipient", "type": "address" }
+    ],
+    "name": "updateFeeRecipient",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "tld", "type": "string" },
+      { "internalType": "bool", "name": "isActive", "type": "bool" },
+      { "internalType": "uint256", "name": "price", "type": "uint256" }
+    ],
+    "name": "configureTLD",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "featureName", "type": "string" },
+      { "internalType": "uint256", "name": "price", "type": "uint256" }
+    ],
+    "name": "setFeaturePrice",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "featureName", "type": "string" },
+      { "internalType": "uint256", "name": "price", "type": "uint256" },
+      { "internalType": "uint256", "name": "flag", "type": "uint256" }
+    ],
+    "name": "addFeature",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "hasRole",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "getDomainByTokenId",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "domain", "type": "string" }
+    ],
+    "name": "getTokenIdByDomain",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "user", "type": "address" }
+    ],
+    "name": "getUserDomains",
+    "outputs": [
+      { "internalType": "string[]", "name": "", "type": "string[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getTotalRevenue",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getFeeCollector",
+    "outputs": [
+      { "internalType": "address", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "feeType", "type": "string" }
+    ],
+    "name": "getFee",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "tld", "type": "string" }
+    ],
+    "name": "getTLDPrice",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "tld", "type": "string" }
+    ],
+    "name": "isTldFree",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "tld", "type": "string" }
+    ],
+    "name": "isTLDActive",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "string", "name": "name", "type": "string" },
+      { "internalType": "string", "name": "tld", "type": "string" }
+    ],
+    "name": "isRegistered",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "contractURI",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "version",
+    "outputs": [
+      { "internalType": "string", "name": "", "type": "string" }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "ownerOf",
+    "outputs": [
+      { "internalType": "address", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "owner", "type": "address" }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "getApproved",
+    "outputs": [
+      { "internalType": "address", "name": "", "type": "address" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "operator", "type": "address" },
+      { "internalType": "bool", "name": "approved", "type": "bool" }
+    ],
+    "name": "setApprovalForAll",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "owner", "type": "address" },
+      { "internalType": "address", "name": "operator", "type": "address" }
+    ],
+    "name": "isApprovedForAll",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "from", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "transferFrom",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "from", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "safeTransferFrom",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "from", "type": "address" },
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "internalType": "bytes", "name": "data", "type": "bytes" }
+    ],
+    "name": "safeTransferFrom",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ADMIN_ROLE",
+    "outputs": [
+      { "internalType": "bytes32", "name": "", "type": "bytes32" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "FEE_MANAGER_ROLE",
+    "outputs": [
+      { "internalType": "bytes32", "name": "", "type": "bytes32" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "TLD_MANAGER_ROLE",
+    "outputs": [
+      { "internalType": "bytes32", "name": "", "type": "bytes32" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "BRIDGE_MANAGER_ROLE",
+    "outputs": [
+      { "internalType": "bytes32", "name": "", "type": "bytes32" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [
+      { "internalType": "bytes32", "name": "", "type": "bytes32" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "isPaused",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "owner", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "approved", "type": "address" },
+      { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "Approval",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "owner", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "operator", "type": "address" },
+      { "indexed": false, "internalType": "bool", "name": "approved", "type": "bool" }
+    ],
+    "name": "ApprovalForAll",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "from", "type": "address" },
+      { "indexed": true, "internalType": "address", "name": "to", "type": "address" },
+      { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "Transfer",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "indexed": true, "internalType": "string", "name": "featureName", "type": "string" },
+      { "indexed": false, "internalType": "uint256", "name": "price", "type": "uint256" }
+    ],
+    "name": "FeaturePurchased",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "feature", "type": "uint256" }
+    ],
+    "name": "FeatureEnabled",
+    "type": "event"
+  }
+]

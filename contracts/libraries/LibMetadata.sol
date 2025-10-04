@@ -2,8 +2,8 @@
 pragma solidity ^0.8.30;
 
 import "./LibAppStorage.sol";
-import "@openzeppelin/contracts/utils/Base64.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
+import "../external/oz/utils/Base64.sol";
+import "../external/oz/utils/Strings.sol";
 
 library LibMetadata {
     using LibAppStorage for AppStorage;
@@ -12,8 +12,8 @@ library LibMetadata {
     // Default background images for domains and subdomains
     // These IPFS URIs point to pinned PNGs hosted on Pinata.  If you change the pin or host,
     // update these constants accordingly.
-    string constant DOMAIN_BG_URI = "ipfs://bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/domain_background.png";
-    string constant SUBDOMAIN_BG_URI = "ipfs://bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/subdomain_background.png";
+    string constant DOMAIN_BG_URI = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzQwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCB3aWR0aD0nNDAwJyBoZWlnaHQ9JzQwMCcgZmlsbD0nIzBhMjQ3MicvPjxyZWN0IHg9JzIwJyB5PScyMCcgd2lkdGg9JzM2MCcgaGVpZ2h0PSczNjAnIGZpbGw9JyMwMDAwMDAnIHJ4PScyNCcvPjxjaXJjbGUgY3g9JzIwMCcgY3k9JzIwMCcgcj0nMTQwJyBzdHJva2U9JyMzOWZmMTQnIGZpbGw9J25vbmUnIHN0cm9rZS13aWR0aD0nNCcvPjwvc3ZnPiI7
+    string constant SUBDOMAIN_BG_URI = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0nNDAwJyBoZWlnaHQ9JzQwMCcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJz48cmVjdCB3aWR0aD0nNDAwJyBoZWlnaHQ9JzQwMCcgZmlsbD0nIzBhMjQ3MicvPjxyZWN0IHg9JzQwJyB5PSc0MCcgd2lkdGg9JzMyMCcgaGVpZ2h0PSczMjAnIGZpbGw9JyMwMDAwMDAnIHJ4PScyNCcvPjxjaXJjbGUgY3g9JzIwMCcgY3k9JzIwMCcgcj0nMTAwJyBzdHJva2U9JyMzOWZmMTQnIGZpbGw9J25vbmUnIHN0cm9rZS13aWR0aD0nNCcvPjwvc3ZnPiI7
     
     event ProfileURIUpdated(uint256 indexed tokenId, string uri);
     event ImageURIUpdated(uint256 indexed tokenId, string uri);
@@ -39,11 +39,21 @@ library LibMetadata {
     }
     
     function getProfileURI(uint256 tokenId) internal view returns (string memory) {
-        return LibAppStorage.appStorage().profileURIs[tokenId];
+        string memory stored = LibAppStorage.appStorage().profileURIs[tokenId];
+        if (bytes(stored).length == 0) {
+            string memory domain = LibAppStorage.appStorage().tokenIdToDomain[tokenId];
+            return defaultProfileURI(domain, LibAppStorage.appStorage().domains[tokenId].isSubdomain);
+        }
+        return stored;
     }
-    
+
     function getImageURI(uint256 tokenId) internal view returns (string memory) {
-        return LibAppStorage.appStorage().imageURIs[tokenId];
+        string memory stored = LibAppStorage.appStorage().imageURIs[tokenId];
+        if (bytes(stored).length == 0) {
+            string memory domain = LibAppStorage.appStorage().tokenIdToDomain[tokenId];
+            return defaultImageURI(domain, LibAppStorage.appStorage().domains[tokenId].isSubdomain);
+        }
+        return stored;
     }
     
     /**
@@ -64,9 +74,13 @@ library LibMetadata {
             : _generateSVG(domain, domainInfo);
         
         // Build JSON metadata
+        string memory description = bytes(s.globalDescription).length > 0
+            ? s.globalDescription
+            : string(abi.encodePacked("Alsania Enhanced Domain registered for ", domain));
+
         string memory json = string(abi.encodePacked(
             '{"name":"', domain, '",',
-            '"description":"Alsania Enhanced Domain - ', domain, '",',
+            '"description":"', description, '",',
             '"image":"', imageURI, '",',
             '"external_url":"https://alsania.io/domain/', domain, '",',
             '"attributes":[',
@@ -149,32 +163,65 @@ library LibMetadata {
         
         // Count bits set in features
         while (features > 0) {
-            if (features & 1 == 1) {
+            if ((features & 1) == 1) {
                 count++;
             }
             features >>= 1;
         }
-        
+
         return count;
     }
-    
+
     /**
      * @dev Contract-level metadata
      * @return uri The contract URI
      */
-    function contractURI() internal pure returns (string memory) {
+    function contractURI() internal view returns (string memory) {
+        AppStorage storage s = LibAppStorage.appStorage();
         string memory json = string(abi.encodePacked(
             '{"name":"Alsania Enhanced Domains",',
-            '"description":"A comprehensive domain name system with enhanced features",',
-            '"image":"https://api.alsania.io/contract-image.png",',
+            '"description":"Alsania\'s sovereign naming system with programmable enhancements",',
+            '"image":"', DOMAIN_BG_URI, '",',
             '"external_link":"https://alsania.io",',
             '"seller_fee_basis_points":250,',
-            '"fee_recipient":"0x0000000000000000000000000000000000000000"}'
+            '"fee_recipient":"', Strings.toHexString(uint160(s.feeCollector), 20), '"}'
         ));
-        
+
         return string(abi.encodePacked(
             "data:application/json;base64,",
             Base64.encode(bytes(json))
+        ));
+    }
+
+    function defaultProfileURI(string memory domain, bool isSubdomain) internal pure returns (string memory) {
+        string memory json = string(abi.encodePacked(
+            '{"domain":"', domain, '",',
+            '"type":"', isSubdomain ? "subdomain" : "domain", '",',
+            '"description":"Alsania sovereign identity profile"}'
+        ));
+
+        return string(abi.encodePacked(
+            "data:application/json;base64,",
+            Base64.encode(bytes(json))
+        ));
+    }
+
+    function defaultImageURI(string memory domain, bool isSubdomain) internal pure returns (string memory) {
+        string memory svg = string(abi.encodePacked(
+            '<svg width="400" height="400" xmlns="http://www.w3.org/2000/svg">',
+            '<rect width="400" height="400" fill="#0a2472"/>',
+            '<text x="200" y="200" font-family="Orbitron" font-size="22" text-anchor="middle" fill="#39ff14">',
+            domain,
+            '</text>',
+            '<text x="200" y="240" font-family="Rajdhani" font-size="16" text-anchor="middle" fill="#39ff14">',
+            isSubdomain ? "Subdomain" : "Domain",
+            '</text>',
+            '</svg>'
+        ));
+
+        return string(abi.encodePacked(
+            "data:image/svg+xml;base64,",
+            Base64.encode(bytes(svg))
         ));
     }
 }

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/utils/Base64.sol";
+import "./external/oz/proxy/utils/UUPSUpgradeable.sol";
+import "./external/oz/access/AccessControlUpgradeable.sol";
+import "./external/oz/token/ERC721/IERC721Upgradeable.sol";
+import "./external/oz/token/ERC721/IERC721Receiver.sol";
+import "./external/oz/utils/Base64.sol";
 import "./core/AppStorage.sol";
 import "./libraries/LibAdmin.sol";
 
@@ -14,7 +14,7 @@ import "./libraries/LibAdmin.sol";
 contract AEDCoreImplementation is
     UUPSUpgradeable,
     AccessControlUpgradeable,
-    IERC721
+    IERC721Upgradeable
 {
     // Direct storage access
     AppStorage private s;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "../external/oz/proxy/utils/Initializable.sol";
 import "./AppStorage.sol";
 import "./AEDConstants.sol";
 import "../libraries/LibAdmin.sol";

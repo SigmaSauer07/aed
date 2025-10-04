@@ -6,7 +6,7 @@
   <title>Alsania Enhanced Domains - Web3 Domain Names</title>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&family=Orbitron:wght@600;700&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/ah.css">
-    <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+  <script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
   <style>
     
   </style>
@@ -85,12 +85,12 @@
       <div class="checkbox-group">
         <label>
           <input type="checkbox" id="enhSubdomain">
-          <span>Add Subdomain Minting (+$2 MATIC)</span>
+          <span>Add Subdomain Minting (+<span id="subdomainPriceLabel">--</span> MATIC)</span>
         </label>
       </div>
 
       <div class="total-display">
-        <div>Registration Total: <span id="registerTotal">$0 MATIC</span></div>
+        <div>Registration Total: <span id="registerTotal">0 MATIC</span></div>
       </div>
 
       <button id="registerBtn" onclick="registerDomain()">Register Domain</button>
@@ -111,8 +111,8 @@
       <div class="cost-info">
         <div class="small-text">
           <strong>Enhancement Pricing:</strong><br>
-          • Alsania Native TLDs (.aed, .alsa, .07, .alsania, .fx, .echo): $2 MATIC<br>
-          • Third-party/External Domains: $5 MATIC
+          • Alsania Native TLDs (.aed, .alsa, .07, .alsania, .fx, .echo): <span id="nativeEnhancementPrice">--</span> MATIC<br>
+          • Third-party/External Domains: <span id="externalEnhancementPrice">--</span> MATIC
         </div>
       </div>
 
@@ -124,7 +124,7 @@
       </div>
 
       <div class="total-display">
-        <div>Enhancement Total: <span id="enhanceTotal">$0 MATIC</span></div>
+        <div>Enhancement Total: <span id="enhanceTotal">0 MATIC</span></div>
       </div>
 
       <button id="enhanceBtn" onclick="enhanceDomain()">Enhance Now</button>
@@ -216,6 +216,7 @@
     </div>
   </footer>
 
+  <script src="js/config.js"></script>
   <script src="js/index.js"></script>
 </body>
 </html>

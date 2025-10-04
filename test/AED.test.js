@@ -61,7 +61,7 @@ describe("AED - Alsania Enhanced Domains", function () {
         it("Should register free domain", async function () {
             const tx = await aed.connect(user1).registerDomain("test", "aed", false);
             const receipt = await tx.wait();
-            
+
             expect(await aed.isRegistered("test", "aed")).to.be.true;
             expect(await aed.ownerOf(1)).to.equal(user1.address);
             expect(await aed.getDomainByTokenId(1)).to.equal("test.aed");
@@ -153,10 +153,18 @@ describe("AED - Alsania Enhanced Domains", function () {
             await aed.connect(user1).registerDomain("test", "aed", false);
         });
 
+        it("Should seed default metadata endpoints on mint", async function () {
+            const expectedProfile = "https://api.alsania.io/metadata/test.aed/profile.json";
+            const expectedImage = "https://api.alsania.io/metadata/test.aed/image.png";
+
+            expect(await aed.getProfileURI(1)).to.equal(expectedProfile);
+            expect(await aed.getImageURI(1)).to.equal(expectedImage);
+        });
+
         it("Should set profile URI", async function () {
             const profileURI = "https://example.com/profile.json";
             await aed.connect(user1).setProfileURI(1, profileURI);
-            
+
             expect(await aed.getProfileURI(1)).to.equal(profileURI);
         });
 
@@ -176,6 +184,16 @@ describe("AED - Alsania Enhanced Domains", function () {
             await expect(
                 aed.connect(user2).setProfileURI(1, "https://example.com")
             ).to.be.revertedWith("Not token owner");
+        });
+
+        it("Should assign defaults for subdomains", async function () {
+            await aed.connect(user1).registerDomain("parent", "aed", true, {
+                value: ethers.parseEther("2"),
+            });
+            await aed.connect(user1).mintSubdomain(2, "child");
+
+            const expectedProfile = "https://api.alsania.io/metadata/child.parent.aed/profile.json";
+            expect(await aed.getProfileURI(3)).to.equal(expectedProfile);
         });
     });
 

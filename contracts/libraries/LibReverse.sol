@@ -4,6 +4,7 @@ pragma solidity ^0.8.30;
 import "../core/AppStorage.sol";
 import "../core/AEDConstants.sol";
 import "./LibAppStorage.sol";
+import "./LibMinting.sol";
 
 library LibReverse {
     using LibAppStorage for AppStorage;
@@ -17,23 +18,24 @@ library LibReverse {
      */
     function setReverseRecord(string calldata domain) internal {
         AppStorage storage s = LibAppStorage.appStorage();
-        
+        string memory normalizedDomain = LibMinting.normalizeLabel(domain);
+
         // Verify the caller owns the domain
-        uint256 tokenId = s.domainToTokenId[domain];
+        uint256 tokenId = s.domainToTokenId[normalizedDomain];
         require(tokenId != 0, "Domain not found");
         require(s.owners[tokenId] == msg.sender, "Not domain owner");
-        
+
         // Clear previous reverse record if exists
         string memory oldDomain = s.reverseRecords[msg.sender];
         if (bytes(oldDomain).length > 0) {
             delete s.reverseOwners[oldDomain];
         }
-        
+
         // Set new reverse record
-        s.reverseRecords[msg.sender] = domain;
-        s.reverseOwners[domain] = msg.sender;
-        
-        emit ReverseRecordSet(msg.sender, domain);
+        s.reverseRecords[msg.sender] = normalizedDomain;
+        s.reverseOwners[normalizedDomain] = msg.sender;
+
+        emit ReverseRecordSet(msg.sender, normalizedDomain);
     }
     
     /**
@@ -59,23 +61,24 @@ library LibReverse {
      */
     function setReverseRecordFor(address addr, string calldata domain) internal {
         AppStorage storage s = LibAppStorage.appStorage();
-        
+        string memory normalizedDomain = LibMinting.normalizeLabel(domain);
+
         // Verify domain exists and is owned by the address
-        uint256 tokenId = s.domainToTokenId[domain];
+        uint256 tokenId = s.domainToTokenId[normalizedDomain];
         require(tokenId != 0, "Domain not found");
         require(s.owners[tokenId] == addr, "Address does not own domain");
-        
+
         // Clear previous reverse record if exists
         string memory oldDomain = s.reverseRecords[addr];
         if (bytes(oldDomain).length > 0) {
             delete s.reverseOwners[oldDomain];
         }
-        
+
         // Set new reverse record
-        s.reverseRecords[addr] = domain;
-        s.reverseOwners[domain] = addr;
-        
-        emit ReverseRecordSet(addr, domain);
+        s.reverseRecords[addr] = normalizedDomain;
+        s.reverseOwners[normalizedDomain] = addr;
+
+        emit ReverseRecordSet(addr, normalizedDomain);
     }
     
     /**
@@ -93,7 +96,8 @@ library LibReverse {
      * @return addr The address, zero address if none set
      */
     function getDomainPrimaryOwner(string calldata domain) internal view returns (address) {
-        return LibAppStorage.appStorage().reverseOwners[domain];
+        string memory normalizedDomain = LibMinting.normalizeLabel(domain);
+        return LibAppStorage.appStorage().reverseOwners[normalizedDomain];
     }
     
     /**
@@ -111,7 +115,8 @@ library LibReverse {
      * @return isPrimary True if domain is set as primary
      */
     function isDomainPrimary(string calldata domain) internal view returns (bool) {
-        return LibAppStorage.appStorage().reverseOwners[domain] != address(0);
+        string memory normalizedDomain = LibMinting.normalizeLabel(domain);
+        return LibAppStorage.appStorage().reverseOwners[normalizedDomain] != address(0);
     }
     
     /**

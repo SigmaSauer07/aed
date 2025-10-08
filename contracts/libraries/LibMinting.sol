@@ -51,14 +51,20 @@ library LibMinting {
         s.domainExists[fullDomain] = true;
         s.userDomains[msg.sender].push(fullDomain);
         
+        // Derive deterministic default metadata endpoints for first-time mints
+        (string memory defaultProfileURI, string memory defaultImageURI) =
+            _defaultMetadataEndpoints(s.baseURI, fullDomain);
+
+        // Persist defaults so external indexers can rely on them immediately
+        s.profileURIs[tokenId] = defaultProfileURI;
+        s.imageURIs[tokenId] = defaultImageURI;
+
         // Initialize domain struct
-        // TODO: Set sensible defaults for profileURI and imageURI (e.g. an IPFS link or baseURI)
-        // If you have specific default metadata or images, replace the empty strings below accordingly.
         s.domains[tokenId] = Domain({
             name: normalizedName,
             tld: tld,
-            profileURI: "", // Set default profile URI here
-            imageURI: "",    // Set default image URI here
+            profileURI: defaultProfileURI,
+            imageURI: defaultImageURI,
             subdomainCount: 0,
             mintFee: 0,
             expiresAt: 0,
@@ -117,13 +123,18 @@ library LibMinting {
         // Update parent domain
         s.domains[parentTokenId].subdomainCount++;
         
+        (string memory defaultProfileURI, string memory defaultImageURI) =
+            _defaultMetadataEndpoints(s.baseURI, subdomainName);
+
+        s.profileURIs[tokenId] = defaultProfileURI;
+        s.imageURIs[tokenId] = defaultImageURI;
+
         // Initialize subdomain struct
-        // TODO: Provide sensible defaults for profileURI and imageURI for subdomains
         s.domains[tokenId] = Domain({
             name: normalizedLabel,
-            tld: parentDomain,
-            profileURI: "", // Set default profile URI here
-            imageURI: "",    // Set default image URI here
+            tld: _extractTld(parentDomain),
+            profileURI: defaultProfileURI,
+            imageURI: defaultImageURI,
             subdomainCount: 0,
             mintFee: 0,
             expiresAt: 0,
@@ -190,7 +201,30 @@ library LibMinting {
             tokenIds[i] = registerDomain(names[i], tlds[i], enableSubdomains[i]);
             unchecked { ++i; }
         }
-        
+
         return tokenIds;
+    }
+
+    function _defaultMetadataEndpoints(
+        string memory baseURI,
+        string memory domain
+    ) private pure returns (string memory profileURI, string memory imageURI) {
+        profileURI = string(abi.encodePacked(baseURI, domain, "/profile.json"));
+        imageURI = string(abi.encodePacked(baseURI, domain, "/image.png"));
+    }
+
+    function _extractTld(string memory domain) private pure returns (string memory) {
+        bytes memory domainBytes = bytes(domain);
+        for (uint256 i = domainBytes.length; i > 0; i--) {
+            if (domainBytes[i - 1] == ".") {
+                uint256 tldLength = domainBytes.length - i;
+                bytes memory tldBytes = new bytes(tldLength);
+                for (uint256 j = 0; j < tldLength; j++) {
+                    tldBytes[j] = domainBytes[i + j];
+                }
+                return string(tldBytes);
+            }
+        }
+        return domain;
     }
 }

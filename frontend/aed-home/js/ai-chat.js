@@ -3,16 +3,19 @@
 // page by including the CSS and JS files and calling initAIChat().
 
 function initAIChat(options = {}) {
-    const defaultOptions = {
+    const config = {
         title: options.title || 'Alsania AI',
         placeholder: options.placeholder || 'Ask me anything…',
         welcomeMessage: options.welcomeMessage || 'Hello! How can I assist you today?',
-        // Provide your own async function to call an AI backend.
-        async onAsk(message) {
-            // TODO: replace this stub with an API call to your AI service
-            return 'This is a stubbed response. Integrate your AI backend here.';
-        },
+        endpoint: options.endpoint || null,
+        docsUrl: options.docsUrl || 'https://alsania.gitbook.io/aed',
+        apiHeaders: options.apiHeaders || {},
+        onAsk: options.onAsk,
     };
+
+    const askHandler = typeof config.onAsk === 'function'
+        ? config.onAsk
+        : createDefaultAskHandler(config);
     // Create toggle button
     const toggleBtn = document.createElement('button');
     toggleBtn.className = 'ai-chat-toggle';
@@ -28,7 +31,7 @@ function initAIChat(options = {}) {
     const header = document.createElement('div');
     header.className = 'ai-chat-header';
     const titleEl = document.createElement('h4');
-    titleEl.textContent = defaultOptions.title;
+    titleEl.textContent = config.title;
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '×';
     closeBtn.style.background = 'none';
@@ -50,7 +53,7 @@ function initAIChat(options = {}) {
     inputArea.className = 'ai-chat-input';
     const input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = defaultOptions.placeholder;
+    input.placeholder = config.placeholder;
     const sendBtn = document.createElement('button');
     sendBtn.textContent = 'Send';
     inputArea.appendChild(input);
@@ -68,7 +71,7 @@ function initAIChat(options = {}) {
     }
 
     // Show welcome message
-    addMessage(defaultOptions.welcomeMessage, 'ai');
+    addMessage(config.welcomeMessage, 'ai');
 
     async function handleSend() {
         const text = input.value.trim();
@@ -77,7 +80,7 @@ function initAIChat(options = {}) {
         input.value = '';
         // Call AI backend
         try {
-            const response = await defaultOptions.onAsk(text);
+            const response = await askHandler(text);
             addMessage(response, 'ai');
         } catch (err) {
             console.error(err);
@@ -98,4 +101,61 @@ function initAIChat(options = {}) {
     closeBtn.addEventListener('click', () => {
         widget.style.display = 'none';
     });
+}
+
+function createDefaultAskHandler(config) {
+    const faq = [
+        {
+            keywords: ['price', 'cost', 'fee'],
+            response: 'Domain pricing: free for .aed/.alsa/.07, 1 MATIC for .alsania/.fx/.echo. Subdomain enhancement is 2 MATIC. The exact gas estimate is shown before each transaction.',
+        },
+        {
+            keywords: ['deploy', 'upgrade', 'contract'],
+            response: 'Contracts are UUPS upgradeable. Use Hardhat: `npx hardhat compile`, `npx hardhat test`, then `npx hardhat run scripts/deploy.js --network amoy`. Remember to verify via `npx hardhat verify`. Full docs: ' + config.docsUrl,
+        },
+        {
+            keywords: ['support', 'help', 'contact'],
+            response: 'Ping the Alsania core team in the Sovereign Builders channel or email support@alsania.io. We respond within 24 hours.',
+        },
+        {
+            keywords: ['feature', 'roadmap', 'coming'],
+            response: 'Upcoming features: cross-chain bridging, enhancement marketplace, and profile badges. Follow updates at ' + config.docsUrl + '.',
+        },
+    ];
+
+    return async function defaultAsk(message) {
+        const trimmed = message.trim();
+        if (config.endpoint) {
+            const response = await fetch(config.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...config.apiHeaders,
+                },
+                body: JSON.stringify({ message: trimmed }),
+            });
+
+            if (!response.ok) {
+                throw new Error(`AI endpoint error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (typeof data.answer === 'string') {
+                return data.answer;
+            }
+            if (Array.isArray(data.messages) && data.messages.length > 0) {
+                return data.messages[data.messages.length - 1];
+            }
+            return JSON.stringify(data);
+        }
+
+        const lower = trimmed.toLowerCase();
+        for (const entry of faq) {
+            if (entry.keywords.some((keyword) => lower.includes(keyword))) {
+                return entry.response;
+            }
+        }
+
+        return `Alsania AI here. I could not match that question, but the deployment and integration manuals live at ${config.docsUrl}.`;
+    };
 }

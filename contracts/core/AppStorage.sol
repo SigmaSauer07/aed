@@ -60,6 +60,9 @@ struct AppStorage {
     // Enhancement Storage
     mapping(string => bool) enhancedDomains;
     mapping(string => uint256) enhancementPrices;
+    string[] availableFeatures;
+    mapping(string => bool) featureExists;
+    mapping(string => uint256) featureFlags;
     
     // Subdomain Storage
     mapping(string => string[]) domainSubdomains;
@@ -106,7 +109,7 @@ struct AppStorage {
     mapping(uint256 => uint256) futureUint256;
     mapping(address => uint256) futureAddressUint256;
     mapping(string => string) futureStringString;
-    uint256[47] __gap; // Reserve slots for future use
+    uint256[44] __gap; // Reserve slots for future use
 }
 
 

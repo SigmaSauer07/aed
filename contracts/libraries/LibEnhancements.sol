@@ -4,6 +4,9 @@ pragma solidity ^0.8.30;
 import "../core/AppStorage.sol";
 import "./LibAppStorage.sol";
 
+error FeatureUnavailable(string featureName);
+error FeeTransferFailed();
+
 library LibEnhancements {
     using LibAppStorage for AppStorage;
     
@@ -19,122 +22,127 @@ library LibEnhancements {
     
     function purchaseFeature(uint256 tokenId, string calldata featureName) internal {
         AppStorage storage s = LibAppStorage.appStorage();
-        
-        require(s.owners[tokenId] == msg.sender, "Not token owner");
-        
-        uint256 price = s.enhancementPrices[featureName];
-        require(price > 0, "Feature not available");
-        require(msg.value >= price, "Insufficient payment");
-        
-        // Enable the feature based on name
-        if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
-            s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
-        } else if (keccak256(bytes(featureName)) == keccak256("metadata")) {
-            s.domainFeatures[tokenId] |= FEATURE_METADATA;
-        } else if (keccak256(bytes(featureName)) == keccak256("reverse")) {
-            s.domainFeatures[tokenId] |= FEATURE_REVERSE;
-        } else if (keccak256(bytes(featureName)) == keccak256("bridge")) {
-            s.domainFeatures[tokenId] |= FEATURE_BRIDGE;
-        }
-        
-        // Update revenue
-        s.totalRevenue += price;
-        
-        // Send to fee collector
-        if (price > 0) {
-            payable(s.feeCollector).transfer(price);
-        }
-        
-        // Refund excess
-        if (msg.value > price) {
-            payable(msg.sender).transfer(msg.value - price);
-        }
-        
-        emit FeaturePurchased(tokenId, featureName, price);
+        _applyFeature(s, tokenId, featureName, msg.value);
     }
-    
+
     function enableSubdomains(uint256 tokenId) internal {
         AppStorage storage s = LibAppStorage.appStorage();
-        
-        require(s.owners[tokenId] == msg.sender, "Not token owner");
-        
-        uint256 price = s.enhancementPrices["subdomain"];
-        require(msg.value >= price, "Insufficient payment");
-        
-        s.domainFeatures[tokenId] |= FEATURE_SUBDOMAINS;
-        s.totalRevenue += price;
-        
-        // Send to fee collector
-        if (price > 0) {
-            payable(s.feeCollector).transfer(price);
-        }
-        
-        // Refund excess
-        if (msg.value > price) {
-            payable(msg.sender).transfer(msg.value - price);
-        }
-        
-        emit FeatureEnabled(tokenId, FEATURE_SUBDOMAINS);
+        _applyFeature(s, tokenId, "subdomain", msg.value);
     }
-    
+
     function upgradeExternalDomain(string calldata externalDomain) internal {
         AppStorage storage s = LibAppStorage.appStorage();
-        
+
         uint256 price = s.enhancementPrices["byo"];
         require(msg.value >= price, "Insufficient payment");
-        
+
         // Store external domain upgrade
         s.futureStringString[externalDomain] = "upgraded";
         s.totalRevenue += price;
-        
-        // Send to fee collector
-        if (price > 0) {
-            payable(s.feeCollector).transfer(price);
-        }
-        
+
+        _forwardFee(s.feeCollector, price);
+
         // Refund excess
-        if (msg.value > price) {
-            payable(msg.sender).transfer(msg.value - price);
-        }
+        _refundExcess(price);
     }
-    
+
     function getFeaturePrice(string calldata featureName) internal view returns (uint256) {
-        return LibAppStorage.appStorage().enhancementPrices[featureName];
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(s.featureExists[featureName], "Feature not found");
+        return s.enhancementPrices[featureName];
     }
-    
+
     function isFeatureEnabled(uint256 tokenId, string calldata featureName) internal view returns (bool) {
         AppStorage storage s = LibAppStorage.appStorage();
-        
-        uint256 feature = 0;
-        if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
-            feature = FEATURE_SUBDOMAINS;
-        } else if (keccak256(bytes(featureName)) == keccak256("metadata")) {
-            feature = FEATURE_METADATA;
-        } else if (keccak256(bytes(featureName)) == keccak256("reverse")) {
-            feature = FEATURE_REVERSE;
-        } else if (keccak256(bytes(featureName)) == keccak256("bridge")) {
-            feature = FEATURE_BRIDGE;
-        }
-        
+
+        uint256 feature = s.featureFlags[featureName];
+        require(feature != 0, "Feature not found");
+
         return (s.domainFeatures[tokenId] & feature) != 0;
     }
-    
-    function getAvailableFeatures() internal pure returns (string[] memory) {
-        string[] memory features = new string[](4);
-        features[0] = "subdomain";
-        features[1] = "metadata";
-        features[2] = "reverse";
-        features[3] = "bridge";
+
+    function getAvailableFeatures() internal view returns (string[] memory) {
+        AppStorage storage s = LibAppStorage.appStorage();
+        uint256 length = s.availableFeatures.length;
+        string[] memory features = new string[](length);
+
+        for (uint256 i = 0; i < length; i++) {
+            features[i] = s.availableFeatures[i];
+        }
+
         return features;
     }
-    
+
     function setFeaturePrice(string calldata featureName, uint256 price) internal {
-        LibAppStorage.appStorage().enhancementPrices[featureName] = price;
-    }
-    
-    function addFeature(string calldata featureName, uint256 price, uint256 /* flag */) internal {
         AppStorage storage s = LibAppStorage.appStorage();
+        require(s.featureExists[featureName], "Feature not found");
         s.enhancementPrices[featureName] = price;
-        // Feature flag handling would be implemented here
+    }
+
+    function addFeature(string calldata featureName, uint256 price, uint256 flag) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(flag != 0, "Invalid feature flag");
+
+        if (!s.featureExists[featureName]) {
+            s.availableFeatures.push(featureName);
+            s.featureExists[featureName] = true;
+        }
+
+        s.featureFlags[featureName] = flag;
+        s.enhancementPrices[featureName] = price;
+    }
+
+    function _applyFeature(
+        AppStorage storage s,
+        uint256 tokenId,
+        string memory featureName,
+        uint256 amountProvided
+    ) private {
+        require(s.owners[tokenId] == msg.sender, "Not token owner");
+
+        uint256 flag = s.featureFlags[featureName];
+        if (flag == 0) {
+            revert FeatureUnavailable(featureName);
+        }
+
+        uint256 price = s.enhancementPrices[featureName];
+        require(amountProvided >= price, "Insufficient payment");
+
+        if ((s.domainFeatures[tokenId] & flag) == 0) {
+            s.domainFeatures[tokenId] |= flag;
+            emit FeatureEnabled(tokenId, flag);
+        }
+
+        // Track special case for subdomains to keep compatibility with legacy UI
+        if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
+            string memory domain = s.tokenIdToDomain[tokenId];
+            s.enhancedDomains[domain] = true;
+        }
+
+        s.totalRevenue += price;
+        _forwardFee(s.feeCollector, price);
+        _refundExcess(price);
+
+        emit FeaturePurchased(tokenId, featureName, price);
+    }
+
+    function _forwardFee(address feeCollector, uint256 amount) private {
+        if (amount == 0) {
+            return;
+        }
+
+        (bool success, ) = payable(feeCollector).call{value: amount}("");
+        if (!success) {
+            revert FeeTransferFailed();
+        }
+    }
+
+    function _refundExcess(uint256 price) private {
+        if (msg.value > price) {
+            (bool success, ) = payable(msg.sender).call{value: msg.value - price}("");
+            if (!success) {
+                revert FeeTransferFailed();
+            }
+        }
     }
 }

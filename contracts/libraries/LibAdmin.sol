@@ -4,6 +4,7 @@ pragma solidity ^0.8.30;
 import "../core/AEDConstants.sol";
 import "../core/AppStorage.sol";
 import "./LibAppStorage.sol";
+import "./LibMinting.sol";
 
 library LibAdmin {
     using LibAppStorage for AppStorage;
@@ -25,6 +26,20 @@ library LibAdmin {
         AppStorage storage s = LibAppStorage.appStorage();
         uint256 oldFee = s.fees[feeType];
         s.fees[feeType] = newAmount;
+
+        bytes32 featureHash = keccak256(bytes(feeType));
+        uint256 featureKey = uint256(featureHash);
+        if (
+            s.futureUint256[featureKey] != 0 ||
+            featureHash == keccak256("subdomain") ||
+            featureHash == keccak256("metadata") ||
+            featureHash == keccak256("reverse") ||
+            featureHash == keccak256("bridge") ||
+            featureHash == keccak256("byo")
+        ) {
+            s.enhancementPrices[feeType] = newAmount;
+        }
+
         emit FeeUpdated(feeType, oldFee, newAmount);
     }
 
@@ -38,12 +53,13 @@ library LibAdmin {
     
     function configureTLD(string calldata tld, bool isActive, uint256 price) internal {
         AppStorage storage s = LibAppStorage.appStorage();
-        s.validTlds[tld] = isActive;
+        string memory normalizedTld = LibMinting.normalizeLabel(tld);
+        s.validTlds[normalizedTld] = isActive;
         if (price > 0) {
-            s.tldPrices[tld] = price;
-            s.freeTlds[tld] = false;
+            s.tldPrices[normalizedTld] = price;
+            s.freeTlds[normalizedTld] = false;
         } else {
-            s.freeTlds[tld] = true;
+            s.freeTlds[normalizedTld] = true;
         }
         emit TLDConfigured(tld, isActive, price);
     }
@@ -106,15 +122,18 @@ library LibAdmin {
     }
     
     function isTLDActive(string calldata tld) internal view returns (bool) {
-        return LibAppStorage.appStorage().validTlds[tld];
+        string memory normalizedTld = LibMinting.normalizeLabel(tld);
+        return LibAppStorage.appStorage().validTlds[normalizedTld];
     }
-    
+
     function getTLDPrice(string calldata tld) internal view returns (uint256) {
-        return LibAppStorage.appStorage().tldPrices[tld];
+        string memory normalizedTld = LibMinting.normalizeLabel(tld);
+        return LibAppStorage.appStorage().tldPrices[normalizedTld];
     }
-    
+
     function isFreeTLD(string calldata tld) internal view returns (bool) {
-        return LibAppStorage.appStorage().freeTlds[tld];
+        string memory normalizedTld = LibMinting.normalizeLabel(tld);
+        return LibAppStorage.appStorage().freeTlds[normalizedTld];
     }
     
     function getFeeCollector() internal view returns (address) {

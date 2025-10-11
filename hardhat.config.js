@@ -1,6 +1,14 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
+const {
+  PRIVATE_KEY,
+  AMOY_RPC,
+  POLYGONSCAN_API_KEY,
+} = process.env;
+
+const accounts = PRIVATE_KEY ? [PRIVATE_KEY] : [];
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
@@ -19,14 +27,14 @@ module.exports = {
       chainId: 1337,
     },
     amoy: {
-      url: process.env.AMOY_RPC,
-      accounts: [process.env.PRIVATE_KEY],
+      url: AMOY_RPC || "https://polygon-amoy-bor.publicnode.com",
+      accounts,
       chainId: 80002,
-      gasPrice: 50000000000, // 50 gwei
-      gas: 10000000, // 10M gas limit
+      gasPrice: 50_000_000_000,
+      gas: 10_000_000,
     },
   },
   etherscan: {
-    apiKey: process.env.POLYGONSCAN_API_KEY,
+    apiKey: POLYGONSCAN_API_KEY || "",
   },
 };

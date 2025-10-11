@@ -4,6 +4,8 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./core/AppStorage.sol";
 import "./libraries/LibAppStorage.sol";
@@ -12,12 +14,14 @@ import "./libraries/LibAdmin.sol";
 import "./libraries/LibMetadata.sol";
 import "./libraries/LibReverse.sol";
 import "./libraries/LibEnhancements.sol";
+import "./libraries/LibValidation.sol";
 import "./core/AEDConstants.sol";
 
-contract AEDImplementation is 
+contract AEDImplementation is
     UUPSUpgradeable,
     ERC721Upgradeable,
     AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable,
     AEDConstants
 {
     using LibAppStorage for AppStorage;
@@ -56,23 +60,43 @@ contract AEDImplementation is
         __ERC721_init(name, symbol);
         __AccessControl_init();
         __UUPSUpgradeable_init();
-        
+        __ReentrancyGuard_init();
+
+        require(paymentWallet != address(0), "Invalid recipient");
+        require(admin != address(0), "Invalid admin");
+
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(ADMIN_ROLE, admin);
-        
+
         AppStorage storage s = LibAppStorage.appStorage();
         s.feeCollector = paymentWallet;
         s.admins[admin] = true;
         s.nextTokenId = 1;
         s.baseURI = "https://api.alsania.io/metadata/";
-        
+
         // Initialize default pricing
         s.enhancementPrices["subdomain"] = 2 ether;
+        s.enhancementPrices["metadata"] = 1 ether;
+        s.enhancementPrices["reverse"] = 0.2 ether;
+        s.enhancementPrices["bridge"] = 3 ether;
         s.enhancementPrices["byo"] = 5 ether;
         s.tldPrices["alsania"] = 1 ether;
         s.tldPrices["fx"] = 1 ether;
         s.tldPrices["echo"] = 1 ether;
-        
+
+        // Initialize feature flags and catalog once
+        if (s.featureCatalog.length == 0) {
+            s.enhancementFlags["subdomain"] = FEATURE_SUBDOMAINS;
+            s.enhancementFlags["metadata"] = FEATURE_METADATA;
+            s.enhancementFlags["reverse"] = FEATURE_REVERSE;
+            s.enhancementFlags["bridge"] = FEATURE_BRIDGE;
+
+            s.featureCatalog.push("subdomain");
+            s.featureCatalog.push("metadata");
+            s.featureCatalog.push("reverse");
+            s.featureCatalog.push("bridge");
+        }
+
         // Initialize free TLDs
         s.freeTlds["aed"] = true;
         s.freeTlds["alsa"] = true;
@@ -98,21 +122,23 @@ contract AEDImplementation is
         string calldata name,
         string calldata tld,
         bool withSubdomains
-    ) external payable whenNotPaused returns (uint256) {
+    ) external payable whenNotPaused nonReentrant returns (uint256) {
         uint256 tokenId = LibMinting.registerDomain(name, tld, withSubdomains);
         _processDomainPayment(tld, withSubdomains);
+        emit Transfer(address(0), msg.sender, tokenId);
         return tokenId;
     }
-    
+
     function mintSubdomain(
         uint256 parentId,
         string calldata label
-    ) external payable returns (uint256) {
+    ) external payable whenNotPaused nonReentrant returns (uint256) {
         string memory parentDomain = LibAppStorage.appStorage().tokenIdToDomain[parentId];
         require(bytes(parentDomain).length > 0, "Parent not found");
-        
+
         uint256 tokenId = LibMinting.createSubdomain(label, parentDomain);
         _processSubdomainPayment(parentId);
+        emit Transfer(address(0), msg.sender, tokenId);
         return tokenId;
     }
     
@@ -124,9 +150,9 @@ contract AEDImplementation is
         string[] calldata names,
         string[] calldata tlds,
         bool[] calldata withSubdomains
-    ) external payable returns (uint256[] memory) {
+    ) external payable whenNotPaused nonReentrant returns (uint256[] memory) {
         uint256[] memory tokenIds = LibMinting.batchRegisterDomains(names, tlds, withSubdomains);
-        
+
         // Calculate and process batch payment
         uint256 totalCost = 0;
         for (uint256 i = 0; i < names.length; i++) {
@@ -143,9 +169,13 @@ contract AEDImplementation is
         
         // Refund excess
         if (msg.value > totalCost) {
-            payable(msg.sender).transfer(msg.value - totalCost);
+            AddressUpgradeable.sendValue(payable(msg.sender), msg.value - totalCost);
         }
-        
+
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            emit Transfer(address(0), msg.sender, tokenIds[i]);
+        }
+
         return tokenIds;
     }
     
@@ -191,15 +221,25 @@ contract AEDImplementation is
     
     // ===== ENHANCEMENT FUNCTIONS =====
     
-    function purchaseFeature(uint256 tokenId, string calldata featureName) external payable {
+    function purchaseFeature(uint256 tokenId, string calldata featureName)
+        external
+        payable
+        whenNotPaused
+        nonReentrant
+    {
         LibEnhancements.purchaseFeature(tokenId, featureName);
     }
-    
-    function enableSubdomainFeature(uint256 tokenId) external payable {
+
+    function enableSubdomainFeature(uint256 tokenId) external payable whenNotPaused nonReentrant {
         LibEnhancements.enableSubdomains(tokenId);
     }
     
-    function upgradeExternalDomain(string calldata externalDomain) external payable {
+    function upgradeExternalDomain(string calldata externalDomain)
+        external
+        payable
+        whenNotPaused
+        nonReentrant
+    {
         LibEnhancements.upgradeExternalDomain(externalDomain);
     }
     
@@ -211,7 +251,7 @@ contract AEDImplementation is
         return LibEnhancements.isFeatureEnabled(tokenId, featureName);
     }
     
-    function getAvailableFeatures() external pure returns (string[] memory) {
+    function getAvailableFeatures() external view returns (string[] memory) {
         return LibEnhancements.getAvailableFeatures();
     }
     
@@ -274,13 +314,21 @@ contract AEDImplementation is
     function getFeeCollector() external view returns (address) {
         return LibAppStorage.appStorage().feeCollector;
     }
-    
+
     function isTLDActive(string calldata tld) external view returns (bool) {
-        return LibAppStorage.appStorage().validTlds[tld];
+        string memory normalized = LibValidation.toLower(tld);
+        return LibAppStorage.appStorage().validTlds[normalized];
     }
-    
+
+    function getTLDPrice(string calldata tld) external view returns (uint256) {
+        string memory normalized = LibValidation.toLower(tld);
+        return LibAppStorage.appStorage().tldPrices[normalized];
+    }
+
     function isRegistered(string calldata name, string calldata tld) external view returns (bool) {
-        string memory fullDomain = string(abi.encodePacked(name, ".", tld));
+        string memory normalizedName = LibValidation.normalizeDomainName(name);
+        string memory normalizedTld = LibValidation.toLower(tld);
+        string memory fullDomain = string(abi.encodePacked(normalizedName, ".", normalizedTld));
         return LibAppStorage.appStorage().domainExists[fullDomain];
     }
     
@@ -347,7 +395,12 @@ contract AEDImplementation is
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
         _customTransfer(from, to, tokenId);
     }
-    
+
+    function safeTransferFrom(address from, address to, uint256 tokenId) public override {
+        require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
+        _customSafeTransfer(from, to, tokenId, "");
+    }
+
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
         _customSafeTransfer(from, to, tokenId, data);
@@ -445,48 +498,49 @@ contract AEDImplementation is
     }
     
     function _processDomainPayment(string calldata tld, bool withEnhancements) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
         uint256 totalCost = _calculateDomainCost(tld, withEnhancements);
-        
+
         require(msg.value >= totalCost, "Insufficient payment");
-        LibAppStorage.appStorage().totalRevenue += totalCost;
-        
-        // Send to fee collector
+        s.totalRevenue += totalCost;
+
         if (totalCost > 0) {
-            payable(LibAppStorage.appStorage().feeCollector).transfer(totalCost);
+            AddressUpgradeable.sendValue(payable(s.feeCollector), totalCost);
         }
-        
-        // Refund excess
+
         if (msg.value > totalCost) {
-            payable(msg.sender).transfer(msg.value - totalCost);
+            AddressUpgradeable.sendValue(payable(msg.sender), msg.value - totalCost);
         }
     }
-    
+
     function _processSubdomainPayment(uint256 parentId) internal {
         uint256 cost = LibMinting.calculateSubdomainFee(parentId);
         require(msg.value >= cost, "Insufficient payment");
-        
-        LibAppStorage.appStorage().totalRevenue += cost;
-        
-        // Send to fee collector
+
+        AppStorage storage s = LibAppStorage.appStorage();
+        s.totalRevenue += cost;
+
         if (cost > 0) {
-            payable(LibAppStorage.appStorage().feeCollector).transfer(cost);
+            AddressUpgradeable.sendValue(payable(s.feeCollector), cost);
         }
-        
-        // Refund excess
+
         if (msg.value > cost) {
-            payable(msg.sender).transfer(msg.value - cost);
+            AddressUpgradeable.sendValue(payable(msg.sender), msg.value - cost);
         }
     }
-    
+
     function _calculateDomainCost(string calldata tld, bool withEnhancements) internal view returns (uint256) {
         AppStorage storage store = LibAppStorage.appStorage();
+        string memory normalized = LibValidation.toLower(tld);
+        require(store.validTlds[normalized], "Invalid TLD");
+
         uint256 totalCost = 0;
-        
+
         // Add TLD cost
-        if (!store.freeTlds[tld]) {
-            totalCost += store.tldPrices[tld];
+        if (!store.freeTlds[normalized]) {
+            totalCost += store.tldPrices[normalized];
         }
-        
+
         // Add enhancement cost
         if (withEnhancements) {
             totalCost += store.enhancementPrices["subdomain"];

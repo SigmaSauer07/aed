@@ -85,12 +85,12 @@
       <div class="checkbox-group">
         <label>
           <input type="checkbox" id="enhSubdomain">
-          <span>Add Subdomain Minting (+$2 MATIC)</span>
+          <span>Add Subdomain Minting (+<span id="subdomainPriceLabel">0</span> MATIC)</span>
         </label>
       </div>
 
       <div class="total-display">
-        <div>Registration Total: <span id="registerTotal">$0 MATIC</span></div>
+        <div>Registration Total: <span id="registerTotal">0 MATIC</span></div>
       </div>
 
       <button id="registerBtn" onclick="registerDomain()">Register Domain</button>
@@ -111,8 +111,8 @@
       <div class="cost-info">
         <div class="small-text">
           <strong>Enhancement Pricing:</strong><br>
-          • Alsania Native TLDs (.aed, .alsa, .07, .alsania, .fx, .echo): $2 MATIC<br>
-          • Third-party/External Domains: $5 MATIC
+          • Alsania Native TLDs (.aed, .alsa, .07, .alsania, .fx, .echo): <span id="nativeEnhPrice">0</span> MATIC<br>
+          • Third-party/External Domains: <span id="externalEnhPrice">0</span> MATIC
         </div>
       </div>
 
@@ -124,7 +124,7 @@
       </div>
 
       <div class="total-display">
-        <div>Enhancement Total: <span id="enhanceTotal">$0 MATIC</span></div>
+        <div>Enhancement Total: <span id="enhanceTotal">0 MATIC</span></div>
       </div>
 
       <button id="enhanceBtn" onclick="enhanceDomain()">Enhance Now</button>
@@ -178,7 +178,7 @@
       <div class="pricing-grid">
         <div class="pricing-card">
           <h3 class="pricing-title">Standard Domain</h3>
-          <div class="pricing-price">FREE</div>
+          <div class="pricing-price"><span id="freeTldLabel">FREE</span></div>
           <ul class="pricing-features">
             <li>Standard domain registration</li>
             <li>Community support</li>
@@ -187,7 +187,7 @@
         </div>
         <div class="pricing-card featured">
           <h3 class="pricing-title">Premium Domain</h3>
-          <div class="pricing-price">$1 MATIC</div>
+          <div class="pricing-price"><span id="premiumTldLabel">0</span> MATIC</div>
           <ul class="pricing-features">
             <li>Premium domain registration</li>
             <li>Priority support</li>
@@ -197,7 +197,7 @@
         </div>
                 <div class="pricing-card featured">
           <h3 class="pricing-title">BYO Domain</h3>
-          <div class="pricing-price">$5 MATIC</div>
+          <div class="pricing-price"><span id="externalUpgradeLabel">0</span> MATIC</div>
           <ul class="pricing-features">
             <li>Subdomain creation</li>
             <li>Advanced features</li>
@@ -216,6 +216,7 @@
     </div>
   </footer>
 
+  <script src="../config/config.js"></script>
   <script src="js/index.js"></script>
 </body>
 </html>

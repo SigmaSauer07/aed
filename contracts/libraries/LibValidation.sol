@@ -55,10 +55,10 @@ library LibValidation {
             return false;
         }
         
-        // Check for valid characters (only letters)
+        // Check for valid characters (letters or digits)
         for (uint256 i = 0; i < length; i++) {
             bytes1 char = tldBytes[i];
-            if (!_isLetter(char)) {
+            if (!_isLetter(char) && !_isDigit(char)) {
                 return false;
             }
         }

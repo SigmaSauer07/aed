@@ -1,147 +1,140 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "./AppStorage.sol";
 import "./AEDConstants.sol";
-import "./CoreState.sol";
+import "../libraries/LibAdmin.sol";
+import "../libraries/LibReverse.sol";
 
-event DomainRegistered(uint256 indexed id, string fullName);
-event SubdomainCreated(uint256 indexed rootId, uint256 indexed subId, string fullName);
-event DomainUpdated(uint256 indexed id, string profileURI, string imageURI);
-event AEDCoreInitialized(address indexed initializer, string name, string symbol);
-
-/**
- * @title AEDCore
- * @dev Core logic for AED, including domain storage, base ERC721 and access control.
- * Inherits OpenZeppelin upgradeable contracts for proxy support.
- */
-abstract contract AEDCore is 
-    ERC721Upgradeable, 
-    AccessControlUpgradeable, 
-    PausableUpgradeable, 
-    UUPSUpgradeable, 
-    ReentrancyGuardUpgradeable, 
-    AEDConstants, 
-    CoreState {
-        
-    /**
-     * @dev Initializes the core contract. Must be called only once (by the main initialize).
-     */
-    function __AEDCore_init(
-        string memory name_,
-        string memory symbol_,
-        address admin
-    ) external initializer {
-        __ERC721_init(name_, symbol_);
-        __AccessControl_init();
-        __Pausable_init();
-        __UUPSUpgradeable_init();
-        __ReentrancyGuard_init();  // Ensure reentrancy guard is initialized
-
-        require(bytes(name_).length > 0, "Name cannot be empty");
-        require(bytes(symbol_).length > 0, "Symbol cannot be empty");
-
-        // Grant all essential roles to the provided admin address
-        _grantRole(DEFAULT_ADMIN_ROLE, admin);
-        _grantRole(ADMIN_ROLE, admin);
-        _grantRole(UPGRADER_ROLE, admin);
-        _grantRole(BRIDGE_MANAGER, admin);
-        _grantRole(FEE_MANAGER_ROLE, admin);
-        _grantRole(TLD_MANAGER_ROLE, admin);
-
-        nextTokenId = 1;
-        royaltyBps = 500;       // 5% default royalty (can be changed via setRoyaltyBps)
-        feeCollector = admin;   // initial fee collector (can be changed via setFeeCollector)
-
-        emit AEDCoreInitialized(msg.sender, name_, symbol_);
+abstract contract AEDCore is Initializable, AEDConstants {
+    using LibAppStorage for AppStorage;
+    using LibAdmin for AppStorage;
+    
+    event DomainRegistered(string indexed domain, address indexed owner, uint256 indexed tokenId);
+    event DomainTransferred(uint256 indexed tokenId, address indexed from, address indexed to);
+    event SubdomainCreated(string indexed subdomain, string indexed parent, address indexed owner);
+    
+    function __AEDCore_init() internal onlyInitializing {
+        AppStorage storage s = LibAppStorage.appStorage();
+        s.nextTokenId = 1;
+        s.baseURI = "https://api.alsania.io/metadata/";
     }
-
-    /** @dev Authorization hook for UUPS proxy upgrades. Only accounts with UPGRADER_ROLE can upgrade. */
-    function _authorizeUpgrade(address newImplementation) internal override onlyRole(UPGRADER_ROLE) {
-        require(newImplementation != address(0), "Invalid implementation");
-        // (Versioning handled in main AED contract)
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public view 
-        virtual 
-        override(ERC721Upgradeable, AccessControlUpgradeable) 
-        returns (bool) 
-    {
-        // Combine ERC721 and AccessControl interface support
-        return super.supportsInterface(interfaceId);
-    }
-
-    // Override CoreState’s abstract functions using OpenZeppelin library logic
-    function ownerOf(uint256 tokenId) public view virtual override(CoreState, ERC721Upgradeable) returns (address) {
-        return ERC721Upgradeable.ownerOf(tokenId);
-    }
-
-    function hasRole(bytes32 role, address account) 
-        public view virtual override(AccessControlUpgradeable, CoreState) 
-        returns (bool) 
-    {
-        return AccessControlUpgradeable.hasRole(role, account);
-    }
-
-    function _exists(uint256 tokenId) internal view virtual override(ERC721Upgradeable, CoreState) returns (bool) {
-        return ERC721Upgradeable._exists(tokenId);
-    }
-
-    function _isApprovedOrOwner(address spender, uint256 tokenId) 
-        internal view virtual override(CoreState, ERC721Upgradeable) 
-        returns (bool) 
-    {
-        return ERC721Upgradeable._isApprovedOrOwner(spender, tokenId);
-    }
-
-    // Implementations for abstract CoreState helpers
-    function _isApproved(address spender, uint256 tokenId) internal view virtual override(CoreState) returns (bool) {
-        return getApproved(tokenId) == spender;
-    }
-
-    function _isApprovedForAll(address owner, address operator) 
-        internal view virtual override(CoreState) returns (bool) 
-    {
-        return isApprovedForAll(owner, operator);
-    }
-
-    function _pause() internal virtual override(PausableUpgradeable) {
-        // Only ADMIN_ROLE can pause/unpause (added security check)
-        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not admin");
-        super._pause();
-    }
-    function _unpause() internal virtual override(PausableUpgradeable) {
-        require(hasRole(ADMIN_ROLE, msg.sender), "Caller is not admin");
-        super._unpause();
-    }
-
-    // ========== Core domain read functions ==========
-
-    function getDomain(uint256 id) external view returns (Domain memory) {
-        return domains[id];
-    }
-
-    function isRegistered(string memory name, string memory tld) external view returns (bool) {
-        return registered[keccak256(abi.encodePacked(name, tld))];
-    }
-
+    
     function getNextTokenId() external view returns (uint256) {
-        return nextTokenId;
+        return LibAppStorage.appStorage().nextTokenId;
     }
-
-    function getRoyaltyBps() external view returns (uint256) {
-        return royaltyBps;
+    
+    function isRegistered(string calldata name, string calldata tld) external view returns (bool) {
+        string memory fullDomain = string(abi.encodePacked(name, ".", tld));
+        return LibAppStorage.appStorage().domainExists[fullDomain];
     }
-
-    function getFeeCollector() external view returns (address) {
-        return feeCollector;
+    
+    function getDomainInfo(uint256 tokenId) external view returns (Domain memory) {
+        require(_tokenExists(tokenId), "Token does not exist");
+        return LibAppStorage.appStorage().domains[tokenId];
     }
-
-    // (Additional core logic like domain transfer hooks, etc., can be added as needed)
-
-    uint256[50] private __gap;
+    
+    function getUserDomains(address user) external view returns (string[] memory) {
+        return LibAppStorage.appStorage().userDomains[user];
+    }
+    
+    function getTotalRevenue() external view returns (uint256) {
+        return LibAppStorage.appStorage().totalRevenue;
+    }
+    
+    function getDomainByTokenId(uint256 tokenId) external view returns (string memory) {
+        require(_tokenExists(tokenId), "Token does not exist");
+        return LibAppStorage.appStorage().tokenIdToDomain[tokenId];
+    }
+    
+    function getTokenIdByDomain(string calldata domain) external view returns (uint256) {
+        uint256 tokenId = LibAppStorage.appStorage().domainToTokenId[domain];
+        require(tokenId != 0, "Domain not found");
+        return tokenId;
+    }
+    
+    function getDomainFeatures(uint256 tokenId) external view returns (uint256) {
+        require(_tokenExists(tokenId), "Token does not exist");
+        return LibAppStorage.appStorage().domainFeatures[tokenId];
+    }
+    
+    function isFeatureEnabled(uint256 tokenId, uint256 feature) external view returns (bool) {
+        require(_tokenExists(tokenId), "Token does not exist");
+        return (LibAppStorage.appStorage().domainFeatures[tokenId] & feature) != 0;
+    }
+    
+    function _tokenExists(uint256 tokenId) internal view returns (bool) {
+        return LibAppStorage.appStorage().owners[tokenId] != address(0);
+    }
+    
+    function _isApprovedOrOwner(address spender, uint256 tokenId) internal view returns (bool) {
+        AppStorage storage s = LibAppStorage.appStorage();
+        address owner = s.owners[tokenId];
+        return (spender == owner || 
+                s.tokenApprovals[tokenId] == spender || 
+                s.operatorApprovals[owner][spender]);
+    }
+    
+    function _transfer(address from, address to, uint256 tokenId) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(s.owners[tokenId] == from, "Transfer from incorrect owner");
+        require(to != address(0), "Transfer to zero address");
+        
+        // Clear approvals
+        delete s.tokenApprovals[tokenId];
+        
+        // Update balances
+        s.balances[from]--;
+        s.balances[to]++;
+        s.owners[tokenId] = to;
+        
+        // Update domain owner
+        s.domains[tokenId].owner = to;
+        
+        // Update user domain arrays
+        string memory domain = s.tokenIdToDomain[tokenId];
+        _removeFromUserDomains(from, domain);
+        s.userDomains[to].push(domain);
+        
+        // Handle reverse resolution updates
+        LibReverse.handleDomainTransfer(from, to, domain);
+        
+        emit DomainTransferred(tokenId, from, to);
+    }
+    
+    function _approve(address to, uint256 tokenId) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        s.tokenApprovals[tokenId] = to;
+    }
+    
+    function _setApprovalForAll(address owner, address operator, bool approved) internal {
+        require(owner != operator, "Approve to caller");
+        AppStorage storage s = LibAppStorage.appStorage();
+        s.operatorApprovals[owner][operator] = approved;
+    }
+    
+    function _removeFromUserDomains(address user, string memory domain) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        string[] storage userDomains = s.userDomains[user];
+        
+        for (uint256 i = 0; i < userDomains.length; i++) {
+            if (keccak256(bytes(userDomains[i])) == keccak256(bytes(domain))) {
+                // Move last element to current position and pop
+                userDomains[i] = userDomains[userDomains.length - 1];
+                userDomains.pop();
+                break;
+            }
+        }
+    }
+    
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal virtual {
+        // Hook for additional logic before transfers
+        // Can be overridden by modules
+    }
+    
+    function _afterTokenTransfer(address from, address to, uint256 tokenId) internal virtual {
+        // Hook for additional logic after transfers  
+        // Can be overridden by modules
+    }
+}

@@ -1,0 +1,394 @@
+/* Modular Header Component Styles */
+
+/* Header Container */
+.header {
+  background: rgba(0, 0, 0, 0.95);
+  border-bottom: 2px solid #39FF14;
+  padding: 0.75rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  align-items: center;
+  padding: 0 1rem;
+  height: 60px;
+  gap: 1rem;
+}
+
+/* Logo Section */
+.logo {
+  justify-self: start;
+}
+
+.logo h2 {
+  font-family: 'Orbitron', sans-serif;
+  color: #39FF14;
+  font-size: 1.2rem;
+  margin: 0;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+}
+
+/* Wallet Section (Center) */
+.wallet-section {
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.wallet-btn {
+  background: linear-gradient(135deg, #001f2e 0%, #003d5c 100%);
+  border: 2px solid #39FF14;
+  color: #39FF14;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+  min-width: 140px;
+  text-align: center;
+}
+
+.wallet-btn:hover {
+  background: linear-gradient(135deg, #39FF14 0%, #4eff28 100%);
+  color: #001f2e;
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
+  transform: translateY(-1px);
+}
+
+.wallet-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid #39FF14;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+}
+
+.wallet-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #39FF14;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+#walletAddress {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  color: #39FF14;
+  font-size: 0.9rem;
+  min-width: 100px;
+}
+
+.disconnect-btn {
+  background: transparent;
+  border: 1px solid #ff6b6b;
+  color: #ff6b6b;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.disconnect-btn:hover {
+  background: #ff6b6b;
+  color: #000;
+}
+
+/* Navigation Section (Right) */
+.nav-section {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+}
+
+/* Hamburger Menu Button */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 2px solid #39FF14;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+  transition: all 0.3s ease;
+}
+
+.hamburger-btn:hover {
+  background: rgba(57, 255, 20, 0.1);
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+}
+
+.hamburger-line {
+  width: 20px;
+  height: 2px;
+  background: #39FF14;
+  margin: 2px 0;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+
+.hamburger-btn.active {
+  background: rgba(57, 255, 20, 0.1);
+}
+
+.hamburger-btn.active .hamburger-line:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-btn.active .hamburger-line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger-btn.active .hamburger-line:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Desktop Navigation */
+.nav-menu {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-overlay {
+  display: none;
+}
+
+.nav-content {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-header {
+  display: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.nav-close {
+  display: none;
+}
+
+.nav-link {
+  color: #39FF14;
+  text-decoration: none;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  background: rgba(57, 255, 20, 0.1);
+  border-color: #39FF14;
+  transform: translateY(-1px);
+}
+
+.admin-only {
+  border: 1px solid #ff6b6b;
+  color: #ff6b6b;
+}
+
+.admin-only:hover {
+  background: rgba(255, 107, 107, 0.1);
+  border-color: #ff6b6b;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .header-content {
+    grid-template-columns: auto 1fr auto;
+    height: 50px;
+    gap: 0.5rem;
+  }
+
+  .logo h2 {
+    font-size: 1rem;
+  }
+
+  .wallet-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    min-width: 120px;
+  }
+
+  .wallet-status {
+    padding: 0.4rem 0.8rem;
+  }
+
+  #walletAddress {
+    font-size: 0.8rem;
+    min-width: 80px;
+  }
+
+  .disconnect-btn {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  /* Show hamburger button on mobile */
+  .hamburger-btn {
+    display: flex;
+  }
+
+  /* Mobile navigation menu */
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 300px;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.98);
+    border-left: 2px solid #39FF14;
+    transition: right 0.3s ease;
+    z-index: 999;
+    backdrop-filter: blur(20px);
+  }
+
+  .nav-menu.active {
+    right: 0;
+  }
+
+  .nav-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 998;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .nav-menu.active .nav-overlay {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .nav-content {
+    flex-direction: column;
+    height: 100%;
+    padding: 0;
+  }
+
+  .nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #333;
+  }
+
+  .nav-header h3 {
+    font-family: 'Orbitron', sans-serif;
+    color: #39FF14;
+    margin: 0;
+    font-size: 1.2rem;
+  }
+
+  .nav-close {
+    display: flex;
+    background: transparent;
+    border: none;
+    color: #39FF14;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-close:hover {
+    background: rgba(57, 255, 20, 0.1);
+  }
+
+  .nav-links {
+    flex-direction: column;
+    gap: 0;
+    padding: 1rem 0;
+  }
+
+  .nav-link {
+    padding: 1rem 1.5rem;
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid #333;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transform: none;
+  }
+
+  .nav-link:hover {
+    background: rgba(57, 255, 20, 0.1);
+    border-bottom: 1px solid #333;
+    transform: none;
+  }
+
+  .nav-link:last-child {
+    border-bottom: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-content {
+    padding: 0 0.5rem;
+  }
+
+  .wallet-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    min-width: 100px;
+  }
+
+  .nav-menu {
+    width: 280px;
+  }
+}

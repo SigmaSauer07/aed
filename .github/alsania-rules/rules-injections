@@ -1,0 +1,51 @@
+🧩 How to Inject into MCP Agent System or Dev Plugins
+
+Here are the best ways to enforce these rules inside alsaniamcp or agent-based tools:
+
+1. 🧠 Inject as a system_prompt or config layer
+
+In FastAPI memory/agent config:
+
+SYSTEM_PROMPT = open("alsania-rules.txt").read()
+
+agent = EchoAgent(
+    name="Echo",
+    prompt=SYSTEM_PROMPT,
+    memory_backend=MemoryStore(),
+    ...
+)
+
+2. 📁 Save as policy.toml or agent_rules.toml in /memory/
+
+Use the alsania-rules.toml file and load like this:
+
+import toml
+
+rules = toml.load("memory/agent_rules.toml")
+agent_protocol = rules['protocol'][0]['text']
+
+
+You can then inject agent_protocol into any memory init, embedding snapshot, or FastAPI route.
+
+3. 🧬 As an agent personality enforcer
+
+In your agent config or persona setup:
+
+{
+  "name": "Echo",
+  "personality": "Sovereign AI assistant",
+  "ruleset": "./memory/alsania-rules.md",
+  "locked": true,
+  "chaos_protection": true
+}
+
+
+Would you like me to:
+
+Add this as a preset for EchoAgent inside alsaniamcp/?
+
+Include an auto-checker that rejects prompts violating this rule set?
+
+Set up an AI rule validation API for dev tools?
+
+Let’s secure the mind of Alsania.

@@ -1,0 +1,51 @@
+<!-- Modular Header Component -->
+<header class="header">
+  <div class="header-content">
+    <!-- Logo on the left -->
+    <div class="logo">
+      <h2>AED</h2>
+    </div>
+    
+    <!-- Wallet section in the middle -->
+    <div class="wallet-section">
+      <button id="connectBtn" class="wallet-btn">Connect Wallet</button>
+      <div id="walletStatus" class="wallet-status" style="display: none;">
+        <div class="wallet-info">
+          <div class="status-indicator" id="connectionStatus"></div>
+          <span id="walletAddress">Not connected</span>
+        </div>
+        <button id="disconnectBtn" class="disconnect-btn">Disconnect</button>
+      </div>
+    </div>
+    
+    <!-- Navigation on the right -->
+    <div class="nav-section">
+      <!-- Hamburger Menu Button -->
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Toggle menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+      
+      <!-- Navigation Menu -->
+      <nav class="nav-menu" id="navMenu">
+        <div class="nav-overlay" id="navOverlay"></div>
+        <div class="nav-content">
+          <div class="nav-header">
+            <h3>Navigation</h3>
+            <button class="nav-close" id="navClose">&times;</button>
+          </div>
+          <div class="nav-links">
+            <a href="../AEDHome/aed_home.html" class="nav-link">🏠 Home</a>
+            <a href="../AEDProfile/aed-profile.html" class="nav-link">👤 Profile</a>
+            <a href="#" class="nav-link" id="domainsLink">🌐 My Domains</a>
+            <a href="#" class="nav-link" id="marketplaceLink">🛒 Marketplace</a>
+            <a href="#" class="nav-link" id="settingsLink">⚙️ Settings</a>
+            <a href="#" class="nav-link" id="helpLink">❓ Help</a>
+            <a href="../AEDAdmin/aed-admin.html" class="nav-link admin-only" id="adminLink" style="display: none;">🔧 Admin Panel</a>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </div>
+</header>

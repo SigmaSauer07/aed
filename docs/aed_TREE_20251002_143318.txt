@@ -1,0 +1,171 @@
+[4.0K]  .
+├── [  42]  aed_metadata-j2xsflqm4-sigmasauer07s-projects_vercel_app_logs.csv
+├── [4.0K]  assets
+│   └── [4.0K]  aedbg
+│       ├── [1.5M]  domain_background.png
+│       └── [818K]  subdomain_background.png
+├── [4.0K]  cache
+│   ├── [   0]  console-history.txt
+│   ├── [ 84K]  solidity-files-cache.json
+│   └── [313K]  validations.json
+├── [1.9K]  changelog.md
+├── [ 315]  codex-sync,js
+├── [ 344]  codex.todo.md
+├── [4.0K]  contracts
+│   ├── [ 14K]  AEDCoreImplementation.sol
+│   ├── [ 12K]  AEDImplementationLite.sol
+│   ├── [ 18K]  AEDImplementation.sol
+│   ├── [ 16K]  AEDMinimal.sol
+│   ├── [ 364]  AED.sol
+│   ├── [4.0K]  core
+│   │   ├── [1.9K]  AEDConstants.sol
+│   │   ├── [5.5K]  AEDCore.sol
+│   │   ├── [3.0K]  AppStorage.sol
+│   │   └── [4.0K]  interfaces
+│   │       ├── [1.8K]  IAEDCore.sol
+│   │       └── [ 682]  IAEDModule.sol
+│   ├── [4.0K]  interfaces
+│   │   ├── [4.0K]  external
+│   │   │   └── [ 243]  IERC721Extended.sol
+│   │   └── [4.0K]  modules
+│   │       ├── [ 572]  IAEDAdmin.sol
+│   │       ├── [ 599]  IAEDBridge.sol
+│   │       ├── [ 606]  IAEDEnhancements.sol
+│   │       ├── [ 475]  IAEDMetadata.sol
+│   │       ├── [ 404]  IAEDMinting.sol
+│   │       ├── [ 864]  IAEDRecovery.sol
+│   │       ├── [ 585]  IAEDRegistry.sol
+│   │       └── [ 343]  IAEDReverse.sol
+│   ├── [4.0K]  libraries
+│   │   ├── [2.0K]  AEDEvents.sol
+│   │   ├── [4.5K]  LibAdmin.sol
+│   │   ├── [5.6K]  LibAppStorage.sol
+│   │   ├── [3.9K]  LibBridge.sol
+│   │   ├── [5.1K]  LibEnhancements.sol
+│   │   ├── [7.0K]  LibMetadata.sol
+│   │   ├── [7.3K]  LibMinting.sol
+│   │   ├── [2.4K]  LibModuleRegistry.sol
+│   │   ├── [2.0K]  LibModule.sol
+│   │   ├── [ 11K]  LibRecovery.sol
+│   │   ├── [4.9K]  LibRegistry.sol
+│   │   ├── [6.6K]  LibReverse.sol
+│   │   ├── [2.5K]  LibRoles.sol
+│   │   └── [4.2K]  LibValidation.sol
+│   ├── [4.8K]  ModuleRegistry.sol
+│   ├── [4.0K]  modules
+│   │   ├── [4.0K]  admin
+│   │   │   └── [2.9K]  AEDAdmin.sol
+│   │   ├── [4.0K]  base
+│   │   │   ├── [3.4K]  ModuleBase.sol
+│   │   │   └── [2.7K]  ModuleRegistry.sol
+│   │   ├── [4.0K]  bridge
+│   │   │   └── [1.6K]  AEDBridge.sol
+│   │   ├── [4.0K]  enhancements
+│   │   │   └── [1.9K]  AEDEnhancements.sol
+│   │   ├── [4.0K]  future
+│   │   │   ├── [ 852]  AEDAnalytics.sol
+│   │   │   ├── [1.1K]  AEDGovernance.sol
+│   │   │   └── [1.1K]  AEDMessaging.sol
+│   │   ├── [4.0K]  metadata
+│   │   │   └── [1.3K]  AEDMetadata.sol
+│   │   ├── [4.0K]  minting
+│   │   │   └── [3.9K]  AEDMinting.sol
+│   │   ├── [4.0K]  recovery
+│   │   │   └── [2.0K]  AEDRecovery.sol
+│   │   ├── [4.0K]  registry
+│   │   │   └── [1.6K]  AEDRegistry.sol
+│   │   └── [4.0K]  reverse
+│   │       └── [2.6K]  AEDReverse.sol
+│   └── [2.8K]  ProxyRouter.sol
+├── [4.0K]  deprecated
+│   └── [4.0K]  metadata-json-amoy
+├── [4.0K]  docs
+│   ├── [ 15K]  AED-MVP-Feature-Checklist.md
+│   ├── [ 13K]  AED-Production-Readiness-Checklist.md
+│   ├── [4.6K]  docs_management.md
+│   └── [6.1K]  rules.md
+├── [4.0K]  frontend
+│   ├── [4.0K]  aed-admin
+│   │   ├── [7.1K]  component-loader.js
+│   │   ├── [4.0K]  components
+│   │   │   ├── [4.5K]  footer.html
+│   │   │   ├── [2.2K]  global-description.html
+│   │   │   └── [ 327]  header.html
+│   │   ├── [4.0K]  css
+│   │   │   ├── [ 10K]  ad.css
+│   │   │   ├── [2.6K]  footer.css
+│   │   │   ├── [4.7K]  global-description.css
+│   │   │   ├── [6.6K]  header.css
+│   │   │   └── [3.5K]  style.css
+│   │   ├── [4.0K]  img
+│   │   │   ├── [671K]  AEDlogo.png
+│   │   │   └── [1.3M]  bg.png
+│   │   ├── [ 15K]  index.html
+│   │   └── [4.0K]  js
+│   │       ├── [ 27K]  aedABI.json
+│   │       ├── [5.2K]  global-description.js
+│   │       ├── [9.0K]  header.js
+│   │       └── [9.7K]  script.js
+│   └── [4.0K]  aed-home
+│       ├── [7.1K]  component-loader.js
+│       ├── [4.0K]  components
+│       │   ├── [1.5K]  checker.html
+│       │   ├── [ 19K]  claim.html
+│       │   ├── [4.5K]  footer.html
+│       │   └── [2.0K]  header.html
+│       ├── [4.0K]  css
+│       │   ├── [4.1K]  ah.css
+│       │   ├── [1.8K]  ai-chat.css
+│       │   ├── [2.6K]  footer.css
+│       │   └── [6.6K]  header.css
+│       ├── [4.0K]  img
+│       │   ├── [671K]  AEDlogo.png
+│       │   └── [1.3M]  bg.png
+│       ├── [8.3K]  index.html
+│       └── [4.0K]  js
+│           ├── [ 27K]  aedABI.json
+│           ├── [3.5K]  ai-chat.js
+│           ├── [9.0K]  header.js
+│           ├── [6.6K]  index.js
+│           └── [1.6K]  wallet.js
+├── [ 707]  hardhat.config.js
+├── [4.0K]  legal
+│   ├── [8.2K]  Cookie-Policy.md
+│   ├── [7.9K]  Legal-Implementation-Guide.md
+│   ├── [9.5K]  Privacy-Policy.md
+│   └── [9.7K]  Terms-of-Service.md
+├── [1.0K]  LICENSE
+├── [4.0K]  metadata-server
+│   ├── [ 12K]  metadata-server.js
+│   ├── [ 655]  package.json
+│   ├── [ 34K]  package-lock.json
+│   ├── [3.4K]  README.md
+│   └── [ 334]  vercel.json
+├── [1.1K]  package.json
+├── [342K]  package-lock.json
+├── [4.0K]  scripts
+│   ├── [1021]  check-balance.js
+│   ├── [3.5K]  check-contract-functions.js
+│   ├── [3.5K]  check-metadata.js
+│   ├── [ 784]  checkState.js
+│   ├── [3.7K]  debug-proxy.js
+│   ├── [4.0K]  debug-storage.js
+│   ├── [3.8K]  debug-tokenuri.js
+│   ├── [1.6K]  deploy.js
+│   ├── [ 973]  generate-abi.js
+│   ├── [2.5K]  generate-metadata-json.js
+│   ├── [4.2K]  mint-domains.js
+│   ├── [3.1K]  mint-full-matrix.js
+│   ├── [ 696]  mintTest.js
+│   ├── [3.2K]  upgrade-implementation.js
+│   ├── [1.6K]  utils.js
+│   └── [ 378]  verify.js
+└── [4.0K]  test
+    ├── [ 780]  AEDCoreTest.sol
+    ├── [ 177]  aed.test.js
+    ├── [ 16K]  AED.test.js
+    ├── [ 166]  basic.test.js
+    ├── [1.4K]  deployment.test.js
+    └── [   0]  ModuleBase_test.sol
+
+40 directories, 129 files

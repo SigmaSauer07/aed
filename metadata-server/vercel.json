@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "metadata-server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "metadata-server.js",
+      "headers": {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=300, s-maxage=3600"
+      }
+    }
+  ]
+}

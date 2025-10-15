@@ -1,0 +1,9 @@
+const fs = require("fs");
+const path = require("path");
+
+const artifact = require("./artifacts/contracts/AEDCore.sol/AEDCore.json");
+fs.writeFileSync(
+  path.join(__dirname, "frontend/client/aedABI.json"),
+  JSON.stringify(artifact.abi, null, 2)
+);
+console.log("✅ Synced AED ABI to frontend/client/aedABI.json");

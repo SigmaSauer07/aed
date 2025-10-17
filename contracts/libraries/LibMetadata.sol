@@ -149,7 +149,7 @@ library LibMetadata {
         
         // Count bits set in features
         while (features > 0) {
-            if (features & 1 == 1) {
+            if ((features & 1) == 1) {
                 count++;
             }
             features >>= 1;

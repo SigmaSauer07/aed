@@ -78,6 +78,9 @@ contract AEDImplementation is
         // External upgrades (bring your own)
         s.featureExists["byo"] = true;
         s.enhancementPrices["byo"] = 5 ether;
+        s.enhancementPrices["metadata"] = 0;
+        s.enhancementPrices["reverse"] = 0;
+        s.enhancementPrices["bridge"] = 0;
 
         // Initialize default pricing
         s.tldPrices["alsania"] = 1 ether;
@@ -95,6 +98,8 @@ contract AEDImplementation is
         s.validTlds["fx"] = true;
         s.validTlds["echo"] = true;
 
+        LibEnhancements.ensureDefaultFeatures();
+        s.globalDescription = "Alsania Enhanced Domains collection";
         // Subdomain fee settings
         s.fees["subdomainBase"] = 0.1 ether;
         s.fees["subdomainMultiplier"] = 2;
@@ -223,9 +228,18 @@ contract AEDImplementation is
     function isFeatureEnabled(uint256 tokenId, string calldata featureName) external view returns (bool) {
         return LibEnhancements.isFeatureEnabled(tokenId, featureName);
     }
+    
 
     function getAvailableFeatures() external view returns (string[] memory) {
         return LibEnhancements.getAvailableFeatures();
+    }
+
+    function getTLDPrice(string calldata tld) external view returns (uint256) {
+        return LibAdmin.getTLDPrice(tld);
+    }
+
+    function isTLDFree(string calldata tld) external view returns (bool) {
+        return LibAdmin.isFreeTLD(tld);
     }
     
     // ===== ADMIN FUNCTIONS =====
@@ -336,6 +350,8 @@ contract AEDImplementation is
         AppStorage storage s = LibAppStorage.appStorage();
         return s.nextTokenId - 1;
     }
+    
+    function contractURI() external view returns (string memory) {
 
     function contractURI() external pure returns (string memory) {
         return LibMetadata.contractURI();

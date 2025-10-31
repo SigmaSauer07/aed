@@ -1,6 +1,10 @@
 const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 
+const BASE_METADATA_URI = "https://api.alsania.io/metadata/";
+const DEFAULT_DOMAIN_IMAGE_URI = "ipfs://bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/domain_background.png";
+const DEFAULT_SUBDOMAIN_IMAGE_URI = "ipfs://bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/subdomain_background.png";
+
 describe("AED - Alsania Enhanced Domains", function () {
     let aed, aedImplementation;
     let owner, user1, user2, feeCollector;
@@ -91,6 +95,12 @@ describe("AED - Alsania Enhanced Domains", function () {
             expect(await aed.isFeatureEnabled(1, "subdomain")).to.be.true;
         });
 
+        it("Should persist default metadata on registration", async function () {
+            await aed.connect(user1).registerDomain("meta", "aed", false);
+            const info = await aed.getDomainInfo(1);
+
+            expect(info.profileURI).to.equal(`${BASE_METADATA_URI}meta.aed/profile.json`);
+            expect(info.imageURI).to.equal(DEFAULT_DOMAIN_IMAGE_URI);
         it("Should estimate registration costs correctly", async function () {
             const cost = await aed.estimateDomainPrice("alsania", true);
             const tldPrice = await aed.getTLDPrice("alsania");
@@ -101,7 +111,7 @@ describe("AED - Alsania Enhanced Domains", function () {
 
         it("Should fail to register existing domain", async function () {
             await aed.connect(user1).registerDomain("test", "aed", false);
-            
+
             await expect(
                 aed.connect(user2).registerDomain("test", "aed", false)
             ).to.be.revertedWith("Domain already exists");
@@ -131,9 +141,18 @@ describe("AED - Alsania Enhanced Domains", function () {
         it("Should create subdomain", async function () {
             const tx = await aed.connect(user1).mintSubdomain(1, "child");
             const receipt = await tx.wait();
-            
+
             expect(await aed.isRegistered("child.parent", "aed")).to.be.true;
             expect(await aed.ownerOf(2)).to.equal(user1.address);
+        });
+
+        it("Should assign default metadata to subdomain", async function () {
+            await aed.connect(user1).mintSubdomain(1, "child");
+            const info = await aed.getDomainInfo(2);
+
+            expect(info.profileURI).to.equal(`${BASE_METADATA_URI}child.parent.aed/profile.json`);
+            expect(info.imageURI).to.equal(DEFAULT_SUBDOMAIN_IMAGE_URI);
+            expect(info.tld).to.equal("aed");
         });
 
         it("Should calculate correct subdomain fees", async function () {
@@ -252,6 +271,14 @@ describe("AED - Alsania Enhanced Domains", function () {
             expect(receipt.status).to.equal(1);
         });
 
+        it("Should enable metadata feature without payment", async function () {
+            await expect(
+                aed.connect(user1).purchaseFeature(1, "metadata")
+            ).to.not.be.reverted;
+
+            expect(await aed.isFeatureEnabled(1, "metadata")).to.be.true;
+        });
+
         it("Should fail with insufficient payment", async function () {
             const insufficientAmount = ethers.parseEther("1");
             await expect(
@@ -290,7 +317,7 @@ describe("AED - Alsania Enhanced Domains", function () {
         it("Should update fee", async function () {
             await aed.connect(owner).grantRole(FEE_MANAGER_ROLE, owner.address);
             await aed.connect(owner).updateFee("subdomain", ethers.parseEther("3"));
-            
+
             expect(await aed.getFeaturePrice("subdomain")).to.equal(ethers.parseEther("3"));
         });
 
@@ -341,6 +368,29 @@ describe("AED - Alsania Enhanced Domains", function () {
             await expect(
                 aed.connect(user1).pause()
             ).to.be.revertedWith("Not admin");
+        });
+    });
+
+    describe("Feature Registry & Pricing", function () {
+        it("Should list default features", async function () {
+            const features = await aed.getAvailableFeatures();
+            expect(features).to.include.members(["subdomain", "metadata", "reverse", "bridge"]);
+        });
+
+        it("Should expose TLD pricing state", async function () {
+            expect(await aed.isTLDFree("aed")).to.be.true;
+            const price = await aed.getTLDPrice("alsania");
+            expect(price).to.equal(ethers.parseEther("1"));
+        });
+
+        it("Should surface collection metadata with live fee recipient", async function () {
+            const uri = await aed.contractURI();
+            const encoded = uri.split(",")[1];
+            const json = Buffer.from(encoded, "base64").toString("utf8");
+            const metadata = JSON.parse(json);
+
+            expect(metadata.fee_recipient.toLowerCase()).to.equal(feeCollector.address.toLowerCase());
+            expect(metadata.description).to.equal("Alsania Enhanced Domains collection");
         });
     });
 

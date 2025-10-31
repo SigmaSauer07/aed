@@ -16,7 +16,7 @@ describe("AED - Alsania Enhanced Domains", function () {
 
     beforeEach(async function () {
         // Deploy the AED implementation
-        const AEDImplementation = await ethers.getContractFactory("AEDImplementationLite");
+        const AEDImplementation = await ethers.getContractFactory("AEDImplementation");
         
         // Deploy with UUPS proxy
         aed = await upgrades.deployProxy(
@@ -59,6 +59,13 @@ describe("AED - Alsania Enhanced Domains", function () {
             expect(await aed.isTLDActive("fx")).to.be.true;
             expect(await aed.isTLDActive("echo")).to.be.true;
         });
+
+        it("Should expose default feature catalogue", async function () {
+            const features = await aed.getAvailableFeatures();
+            expect(features).to.include("subdomain");
+            expect(features).to.include("metadata");
+            expect(features).to.include("reverse");
+        });
     });
 
     describe("Domain Registration", function () {
@@ -72,16 +79,16 @@ describe("AED - Alsania Enhanced Domains", function () {
         });
 
         it("Should register paid domain", async function () {
-            const cost = ethers.parseEther("1"); // $1 for .alsania
+            const cost = await aed.estimateDomainPrice("alsania", false);
             const tx = await aed.connect(user1).registerDomain("test", "alsania", false, { value: cost });
             const receipt = await tx.wait();
-            
+
             expect(await aed.isRegistered("test", "alsania")).to.be.true;
             expect(await aed.ownerOf(1)).to.equal(user1.address);
         });
 
         it("Should register domain with subdomain feature", async function () {
-            const subdomainCost = ethers.parseEther("2"); // $2 for subdomain enhancement
+            const subdomainCost = await aed.estimateDomainPrice("aed", true);
             const tx = await aed.connect(user1).registerDomain("test", "aed", true, { value: subdomainCost });
             const receipt = await tx.wait();
 
@@ -94,6 +101,12 @@ describe("AED - Alsania Enhanced Domains", function () {
 
             expect(info.profileURI).to.equal(`${BASE_METADATA_URI}meta.aed/profile.json`);
             expect(info.imageURI).to.equal(DEFAULT_DOMAIN_IMAGE_URI);
+        it("Should estimate registration costs correctly", async function () {
+            const cost = await aed.estimateDomainPrice("alsania", true);
+            const tldPrice = await aed.getTLDPrice("alsania");
+            const featurePrice = await aed.getFeaturePrice("subdomain");
+
+            expect(cost).to.equal(tldPrice + featurePrice);
         });
 
         it("Should fail to register existing domain", async function () {
@@ -121,7 +134,7 @@ describe("AED - Alsania Enhanced Domains", function () {
     describe("Subdomain Creation", function () {
         beforeEach(async function () {
             // Register a domain with subdomain feature
-            const cost = ethers.parseEther("2");
+            const cost = await aed.estimateDomainPrice("aed", true);
             await aed.connect(user1).registerDomain("parent", "aed", true, { value: cost });
         });
 
@@ -148,8 +161,11 @@ describe("AED - Alsania Enhanced Domains", function () {
             
             await aed.connect(user1).mintSubdomain(1, "child1");
             expect(await aed.calculateSubdomainFee(1)).to.equal(0);
-            
+
             await aed.connect(user1).mintSubdomain(1, "child2");
+            expect(await aed.calculateSubdomainFee(1)).to.equal(0);
+
+            await aed.connect(user1).mintSubdomain(1, "child3");
             expect(await aed.calculateSubdomainFee(1)).to.equal(ethers.parseEther("0.1"));
         });
 
@@ -233,21 +249,21 @@ describe("AED - Alsania Enhanced Domains", function () {
         });
 
         it("Should enable subdomain feature", async function () {
-            const cost = ethers.parseEther("2");
+            const cost = await aed.getFeaturePrice("subdomain");
             await aed.connect(user1).enableSubdomainFeature(1, { value: cost });
-            
+
             expect(await aed.isFeatureEnabled(1, "subdomain")).to.be.true;
         });
 
         it("Should purchase feature", async function () {
-            const cost = ethers.parseEther("2");
+            const cost = await aed.getFeaturePrice("subdomain");
             await aed.connect(user1).purchaseFeature(1, "subdomain", { value: cost });
-            
+
             expect(await aed.isFeatureEnabled(1, "subdomain")).to.be.true;
         });
 
         it("Should upgrade external domain", async function () {
-            const cost = ethers.parseEther("5");
+            const cost = await aed.getFeaturePrice("byo");
             const tx = await aed.connect(user1).upgradeExternalDomain("example.eth", { value: cost });
             const receipt = await tx.wait();
 
@@ -276,9 +292,9 @@ describe("AED - Alsania Enhanced Domains", function () {
             const names = ["test1", "test2", "test3"];
             const tlds = ["aed", "alsa", "07"];
             const enableSubdomains = [false, false, false];
-            
+
             const tokenIds = await aed.connect(user1).batchRegisterDomains(names, tlds, enableSubdomains);
-            
+
             expect(await aed.ownerOf(1)).to.equal(user1.address);
             expect(await aed.ownerOf(2)).to.equal(user1.address);
             expect(await aed.ownerOf(3)).to.equal(user1.address);
@@ -288,10 +304,10 @@ describe("AED - Alsania Enhanced Domains", function () {
             const names = ["free", "paid"];
             const tlds = ["aed", "alsania"];
             const enableSubdomains = [false, false];
-            const cost = ethers.parseEther("1"); // Cost for .alsania
-            
+            const cost = await aed.estimateDomainPrice("alsania", false);
+
             await aed.connect(user1).batchRegisterDomains(names, tlds, enableSubdomains, { value: cost });
-            
+
             expect(await aed.ownerOf(1)).to.equal(user1.address);
             expect(await aed.ownerOf(2)).to.equal(user1.address);
         });
@@ -308,20 +324,27 @@ describe("AED - Alsania Enhanced Domains", function () {
         it("Should configure TLD", async function () {
             await aed.connect(owner).grantRole(TLD_MANAGER_ROLE, owner.address);
             await aed.connect(owner).configureTLD("newtld", true, ethers.parseEther("2"));
-            
+
             expect(await aed.isTLDActive("newtld")).to.be.true;
         });
 
         it("Should update fee recipient", async function () {
             const newRecipient = user1.address;
             await aed.connect(owner).updateFeeRecipient(newRecipient);
-            
+
             expect(await aed.getFeeCollector()).to.equal(newRecipient);
+        });
+
+        it("Should update global description", async function () {
+            const description = "Alsania Sovereign Domains";
+            await aed.connect(owner).setGlobalDescription(description);
+
+            expect(await aed.getGlobalDescription()).to.equal(description);
         });
 
         it("Should pause and unpause contract", async function () {
             await aed.connect(owner).pause();
-            
+
             await expect(
                 aed.connect(user1).registerDomain("test", "aed", false)
             ).to.be.revertedWith("Contract paused");
@@ -409,15 +432,15 @@ describe("AED - Alsania Enhanced Domains", function () {
     describe("Edge Cases & Security", function () {
         it("Should handle domain name normalization", async function () {
             await aed.connect(user1).registerDomain("Test", "aed", false);
-            
+
             expect(await aed.isRegistered("test", "aed")).to.be.true;
             expect(await aed.getDomainByTokenId(1)).to.equal("test.aed");
         });
 
         it("Should handle maximum subdomain limits", async function () {
-            const cost = ethers.parseEther("2");
+            const cost = await aed.estimateDomainPrice("aed", true);
             await aed.connect(user1).registerDomain("parent", "aed", true, { value: cost });
-            
+
             // This test would need to be adjusted based on MAX_SUBDOMAINS constant
             // For now, we'll just verify it doesn't fail for a few subdomains
             await aed.connect(user1).mintSubdomain(1, "child1");
@@ -430,12 +453,24 @@ describe("AED - Alsania Enhanced Domains", function () {
 
             const tx = await aed.connect(user1).registerDomain("test", "aed", false, { value: overpayment });
             const receipt = await tx.wait();
-            const gasUsed = receipt.gasUsed * receipt.gasPrice;
-            
+            const gasCost = receipt.gasUsed * receipt.effectiveGasPrice;
+
             const balanceAfter = await ethers.provider.getBalance(user1.address);
-            
+
             // Should only charge for gas, overpayment should be refunded
-            expect(balanceBefore - balanceAfter).to.be.closeTo(gasUsed, ethers.parseEther("0.01"));
+            expect(balanceBefore - balanceAfter).to.be.closeTo(gasCost, ethers.parseEther("0.01"));
+        });
+    });
+
+    describe("Upgradeability", function () {
+        it("Should upgrade to new implementation", async function () {
+            const V2 = await ethers.getContractFactory("AEDImplementationV2Mock");
+            const upgraded = await upgrades.upgradeProxy(await aed.getAddress(), V2);
+            await upgraded.waitForDeployment();
+
+            expect(await upgraded.version()).to.equal("2.0");
+            // State should persist
+            expect(await upgraded.getFeeCollector()).to.equal(feeCollector.address);
         });
     });
 });

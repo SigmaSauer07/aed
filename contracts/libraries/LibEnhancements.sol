@@ -5,6 +5,9 @@ import "../core/AppStorage.sol";
 import "./LibAppStorage.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
+error FeatureUnavailable(string featureName);
+error FeeTransferFailed();
+
 library LibEnhancements {
     using LibAppStorage for AppStorage;
     using Strings for uint256;
@@ -58,6 +61,12 @@ library LibEnhancements {
 
     function enableSubdomains(uint256 tokenId) internal {
         purchaseFeature(tokenId, "subdomain");
+        _applyFeature(s, tokenId, featureName, msg.value);
+    }
+
+    function enableSubdomains(uint256 tokenId) internal {
+        AppStorage storage s = LibAppStorage.appStorage();
+        _applyFeature(s, tokenId, "subdomain", msg.value);
     }
 
     function upgradeExternalDomain(string calldata externalDomain) internal {
@@ -65,26 +74,23 @@ library LibEnhancements {
 
         uint256 price = s.enhancementPrices["byo"];
         require(msg.value >= price, "Insufficient payment");
-        
+
         // Store external domain upgrade
         s.futureStringString[externalDomain] = "upgraded";
         s.totalRevenue += price;
-        
-        // Send to fee collector
-        if (price > 0) {
-            payable(s.feeCollector).transfer(price);
-        }
-        
+
+        _forwardFee(s.feeCollector, price);
+
         // Refund excess
-        if (msg.value > price) {
-            payable(msg.sender).transfer(msg.value - price);
-        }
+        _refundExcess(price);
     }
-    
+
     function getFeaturePrice(string calldata featureName) internal view returns (uint256) {
-        return LibAppStorage.appStorage().enhancementPrices[featureName];
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(s.featureExists[featureName], "Feature not found");
+        return s.enhancementPrices[featureName];
     }
-    
+
     function isFeatureEnabled(uint256 tokenId, string calldata featureName) internal view returns (bool) {
         AppStorage storage s = LibAppStorage.appStorage();
         uint256 flag = _featureFlag(s, featureName);
@@ -92,6 +98,11 @@ library LibEnhancements {
             return false;
         }
         return (s.domainFeatures[tokenId] & flag) != 0;
+
+        uint256 feature = s.featureFlags[featureName];
+        require(feature != 0, "Feature not found");
+
+        return (s.domainFeatures[tokenId] & feature) != 0;
     }
 
     function getAvailableFeatures() internal view returns (string[] memory) {
@@ -101,6 +112,11 @@ library LibEnhancements {
 
         for (uint256 i = 0; i < count; ++i) {
             features[i] = s.futureStringString[_featureNameKey(i)];
+        uint256 length = s.availableFeatures.length;
+        string[] memory features = new string[](length);
+
+        for (uint256 i = 0; i < length; i++) {
+            features[i] = s.availableFeatures[i];
         }
 
         return features;
@@ -109,6 +125,9 @@ library LibEnhancements {
     function setFeaturePrice(string calldata featureName, uint256 price) internal {
         require(bytes(featureName).length != 0, "Feature required");
         LibAppStorage.appStorage().enhancementPrices[featureName] = price;
+        AppStorage storage s = LibAppStorage.appStorage();
+        require(s.featureExists[featureName], "Feature not found");
+        s.enhancementPrices[featureName] = price;
     }
 
     function addFeature(string calldata featureName, uint256 price, uint256 flag) internal {
@@ -174,6 +193,68 @@ library LibEnhancements {
             }
 
             emit FeatureCatalogued(featureName, flag);
+        require(flag != 0, "Invalid feature flag");
+
+        if (!s.featureExists[featureName]) {
+            s.availableFeatures.push(featureName);
+            s.featureExists[featureName] = true;
+        }
+
+        s.featureFlags[featureName] = flag;
+        s.enhancementPrices[featureName] = price;
+    }
+
+    function _applyFeature(
+        AppStorage storage s,
+        uint256 tokenId,
+        string memory featureName,
+        uint256 amountProvided
+    ) private {
+        require(s.owners[tokenId] == msg.sender, "Not token owner");
+
+        uint256 flag = s.featureFlags[featureName];
+        if (flag == 0) {
+            revert FeatureUnavailable(featureName);
+        }
+
+        uint256 price = s.enhancementPrices[featureName];
+        require(amountProvided >= price, "Insufficient payment");
+
+        if ((s.domainFeatures[tokenId] & flag) == 0) {
+            s.domainFeatures[tokenId] |= flag;
+            emit FeatureEnabled(tokenId, flag);
+        }
+
+        // Track special case for subdomains to keep compatibility with legacy UI
+        if (keccak256(bytes(featureName)) == keccak256("subdomain")) {
+            string memory domain = s.tokenIdToDomain[tokenId];
+            s.enhancedDomains[domain] = true;
+        }
+
+        s.totalRevenue += price;
+        _forwardFee(s.feeCollector, price);
+        _refundExcess(price);
+
+        emit FeaturePurchased(tokenId, featureName, price);
+    }
+
+    function _forwardFee(address feeCollector, uint256 amount) private {
+        if (amount == 0) {
+            return;
+        }
+
+        (bool success, ) = payable(feeCollector).call{value: amount}("");
+        if (!success) {
+            revert FeeTransferFailed();
+        }
+    }
+
+    function _refundExcess(uint256 price) private {
+        if (msg.value > price) {
+            (bool success, ) = payable(msg.sender).call{value: msg.value - price}("");
+            if (!success) {
+                revert FeeTransferFailed();
+            }
         }
     }
 }

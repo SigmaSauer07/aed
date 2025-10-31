@@ -18,6 +18,13 @@ async function main() {
   console.log("🚀 Deploying AED with optimized UUPS structure...");
 
   const aed = await upgrades.deployProxy(
+    AED,
+    [
+      "Alsania Enhanced Domains", // ERC721 name
+      "AED",                       // ERC721 symbol
+      paymentWallet,               // fee collector
+      initialAdmin                 // admin
+    ],
     AEDImplementation,
     [name, symbol, paymentWallet, initialAdmin],
     {

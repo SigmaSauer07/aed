@@ -1,307 +1,299 @@
-// ===== Configuration =====
-const CONTRACT_ADDRESS = '0x6452DCd7Bbee694223D743f09FF07c717Eeb34DF'; // Working AED contract
-let AED_ABI = null; // Will be loaded dynamically
-let provider, signer, contract, selectedMultiplier = 2;
+const CONFIG = window.AED_CONFIG || {};
 
-// ===== Load ABI =====
+let provider;
+let signer;
+let contract;
+let abi;
+
+const ROLE_KEYS = {
+  ADMIN_ROLE: "ADMIN_ROLE",
+  FEE_MANAGER_ROLE: "FEE_MANAGER_ROLE",
+  TLD_MANAGER_ROLE: "TLD_MANAGER_ROLE",
+};
+
 async function loadABI() {
-   try {
-      const response = await fetch('./js/aedABI.json');
-      const abiData = await response.json();
-      AED_ABI = abiData.abi;
-      console.log('ABI loaded successfully');
-   } catch (error) {
-      console.error('Failed to load ABI:', error);
-   }
+  if (abi) return abi;
+  const response = await fetch("./js/aedABI.json");
+  const json = await response.json();
+  abi = json.abi || json;
+  return abi;
 }
 
-// ===== Wallet Connect / Disconnect =====
 async function connectWallet() {
-   if (!window.ethereum) return alert("Install MetaMask!");
-   if (!AED_ABI) {
-      await loadABI();
-      if (!AED_ABI) return alert("Failed to load contract ABI");
-   }
+  if (!window.ethereum) {
+    alert("MetaMask (or another wallet) is required.");
+    return;
+  }
 
-   provider = new ethers.BrowserProvider(window.ethereum);
-   await provider.send("eth_requestAccounts", []);
-   signer = await provider.getSigner();
-   contract = new ethers.Contract(CONTRACT_ADDRESS, AED_ABI, signer);
-   const addr = await signer.getAddress();
+  try {
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
 
-   document.getElementById("walletAddress").innerText = `Connected: ${addr.slice(0,6)}...${addr.slice(-4)}`;
-   const btn = document.getElementById("connectBtn");
-   btn.textContent = "Disconnect";
-   btn.onclick = disconnectWallet;
+    const loadedAbi = await loadABI();
+    contract = new ethers.Contract(CONFIG.CONTRACT_ADDRESS, loadedAbi, signer);
+    window.contract = contract;
+    window.signer = signer;
 
-   // Make contract available globally for other components
-   window.contract = contract;
-   window.signer = signer;
+    const address = accounts[0];
+    document.getElementById("walletAddress").textContent = `Connected: ${address.slice(0, 6)}…${address.slice(-4)}`;
+    const connectBtn = document.getElementById("connectBtn");
+    connectBtn.textContent = "Disconnect";
+    connectBtn.onclick = disconnectWallet;
 
-   // Load global description if manager is available
-   if (window.globalDescriptionManager) {
-      window.globalDescriptionManager.loadCurrentDescription();
-   }
+    await refreshOverview();
+    await loadFeaturePrices();
+  } catch (error) {
+    console.error("Failed to connect", error);
+    alert(`Connection failed: ${error.message || error}`);
+  }
 }
 
 function disconnectWallet() {
-  provider = signer = contract = null;
-  document.getElementById("walletAddress").innerText = "Wallet: Not connected";
-  const btn = document.getElementById("connectBtn");
-  btn.textContent = "Connect Wallet";
-  btn.onclick = connectWallet;
+  provider = undefined;
+  signer = undefined;
+  contract = undefined;
+  window.contract = undefined;
+  window.signer = undefined;
+  document.getElementById("walletAddress").textContent = "Wallet: Not connected";
+  const connectBtn = document.getElementById("connectBtn");
+  connectBtn.textContent = "Connect Wallet";
+  connectBtn.onclick = connectWallet;
 }
 
-// Remove this line as connect function doesn't exist
-// window.addEventListener('load', connect);
+async function refreshOverview() {
+  if (!contract) return;
+  try {
+    const [supply, revenue, features] = await Promise.all([
+      contract.totalSupply(),
+      contract.getTotalRevenue(),
+      contract.getAvailableFeatures(),
+    ]);
 
-async function registerDomain(){
-  const name = val('domainName');
-  const tld = val('domainTld');
-  const dur = parseInt(val('duration')||'0');
-  const fee = parseInt(val('mintFee')||'0');
-  const feeEnabled = document.getElementById('feeEnabled').checked;
-  const price = await AED.renewalPrice();
-  const tx = await AED.registerDomain(name,tld,fee,feeEnabled,dur,{value: price.mul(dur)});
-  await tx.wait();
-  alert('Domain minted');
-}
-async function setRoyalty(){
-  const bps = parseInt(val('royalty'));
-  const tx = await AED.setRoyaltyBps(bps);
-  await tx.wait();
-  alert('Royalty updated');
-}
-async function setBaseURI(){
-  const uri = val('baseUri');
-  const tx = await AED.setBaseURI(uri);
-  await tx.wait();
-  alert('Base URI updated');
-}
+    document.getElementById("totalDomains").textContent = supply.toString();
+    document.getElementById("totalRevenue").textContent = Number(ethers.formatEther(revenue)).toFixed(2);
 
-async function setMintFee(){
-  const fee = parseInt(val('mintFee'));
-  const tx = await AED.setMintFee(fee);
-  await tx.wait();
-  alert('Mint Fee updated');
-}
-async function reverseLookup(){
-  const addr = val('addrLookup');
-  const domain = await AED.getReverseDomain(addr);
-  document.getElementById('reverseOut').innerText = domain;
-}
-
-function val(id){return document.getElementById(id).value;}
-
-async function checkAdminRole() {
-  const addr = val('roleAccount');
-  const has = await AED.hasRole(await AED.ADMIN_ROLE(), addr);
-  alert(addr + (has ? " HAS " : " DOES NOT HAVE ") + "ADMIN ROLE");
-}
-async function grantAdminRole() {
-  const addr = val('roleAccount');
-  const tx = await AED.grantRole(await AED.ADMIN_ROLE(), addr);
-  await tx.wait();
-  alert("Granted ADMIN role");
-}
-async function revokeAdminRole() {
-  const addr = val('roleAccount');
-  const tx = await AED.revokeRole(await AED.ADMIN_ROLE(), addr);
-  await tx.wait();
-  alert("Revoked ADMIN role");
-}
-async function addGuardian() {
-  const id = parseInt(val('guardianTokenId'));
-  const addr = val('guardianAddress');
-  const tx = await AED.addGuardian(id, addr);
-  await tx.wait();
-  alert("Guardian added");
-}
-async function removeGuardian() {
-  const id = parseInt(val('guardianTokenId'));
-  const addr = val('guardianAddress');
-  const tx = await AED.removeGuardian(id, addr);
-  await tx.wait();
-  alert("Guardian removed");
-}
-async function initiateRecovery() {
-  const id = parseInt(val('recoverId'));
-  const tx = await AED.initiateRecovery(id);
-  await tx.wait();
-  alert("Recovery started");
-}
-async function completeRecovery() {
-  const id = parseInt(val('recoverId'));
-  const newOwner = val('recoverNewOwner');
-  const tx = await AED.completeRecovery(id, newOwner, []);
-  await tx.wait();
-  alert("Recovery completed");
-}
-
-async function transfer() {
-  const id = parseInt(val('transferId'));
-  const newOwner = val('transferNewOwner');
-  const tx = await AED.transfer(id, newOwner);
-  await tx.wait();
-  alert("Transfer completed");
-}
-
-async function transferFrom() {
-  const id = parseInt(val('transferId'));
-  const from = val('transferFrom');
-  const newOwner = val('transferNewOwner');
-  const tx = await AED.transferFrom(from, id, newOwner);
-  await tx.wait();
-  alert("Transfer completed");
-}
-
-async function transferTo() {
-  const id = parseInt(val('transferId'));
-  const to = val('transferTo');
-  const newOwner = val('transferNewOwner');
-  const tx = await AED.transferTo(to, id, newOwner);
-  await tx.wait();
-  alert("Transfer completed");
-}
-
-async function transferFromTo() {
-  const id = parseInt(val('transferId'));
-  const from = val('transferFrom');
-  const to = val('transferTo');
-  const newOwner = val('transferNewOwner');
-  const tx = await AED.transferFromTo(from, to, id, newOwner);
-  await tx.wait();
-  alert("Transfer completed");
-}
-
-// ===== Subdomain Tiered Pricing Logic =====
-async function updateSubdomainTiered() {
-  const base = document.getElementById("subdomainBaseFee").value;
-  const status = document.getElementById("subdomainTieredStatus");
-  status.innerText = `⏱️ Updating: base=${base}, x${selectedMultiplier}…`;
-  // contract logic can go here
-  status.innerText = `✅ Tiered pricing set: ${base} × ${selectedMultiplier}`;
-}
-
-// ===== Component Loading =====
-async function loadComponents() {
-   // Load Global Description Component
-   const globalDescContent = document.getElementById('global-description-content');
-   if (globalDescContent) {
-      try {
-         const response = await fetch('./components/global-description.html');
-         const html = await response.text();
-         globalDescContent.innerHTML = html;
-
-         // Load CSS if not already loaded
-         if (!document.querySelector('link[href="./css/global-description.css"]')) {
-            const link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = './css/global-description.css';
-            document.head.appendChild(link);
-         }
-
-         // Load JavaScript
-         const script = document.createElement('script');
-         script.src = './js/global-description.js';
-         script.type = 'text/javascript';
-         document.head.appendChild(script);
-
-         console.log('Global Description component loaded');
-      } catch (error) {
-         console.error('Failed to load Global Description component:', error);
+    const activeTlds = ["aed", "alsa", "07", "alsania", "fx", "echo"];
+    let activeCount = 0;
+    const activeList = [];
+    for (const tld of activeTlds) {
+      const isActive = await contract.isTLDActive(tld);
+      if (isActive) {
+        activeCount += 1;
+        activeList.push(`.${tld}`);
       }
-   }
-}
-
-// ===== Tab Navigation =====
-function setupTabNavigation() {
-   const tabs = document.querySelectorAll('.nav-tab');
-   const contents = document.querySelectorAll('.tab-content');
-
-   tabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-         const targetTab = tab.dataset.tab;
-         
-         // Remove active class from all tabs and contents
-         tabs.forEach(t => t.classList.remove('active'));
-         contents.forEach(c => c.classList.remove('active'));
-         
-         // Add active class to clicked tab and corresponding content
-         tab.classList.add('active');
-         const targetContent = document.getElementById(targetTab);
-         if (targetContent) {
-            targetContent.classList.add('active');
-         }
-      });
-   });
-}
-
-// ===== Initialization =====
-document.addEventListener("DOMContentLoaded", async () => {
-   // Load ABI first
-   await loadABI();
-
-   // Load components
-   await loadComponents();
-
-   // Setup tab navigation
-   setupTabNavigation();
-
-   // Set up event listeners
-   const connectBtn = document.getElementById("connectBtn");
-   const updateBtn = document.getElementById("updateSubdomainTieredBtn");
-
-   if (connectBtn) connectBtn.onclick = connectWallet;
-   if (updateBtn) updateBtn.onclick = updateSubdomainTiered;
-
-  const display = document.getElementById("multiplierDisplay");
-  const dropdown = document.getElementById("multiplierDropdown");
-  const options = dropdown.querySelectorAll(".multiplier-option");
-  const baseInput = document.getElementById("subdomainBaseFee");
-  const feeOutput = document.getElementById("subdomainFee");
-
-  const updateLiveFee = () => {
-    const base = parseFloat(baseInput.value) || 0;
-    const result = (base * selectedMultiplier).toFixed(4);
-    feeOutput.textContent = result;
-  };
-
-  // Set default selection
-  display.value = "x2";
-  selectedMultiplier = 2;
-  options.forEach(opt => {
-    opt.classList.toggle("selected", opt.dataset.value === "2");
-  });
-  updateLiveFee();
-
-  display.addEventListener("click", () => {
-    dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
-  });
-
-  options.forEach(option => {
-    option.addEventListener("click", () => {
-      selectedMultiplier = Number(option.dataset.value);
-      display.value = option.textContent;
-      options.forEach(o => o.classList.remove("selected"));
-      option.classList.add("selected");
-      dropdown.style.display = "none";
-      updateLiveFee();
-    });
-  });
-
-  baseInput.addEventListener("input", updateLiveFee);
-
-  document.addEventListener("click", e => {
-    if (!e.target.closest(".multiplier-selector")) {
-      dropdown.style.display = "none";
     }
+
+    document.getElementById("activeTLDs").textContent = activeCount.toString();
+    document.getElementById("tldsList").textContent = activeList.join(", ");
+    const paused = await contract.isPaused();
+    document.getElementById("systemStatus").textContent = paused ? "🔴" : "🟢";
+
+    const list = document.getElementById("currentFees");
+    if (list) {
+      const feeBase = await contract.getFeeValue("subdomainBase");
+      const multiplier = await contract.getFeeValue("subdomainMultiplier");
+      const freeMints = await contract.getFeeValue("subdomainFreeMints");
+      list.innerHTML = `
+        <div>Subdomain Base: ${ethers.formatEther(feeBase)} MATIC</div>
+        <div>Multiplier: ${multiplier.toString()}x</div>
+        <div>Free Mints: ${freeMints.toString()}</div>
+      `;
+    }
+
+    const featureList = document.getElementById("featurePriceList");
+    if (featureList) {
+      featureList.innerHTML = "";
+      for (const feature of features) {
+        const price = await contract.getFeaturePrice(feature);
+        const item = document.createElement("div");
+        item.textContent = `${feature} ➜ ${ethers.formatEther(price)} MATIC`;
+        featureList.appendChild(item);
+      }
+    }
+
+    const descriptionPreview = document.getElementById("description-preview");
+    if (descriptionPreview) {
+      const description = await contract.getGlobalDescription();
+      descriptionPreview.textContent = description || "No description set";
+    }
+  } catch (error) {
+    console.error("Failed to refresh overview", error);
+  }
+}
+
+async function loadFeaturePrices() {
+  if (!contract) return;
+  const features = await contract.getAvailableFeatures();
+  const select = document.getElementById("enhancementSelect");
+  if (!select) return;
+
+  select.innerHTML = "";
+  for (const feature of features) {
+    const option = document.createElement("option");
+    option.value = feature;
+    option.textContent = feature;
+    select.appendChild(option);
+  }
+}
+
+async function checkContractBalance() {
+  const address = document.getElementById("contractAddress").value || CONFIG.CONTRACT_ADDRESS;
+  if (!provider) {
+    alert("Connect wallet to check balance.");
+    return;
+  }
+  const balance = await provider.getBalance(address);
+  document.getElementById("balanceResult").textContent = `${ethers.formatEther(balance)} MATIC`;
+}
+
+async function pauseContract() {
+  await executeTx(() => contract.pause(), "Contract paused");
+}
+
+async function unpauseContract() {
+  await executeTx(() => contract.unpause(), "Contract unpaused");
+}
+
+async function configureTld() {
+  const name = document.getElementById("tldName").value.trim().toLowerCase();
+  const fee = document.getElementById("tldPrice").value || "0";
+  if (!name) {
+    alert("Enter a TLD name.");
+    return;
+  }
+
+  const priceWei = ethers.parseEther(fee || "0");
+  await executeTx(() => contract.configureTLD(name, true, priceWei), "TLD configured");
+  await refreshOverview();
+}
+
+async function deactivateTld() {
+  const name = document.getElementById("tldName").value.trim().toLowerCase();
+  if (!name) {
+    alert("Enter a TLD name.");
+    return;
+  }
+  await executeTx(() => contract.configureTLD(name, false, 0), "TLD deactivated");
+  await refreshOverview();
+}
+
+async function updateFeaturePrice() {
+  const feature = document.getElementById("enhancementSelect").value;
+  const price = document.getElementById("enhancementPrice").value;
+  if (!feature) {
+    alert("Select a feature.");
+    return;
+  }
+  const priceWei = ethers.parseEther(price || "0");
+  await executeTx(() => contract.setFeaturePrice(feature, priceWei), "Feature price updated");
+  await refreshOverview();
+}
+
+async function updateFeeSetting() {
+  const type = document.getElementById("feeType").value;
+  const amount = document.getElementById("feeAmount").value || "0";
+  let value;
+  if (type === "subdomainMultiplier" || type === "subdomainFreeMints") {
+    value = BigInt(amount || "0");
+  } else {
+    value = ethers.parseEther(amount);
+  }
+  await executeTx(() => contract.updateFee(type, value), "Fee updated");
+  await refreshOverview();
+}
+
+async function updateFeeRecipient() {
+  const address = document.getElementById("recipientAddress").value;
+  if (!ethers.isAddress(address)) {
+    alert("Enter a valid address.");
+    return;
+  }
+  await executeTx(() => contract.updateFeeRecipient(address), "Fee recipient updated");
+  await refreshOverview();
+}
+
+async function handleRole(action) {
+  const address = document.getElementById("roleAddress").value;
+  const roleKey = document.getElementById("roleSelect").value;
+  if (!ethers.isAddress(address)) {
+    alert("Enter a valid address.");
+    return;
+  }
+  if (!ROLE_KEYS[roleKey]) {
+    alert("Select a supported role.");
+    return;
+  }
+  const role = await contract[roleKey]();
+  if (action === "grant") {
+    await executeTx(() => contract.grantRole(role, address), "Role granted");
+  } else if (action === "revoke") {
+    await executeTx(() => contract.revokeRole(role, address), "Role revoked");
+  } else {
+    const hasRole = await contract.hasRole(role, address);
+    alert(`${address} ${hasRole ? "has" : "does not have"} ${roleKey}`);
+  }
+}
+
+async function updateGlobalDescription() {
+  const description = document.getElementById("global-desc-input").value.trim();
+  await executeTx(() => contract.setGlobalDescription(description), "Global description updated");
+  const status = document.getElementById("global-description-status");
+  if (status) {
+    status.textContent = "Description saved.";
+  }
+  await refreshOverview();
+}
+
+async function executeTx(action, successMessage) {
+  if (!contract) {
+    alert("Connect wallet first.");
+    return;
+  }
+  try {
+    const tx = await action();
+    await tx.wait();
+    if (successMessage) {
+      alert(successMessage);
+    }
+  } catch (error) {
+    console.error("Transaction failed", error);
+    alert(`Transaction failed: ${error.reason || error.message || error}`);
+  }
+}
+
+function hideUnsupportedPanels() {
+  ["analytics", "emergency", "whitelistStatus", "platformFeeStatus"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.closest(".panel")?.remove();
   });
+}
+
+function setupListeners() {
+  document.getElementById("connectBtn").onclick = connectWallet;
+  document.getElementById("checkBalanceBtn").onclick = checkContractBalance;
+  document.getElementById("pauseBtn").onclick = pauseContract;
+  document.getElementById("unpauseBtn").onclick = unpauseContract;
+  document.getElementById("configureTldBtn").onclick = configureTld;
+  document.getElementById("deactivateTldBtn").onclick = deactivateTld;
+  document.getElementById("updateEnhancementBtn").onclick = updateFeaturePrice;
+  document.getElementById("setFeeBtn").onclick = updateFeeSetting;
+  document.getElementById("setRecipientBtn").onclick = updateFeeRecipient;
+  document.getElementById("grantRoleBtn").onclick = () => handleRole("grant");
+  document.getElementById("revokeRoleBtn").onclick = () => handleRole("revoke");
+  document.getElementById("checkRoleBtn").onclick = () => handleRole("check");
+  document.getElementById("set-global-description-btn")?.addEventListener("click", updateGlobalDescription);
+  document.getElementById("loadTldsBtn").onclick = refreshOverview;
+  document.getElementById("loadFeesBtn").onclick = refreshOverview;
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
+  hideUnsupportedPanels();
+  setupListeners();
+  await loadABI();
 });
 
-// ===== Export for Debugging =====
-window.AED = {
+window.AED_ADMIN = {
   connectWallet,
-  disconnectWallet,
-  updateSubdomainTiered
+  refreshOverview,
 };

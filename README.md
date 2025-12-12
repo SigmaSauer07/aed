@@ -1,213 +1,190 @@
-# Alsania Enhanced Domains (AED)
+# Alsania Enhanced Domains (AED) 🚀
 
-Alsania Enhanced Domains (AED) is an upgradeable ERC-721 domain registry that supports subdomains, dynamic metadata, SVG image rendering, and paid feature upgrades. Contracts are designed for UUPS upgradeability, align with Alsania's branding, and target the Polygon Amoy testnet.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Polygon](https://img.shields.io/badge/Network-Polygon%20Amoy-blue.svg)](https://polygon.technology/)
+[![Solidity](https://img.shields.io/badge/Solidity-^0.8.30-363636.svg)](https://soliditylang.org/)
 
-## Features
+Alsania Enhanced Domains (AED) is an upgradeable ERC-721 domain registry built for sovereignty, featuring subdomains, dynamic metadata, SVG image rendering, and paid feature upgrades. Designed for UUPS upgradeability and aligned with Alsania's neon green/navy branding.
 
-- **Upgradeable architecture** – UUPS proxies with storage layout guard rails.
-- **Rich domain data** – On-chain structs track profile URIs, image URIs, and feature flags.
-- **Dynamic metadata** – Automatic profile/image defaults with inline SVG fallbacks.
-- **Feature marketplace** – Purchase add-ons (subdomains, metadata, reverse, bridging) with transparent pricing.
-- **Reverse resolution** – Primary domain assignment with automatic updates on transfer.
-- **Batch operations** – Batch registration with precise fee handling.
-- **Frontend** – Lightweight HTML/JS dashboard with live pricing sourced from the contract.
+## ✨ Key Features
 
-## Repository Structure
+- 🔄 **Upgradeable Architecture** – UUPS proxies with storage layout protection
+- 🎨 **Rich Domain Data** – On-chain profile URIs, image URIs, and feature flags
+- 📊 **Dynamic Metadata** – Automatic defaults with inline SVG fallbacks
+- 💰 **Feature Marketplace** – Transparent pricing for subdomains, metadata, reverse, bridging
+- 🔄 **Reverse Resolution** – Primary domain assignment with automatic updates
+- ⚡ **Batch Operations** – Efficient batch registration with precise fee handling
+- 🌐 **Frontend Dashboard** – Lightweight HTML/JS with live pricing integration
+
+## 🏗️ Project Architecture
 
 ```
-contracts/           Solidity sources (upgradeable implementation + libraries)
-frontend/aed-home/   Static landing page + wallet actions
-scripts/             Hardhat deployment scripts
-test/                Hardhat tests (JavaScript + Foundry-style helpers)
+📁 contracts/           Solidity smart contracts (UUPS upgradeable)
+📁 frontend/aed-home/   Public domain registration portal
+📁 frontend/aed-admin/  Administrative dashboard
+📁 metadata-server/     NFT metadata API server
+📁 scripts/            Hardhat deployment & utility scripts
+📁 test/               Comprehensive test suite
 ```
 
-## Requirements
+## 🛠️ Quick Start
 
+### Prerequisites
 - Node.js 18+
 - npm 9+
-- Polygon Amoy RPC endpoint (`AMOY_RPC`)
-- Deployment private key with testnet funds (`PRIVATE_KEY`)
-- Polygonscan API key for verification (`POLYGONSCAN_API_KEY`)
+- Polygon Amoy testnet access
+- MetaMask wallet
 
-Copy `.env.example` to `.env` and edit the values before deploying.
-Alsania Enhanced Domains is an upgradeable ERC-721 based domain naming system. Domains live as NFTs and support on-chain metadata, subdomains, enhancement add-ons, and reverse resolution. This repository ships the full smart-contract suite, a lightweight admin/home frontend, and a metadata server ready for deployment on Polygon Amoy (testnet) or the upcoming Alsania chain.
-
-## Contents
-
-- `contracts/` – UUPS upgradeable AED implementation, libraries, and supporting modules.
-- `frontend/` – Static HTML/JS admin and public dApps styled for Alsania branding.
-- `metadata-server/` – Express server that exposes NFT metadata endpoints.
-- `scripts/` – Hardhat helpers for deployment, upgrades, and ABI generation.
-- `test/` – Hardhat test suite covering minting, roles, fees, upgrades, and metadata.
-
-## Prerequisites
-
-- Node.js 18+
-- npm 9+ (or Yarn 4+ via Corepack)
-- Git
-
-> **Note:** Some environments block scoped npm packages (e.g. `@nomicfoundation/*`). If you encounter HTTP 403 errors run `npm config set @nomicfoundation:registry https://registry.npmjs.org/` before installing dependencies.
-
-## Installation
-
+### Installation
 ```bash
+# Clone the repository
+git clone https://github.com/alsania-io/aed.git
+cd aed
+
+# Install dependencies
 make install
-```
-
-## Smart Contract Tasks
-
-| Command              | Description |
-|---------------------|-------------|
-| `make compile`       | Compile contracts and export storage layout to `build/storage-layout.txt` |
-| `make test`          | Run the Hardhat test suite |
-| `make coverage`      | Generate a solidity-coverage report |
-| `make clean`         | Remove build artifacts |
-
-All commands can be executed directly via `npx hardhat ...` if preferred.
-
-## Testing
-
-```bash
-npx hardhat test
 # or
-make test
-```
-
-The suite covers:
-
-- Domain + subdomain registration
-- Metadata defaults
-- Feature purchasing (including zero-cost metadata)
-- Reverse resolution updates on transfer
-- Batch operations and payment refunds
-- Contract metadata (`contractURI`) and pricing helpers
-
-## Frontend
-
-`frontend/aed-home/` is a static site served with any HTTP server (or `npx http-server`). Key features:
-
-- Wallet connection (MetaMask) with automatic network switching to Polygon Amoy.
-- Live pricing fetched from the AED contract; falls back to configuration constants if RPC unavailable.
-- Domain registration and enhancement flows with precise fee estimation.
-
-Configuration lives in `frontend/aed-home/js/config.js`. Update the contract address, RPC endpoint, or fallback pricing before deploying.
-
-## Deployment
-
-1. Configure `.env` with RPC, private key, and Polygonscan API key.
-2. Compile contracts: `make compile`
-3. Deploy via Hardhat (example):
-
-```bash
-npx hardhat run scripts/deploy.js --network amoy
-```
-
-4. Verify the implementation with `npx hardhat verify --network amoy <implementation-address>`.
-
-## Upgrade Process
-
-1. Implement upgrades in a new contract (respecting storage layout).
-2. Run `npx hardhat storage-layout` to confirm compatibility.
-3. Deploy the new implementation.
-4. Execute `upgradeTo` via Hardhat upgrades or governor tooling.
-
-## Security Notes
-
-- Administrative actions use `AccessControl` roles (`ADMIN_ROLE`, `FEE_MANAGER_ROLE`, `TLD_MANAGER_ROLE`).
-- Feature prices and TLD fees are guarded by roles and surfaced via read functions for auditability.
-- Default metadata URIs point to Alsania-hosted endpoints while retaining on-chain SVG fallbacks.
-- The test suite enforces refund behaviour and zero-payment checks for free features.
-
-## Support
-
-For issues or feature requests, open an issue on the repository or reach out through the Alsania community channels.
 npm install
 ```
 
-The root `Makefile` mirrors the common commands:
-
+### Environment Setup
 ```bash
-make install      # npm install
-make compile      # npx hardhat compile
-make test         # npx hardhat test
-make metadata     # node metadata-server/metadata-server.js
+# Copy and configure environment variables
+cp .env.example .env
+
+# Edit .env with your configuration:
+# AMOY_RPC=https://rpc-amoy.polygon.technology
+# PRIVATE_KEY=your_private_key_here
+# POLYGONSCAN_API_KEY=your_api_key
 ```
 
-## Testing
+### Development Commands
+```bash
+make compile      # Compile contracts
+make test         # Run test suite
+make coverage     # Generate coverage report
+make clean        # Clean build artifacts
+```
 
-Run the full test suite:
+## 🧪 Testing
 
+Run the comprehensive test suite:
 ```bash
 npx hardhat test
 ```
 
-The tests deploy the upgradeable proxy, exercise registration flows, validate fee routing, and confirm upgrade safety via a mock V2 implementation.
+The test suite covers:
+- Domain & subdomain registration flows
+- Metadata generation and SVG rendering
+- Feature purchasing and fee calculations
+- Reverse resolution updates
+- Batch operations and payment handling
+- Contract upgrade safety
 
-Generate coverage reports:
+## 🚀 Deployment
 
+### Smart Contract Deployment
 ```bash
-npx hardhat coverage
+# Compile contracts
+npx hardhat compile
+
+# Deploy to Polygon Amoy
+npx hardhat run scripts/deploy.js --network amoy
+
+# Verify on Polygonscan
+npx hardhat verify --network amoy <contract-address>
 ```
 
-## Deployment
+### Frontend Deployment
+```bash
+# Serve frontend locally
+npx http-server frontend/aed-home
 
-1. Set environment variables (or fill `.env`):
-   - `ALSANIA_ADMIN` – address that receives default admin roles.
-   - `ALSANIA_WALLET` – fee collector wallet.
-   - `AMOY_RPC` – Polygon Amoy RPC endpoint.
-   - `PRIVATE_KEY` – deployment key (never commit secrets).
-2. Compile contracts: `npx hardhat compile`.
-3. Deploy: `npx hardhat run scripts/deploy.js --network amoy`.
-4. Verify (optional): configure `POLYGONSCAN_API_KEY` and run `npx hardhat verify --network amoy <proxy>`.
-
-## Upgrade Process
-
-The AED proxy uses the UUPS pattern. To upgrade:
-
-1. Implement the new logic contract (e.g. `AEDImplementationV2` inheriting from `AEDImplementation`).
-2. Deploy upgrades: `npx hardhat run scripts/upgrade-implementation.js --network amoy`.
-3. Execute `grantRole(DEFAULT_ADMIN_ROLE, <upgrader>)` if necessary before calling the upgrade script.
-
-## Frontend
-
-- `frontend/aed-home/` – public minting portal. Configuration lives in `frontend/config.js` (contract address, network chain ID, RPC URL). The page connects via Ethers v6 and calls `estimateDomainPrice` to display real-time pricing.
-- `frontend/aed-admin/` – admin dashboard for roles, TLD configuration, fee tuning, and metadata updates. The dashboard reuses the shared ABI and leverages the same config file.
-
-Both frontends are static assets and can be hosted on any CDN/static host.
-
-## Metadata Server
-
-`metadata-server/metadata-server.js` exposes two endpoints:
-
-- `GET /domain/:tokenId.json`
-- `GET /sub/:tokenId.json`
-
-The server reads on-chain data via the configured RPC and contract address. Configure environment variables before running:
-
+# Or deploy to any static hosting service
 ```
+
+### Metadata Server
+```bash
+# Configure environment
 export RPC_URL="https://rpc-amoy.polygon.technology"
-export CONTRACT_ADDRESS="0x6452DCd7Bbee694223D743f09FF07c717Eeb34DF"
+export CONTRACT_ADDRESS="your_deployed_contract_address"
+
+# Start metadata server
 node metadata-server/metadata-server.js
 ```
 
-## Configuration
+## 🔧 Configuration
 
-- Contract/network constants for the frontends live in `frontend/config.js`.
-- Default fee and enhancement pricing is stored in contract storage and adjustable through the admin dashboard.
-- SVG metadata colors follow Alsania branding (`#39FF14` neon green, `#0A2472` navy).
+### Contract Settings
+- Network: Polygon Amoy Testnet
+- Contract: UUPS Upgradeable ERC-721
+- Admin Roles: `ADMIN_ROLE`, `FEE_MANAGER_ROLE`, `TLD_MANAGER_ROLE`
 
-## Security Considerations
+### Frontend Configuration
+Update `frontend/aed-home/js/config.js`:
+```javascript
+export const config = {
+  CONTRACT_ADDRESS: "your_contract_address",
+  RPC_URL: "https://rpc-amoy.polygon.technology",
+  CHAIN_ID: 80002, // Polygon Amoy
+  NETWORK_NAME: "Polygon Amoy"
+};
+```
 
-- Access control is enforced via `AccessControlUpgradeable` roles (`ADMIN_ROLE`, `FEE_MANAGER_ROLE`, `TLD_MANAGER_ROLE`).
-- All payable entry-points are protected by `ReentrancyGuardUpgradeable` and use safe `call` payouts.
-- Storage layout uses a single `AppStorage` struct to maintain upgrade safety. New mappings are appended before the reserved gap.
+## 🛡️ Security Features
 
-## Troubleshooting
+- **Access Control**: Role-based permissions using OpenZeppelin's `AccessControlUpgradeable`
+- **Reentrancy Protection**: All payable functions protected with `ReentrancyGuardUpgradeable`
+- **Upgrade Safety**: Single `AppStorage` struct with reserved storage gap
+- **Input Validation**: Comprehensive parameter checking and bounds validation
 
-- **403 during npm install** – run `npm config set @nomicfoundation:registry https://registry.npmjs.org/` or use an alternate network with registry access.
-- **ABI mismatch on frontend** – regenerate from contracts via `npx hardhat compile` followed by `node scripts/generate-abi.js` (once dependencies are installed).
-- **Metadata previews stale** – restart the metadata server or clear local storage for the admin UI.
+## 🔄 Upgrades
 
-## License
+The AED system uses UUPS (Universal Upgradeable Proxy Standard) for upgrades:
 
-This project is released under the MIT License. See `LICENSE` for details.
+1. **Implement**: Create new contract version respecting storage layout
+2. **Validate**: Run `npx hardhat storage-layout` to confirm compatibility
+3. **Deploy**: Use the upgrade script: `npx hardhat run scripts/upgrade-implementation.js --network amoy`
+4. **Execute**: Call `upgradeTo()` with appropriate admin permissions
+
+## 📚 API Reference
+
+### Core Functions
+- `registerDomain(string memory name, address owner)` - Register new domain
+- `purchaseEnhancement(uint256 tokenId, EnhancementType enhancement)` - Buy features
+- `setPrimaryDomain(uint256 tokenId)` - Set primary domain
+- `estimateDomainPrice(string memory name)` - Get registration cost
+
+### Metadata Endpoints
+- `GET /domain/:tokenId.json` - Domain metadata
+- `GET /sub/:tokenId.json` - Subdomain metadata
+
+## 🎨 Design System
+
+AED follows Alsania's design principles:
+- **Primary Color**: `#39FF14` (Neon Green)
+- **Secondary Color**: `#0A2472` (Navy)
+- **Typography**: Clean, modern fonts
+- **UI**: Minimalist, sovereignty-focused design
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+- **Issues**: [GitHub Issues](https://github.com/alsania-io/aed/issues)
+- **Documentation**: [Project Wiki](https://github.com/alsania-io/aed/wiki)
+- **Community**: [Alsania Discord](https://discord.gg/alsania)
+
+---
+
+**Built with ❤️ for digital sovereignty by the Alsania team**

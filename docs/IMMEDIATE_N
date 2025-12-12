@@ -1,0 +1,72 @@
+# 🚀 Repository Creation Steps
+
+## Step 1: Create Repository on GitHub Web Interface
+
+1. **Go to GitHub**: https://github.com/new
+2. **Fill in the form**:
+   - **Owner**: Select `alsania-io` from dropdown
+   - **Repository name**: `aed`
+   - **Description**: `Alsania Enhanced Domains - Upgradeable ERC-721 domain registry with subdomains, dynamic metadata, and feature marketplace`
+   - **Visibility**: Choose Public or Private
+   - **⚠️ IMPORTANT**: Uncheck ALL initialization options:
+     - ❌ README file
+     - ❌ .gitignore
+     - ❌ Add a license file
+3. **Click "Create repository"**
+
+## Step 2: Push Your Code
+
+After creating the repository, GitHub will show you a page with setup instructions. Use these commands:
+
+```bash
+# If not already done, add the remote (already done)
+git remote add origin https://github.com/alsania-io/aed.git
+
+# Verify the remote
+git remote -v
+
+# Push your code
+git branch -M main
+git push -u origin main
+```
+
+## Step 3: Verify
+
+Your repository should now be live at: https://github.com/alsania-io/aed
+
+## 🔧 Alternative: GitHub CLI (if you have it installed)
+
+```bash
+# Create repository using GitHub CLI
+gh repo create alsania-io/aed --public --source=. --push
+
+# Or if you want to be more specific:
+gh repo create alsania-io/aed --description "Alsania Enhanced Domains - Upgradeable ERC-721 domain registry" --public --source=.
+```
+
+## ✅ Expected Result
+
+After pushing, your repository will have:
+- 📄 Professional README.md with badges
+- 📁 Clean project structure
+- 📚 Comprehensive documentation in docs/
+- 🗂️ All smart contracts, frontend, and tests
+- ⚙️ Proper .gitignore and configuration files
+
+## 🎯 Next Steps After Creation
+
+1. **Configure Repository**:
+   - Add topics/tags
+   - Set up branch protection (optional)
+   - Configure GitHub Pages (optional)
+
+2. **Add Team Members**:
+   - Go to Settings > Manage access
+   - Add alsania-io team members with appropriate permissions
+
+3. **Create Initial Release**:
+   - Go to Releases page
+   - Create release v1.0.0
+   - Add changelog content
+
+The repository is now ready for the alsania-io organization! 🎉

@@ -17,6 +17,10 @@ const ABI = [
    'function getGlobalDescription() view returns (string)',
    'function getDomainInfo(uint256) view returns (tuple(string name, string tld, string profileURI, string imageURI, uint256 subdomainCount, uint256 mintFee, uint64 expiresAt, bool feeEnabled, bool isSubdomain, address owner))',
    'function getDomainByTokenId(uint256) view returns (string)',
+   'function getEvolutionLevel(uint256) view returns (uint256)',
+   'function getFragmentCount(uint256) view returns (uint256)',
+   'function getTokenFragments(uint256) view returns (tuple(string fragmentType, uint256 earnedAt, bytes32 eventHash)[])',
+   'function hasFragment(uint256, string) view returns (bool)',
 ];
 
 // Defaults
@@ -77,25 +81,25 @@ async function buildJson(tokenId, isSub, globalDesc) {
       try {
          domainInfo = await contract.getDomainInfo(tokenId);
          console.log(`Domain info for ${tokenId}:`, domainInfo);
-         
+
          // Construct full domain name from domain info
          domainName = `${domainInfo.name}.${domainInfo.tld}`;
          isSubdomain = domainInfo.isSubdomain;
-         
+
          console.log(`Constructed domain name: ${domainName}, isSubdomain: ${isSubdomain}`);
       } catch (domainInfoError) {
          console.log(`getDomainInfo failed for ${tokenId}:`, domainInfoError.message);
-         
+
          // Try alternative method - getDomainByTokenId
          try {
             domainName = await contract.getDomainByTokenId(tokenId);
             console.log(`Got domain name from getDomainByTokenId: ${domainName}`);
-            
+
             // Check if it's a subdomain by looking for multiple dots
             isSubdomain = (domainName.split('.').length > 2);
          } catch (domainByTokenError) {
             console.log(`getDomainByTokenId also failed for ${tokenId}:`, domainByTokenError.message);
-            
+
             // Last resort - try parsing from tokenURI
             try {
                const tokenURI = await contract.tokenURI(tokenId);
@@ -135,18 +139,47 @@ async function buildJson(tokenId, isSub, globalDesc) {
          ]
       };
 
-      // Add additional attributes from domain info if available
-      if (domainInfo) {
-         metadata.attributes.push(
-            { trait_type: 'TLD', value: domainInfo.tld },
-            { trait_type: 'Subdomain Count', value: domainInfo.subdomainCount.toString() }
-         );
-         
-         // Add feature count if available
-         if (domainInfo.subdomainCount > 0) {
-            metadata.attributes.push({ trait_type: 'Has Subdomains', value: 'true' });
-         }
-      }
+// Add additional attributes from domain info if available
+if (domainInfo) {
+    metadata.attributes.push(
+        { trait_type: 'TLD', value: domainInfo.tld },
+        { trait_type: 'Subdomain Count', value: domainInfo.subdomainCount.toString() }
+    );
+
+    // Add feature count if available
+    if (domainInfo.subdomainCount > 0) {
+        metadata.attributes.push({ trait_type: 'Has Subdomains', value: 'true' });
+    }
+}
+
+// Fetch evolution data
+try {
+    const evolutionLevel = await contract.getEvolutionLevel(tokenId);
+    const fragmentCount = await contract.getFragmentCount(tokenId);
+
+    metadata.attributes.push(
+        { trait_type: 'Evolution Level', value: evolutionLevel.toString() },
+        { trait_type: 'Fragments Earned', value: fragmentCount.toString() }
+    );
+
+    // Try to fetch fragment details
+    try {
+        const fragments = await contract.getTokenFragments(tokenId);
+        if (fragments && fragments.length > 0) {
+            const fragmentTypes = fragments.map(f => f.fragmentType).join(', ');
+            metadata.attributes.push({
+                trait_type: 'Fragment Types',
+                value: fragmentTypes
+            });
+        }
+    } catch (fragmentError) {
+        console.log(`Could not fetch fragment details for ${tokenId}:`, fragmentError.message);
+    }
+
+    console.log(`Evolution data for ${tokenId}: Level ${evolutionLevel}, ${fragmentCount} fragments`);
+} catch (evolutionError) {
+    console.log(`Could not fetch evolution data for ${tokenId}:`, evolutionError.message);
+}
 
       console.log(`Final metadata for ${tokenId}:`, metadata);
       return metadata;
@@ -250,10 +283,10 @@ app.get('/test-contract', async (req, res) => {
          try {
             // First try to get owner to see if token exists
             const owner = await testContract.ownerOf(i);
-            
+
             // Try to get domain info
             let domainData = { exists: true, tokenId: i, owner };
-            
+
             try {
                const info = await testContract.getDomainInfo(i);
                const domain = `${info.name}.${info.tld}`;
@@ -282,7 +315,7 @@ app.get('/test-contract', async (req, res) => {
                   };
                }
             }
-            
+
             tokenTests.push(domainData);
          } catch (error) {
             tokenTests.push({

@@ -50,7 +50,7 @@
 - SVGs must be inline, themed, Alsania-style.
 
 ## MEMORY/AI AGENT
-- Store no memory unless building for `alsaniamcp`.
+- Store no memory unless building for `$current_repo`.
 - All memory must use:
   - blake3 hash ID
   - Namespace isolation

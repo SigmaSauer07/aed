@@ -1,5 +1,3 @@
-🧩 How to Inject into MCP Agent System or Dev Plugins
-
 Here are the best ways to enforce these rules inside alsaniamcp or agent-based tools:
 
 1. 🧠 Inject as a system_prompt or config layer

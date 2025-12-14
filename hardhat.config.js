@@ -20,7 +20,7 @@ module.exports = {
     },
     amoy: {
       url: process.env.AMOY_RPC,
-      accounts: [process.env.PRIVATE_KEY],
+      accounts: [process.env.PRIVATE_KEY_TEST],
       chainId: 80002,
       gasPrice: 50000000000, // 50 gwei
       gas: 10000000, // 10M gas limit

@@ -13,6 +13,11 @@ typechain-types/
 # Build output
 build/
 dist/
+out/
+coverage/
+coverage.json
+*/alsania-rules/
+add/
 
 # Environment config
 .env

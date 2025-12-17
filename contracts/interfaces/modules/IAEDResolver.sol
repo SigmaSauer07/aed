@@ -1,6 +1,6 @@
 
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30
+pragma solidity ^0.8.30;
 
 interface IAEDResolver {
     event AddressChanged(bytes32 indexed node, uint256 coinType, bytes newAddress);

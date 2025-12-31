@@ -145,5 +145,4 @@ fi
 if [ "$#" -eq 1 ] && [ "$1" = "download" ]; then
     echo "Codacy cli v2 download succeeded"
 else
-    eval "$run_command $*"
-fi
+    "$run_command" "$@"fi

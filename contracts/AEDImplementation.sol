@@ -13,9 +13,10 @@ import "./libraries/LibAdmin.sol";
 import "./libraries/LibMetadata.sol";
 import "./libraries/LibReverse.sol";
 import "./libraries/LibEnhancements.sol";
-import "./libraries/LibBadges.sol";
-import "./libraries/LibAISubdomains.sol";
+import "./libraries/LibBadgeCreator.sol";
+import "./libraries/LibBadgeManager.sol";
 import "./libraries/LibEvolution.sol";
+import "./libraries/LibPayment.sol";
 import "./core/AEDConstants.sol";
 
 contract AEDImplementation is
@@ -72,25 +73,23 @@ contract AEDImplementation is
         s.nextTokenId = 1;
         s.baseURI = "ipfs://bafybeie4uuvvoqp66wx7vu6x7jmnk6xblqjz6cghz6mv2vqf6mcgcpk6xi/";
 
-        // Initialize feature catalogue
-        _registerFeature(s, "subdomain", 2 ether, FEATURE_SUBDOMAINS);
+        // Register features (prices in USDC 6 decimals)
+        _registerFeature(s, "subdomain", DEFAULT_SUBDOMAIN_ENHANCEMENT, FEATURE_SUBDOMAINS);
         _registerFeature(s, "metadata", 0, FEATURE_METADATA);
         _registerFeature(s, "reverse", 0, FEATURE_REVERSE);
         _registerFeature(s, "bridge", 0, FEATURE_BRIDGE);
 
-        // External upgrades (bring your own)
         s.featureExists["byo"] = true;
-        s.enhancementPrices["byo"] = 5 ether;
+        s.enhancementPrices["byo"] = DEFAULT_BYO_DOMAIN;
         s.enhancementPrices["metadata"] = 0;
         s.enhancementPrices["reverse"] = 0;
         s.enhancementPrices["bridge"] = 0;
 
-        // Initialize default pricing
-        s.tldPrices["alsania"] = 1 ether;
-        s.tldPrices["fx"] = 1 ether;
-        s.tldPrices["echo"] = 1 ether;
+        // TLD prices in USDC (6 decimals)
+        s.tldPrices["alsania"] = DEFAULT_PAID_TLD;
+        s.tldPrices["fx"] = DEFAULT_PAID_TLD;
+        s.tldPrices["echo"] = DEFAULT_PAID_TLD;
 
-        // Initialize free TLDs
         s.freeTlds["aed"] = true;
         s.freeTlds["alsa"] = true;
         s.freeTlds["07"] = true;
@@ -103,58 +102,62 @@ contract AEDImplementation is
 
         LibEnhancements.ensureDefaultFeatures();
         s.globalDescription = "Alsania Enhanced Domains collection";
-        // Subdomain fee settings
-        s.fees["subdomainBase"] = 0.1 ether;
-        s.fees["subdomainMultiplier"] = 2;
         s.fees["subdomainFreeMints"] = 2;
-
-        // Global metadata description
-        s.globalDescription = "Alsania Enhanced Domains";
+        
+        // Set default base fees (admin can adjust)
+        s.fees["badgeBase"] = DEFAULT_BADGE_FEE;
+        s.fees["capabilityBase"] = DEFAULT_CAPABILITY_FEE;
+        s.fees["subdomainBase"] = DEFAULT_SUBDOMAIN_FEE;
     }
 
-    // UUPS upgrade authorization
     function _authorizeUpgrade(address newImplementation)
         internal
         onlyRole(DEFAULT_ADMIN_ROLE)
         override
     {}
 
-    // ===== DOMAIN MINTING FUNCTIONS =====
+    // ===== DOMAIN MINTING =====
 
-function registerDomain(
-    string calldata name,
-    string calldata tld,
-    bool withSubdomains
-) external payable whenNotPaused nonReentrant returns (uint256) {
-    uint256 tokenId = LibMinting.registerDomain(name, tld, withSubdomains);
-    _processDomainPayment(tld, withSubdomains);
+    function registerDomain(
+        string calldata name,
+        string calldata tld,
+        bool withSubdomains
+    ) external whenNotPaused nonReentrant returns (uint256) {
+        uint256 cost = _calculateDomainCost(tld, withSubdomains);
+        if (cost > 0) {
+            LibPayment.collectPayment(cost, "domain_registration");
+        }
+        
+        uint256 tokenId = LibMinting.registerDomain(name, tld, withSubdomains);
 
-    // Award "first_domain" fragment if this is user's first domain
-    AppStorage storage s = LibAppStorage.appStorage();
-    if (s.userDomains[msg.sender].length == 1) {
-        bytes32 eventHash = keccak256(abi.encodePacked("first_domain", tokenId, block.timestamp));
-        LibEvolution.awardFragment(tokenId, "first_domain", eventHash);
+        AppStorage storage s = LibAppStorage.appStorage();
+        if (s.userDomains[msg.sender].length == 1) {
+            bytes32 eventHash = keccak256(abi.encodePacked("first_domain", tokenId, block.timestamp));
+            LibEvolution.awardFragment(tokenId, "first_domain", eventHash);
+        }
+
+        return tokenId;
     }
 
-    return tokenId;
-}
+    function mintSubdomain(
+        uint256 parentId,
+        string calldata label
+    ) external whenNotPaused nonReentrant returns (uint256) {
+        string memory parentDomain = LibAppStorage.appStorage().tokenIdToDomain[parentId];
+        require(bytes(parentDomain).length > 0, "Parent not found");
 
-function mintSubdomain(
-    uint256 parentId,
-    string calldata label
-) external payable whenNotPaused nonReentrant returns (uint256) {
-    string memory parentDomain = LibAppStorage.appStorage().tokenIdToDomain[parentId];
-    require(bytes(parentDomain).length > 0, "Parent not found");
+        uint256 cost = LibMinting.calculateSubdomainFee(parentId);
+        if (cost > 0) {
+            LibPayment.collectPayment(cost, "subdomain_mint");
+        }
 
-    uint256 tokenId = LibMinting.createSubdomain(label, parentDomain);
-    _processSubdomainPayment(parentId);
+        uint256 tokenId = LibMinting.createSubdomain(label, parentDomain);
 
-    // Award "subdomain_creator" fragment to parent domain
-    bytes32 eventHash = keccak256(abi.encodePacked("subdomain_created", parentId, tokenId, block.timestamp));
-    LibEvolution.awardFragment(parentId, "subdomain_creator", eventHash);
+        bytes32 eventHash = keccak256(abi.encodePacked("subdomain_created", parentId, tokenId, block.timestamp));
+        LibEvolution.awardFragment(parentId, "subdomain_creator", eventHash);
 
-    return tokenId;
-}
+        return tokenId;
+    }
 
     function calculateSubdomainFee(uint256 parentId) external view returns (uint256) {
         return LibMinting.calculateSubdomainFee(parentId);
@@ -164,26 +167,98 @@ function mintSubdomain(
         string[] calldata names,
         string[] calldata tlds,
         bool[] calldata withSubdomains
-    ) external payable whenNotPaused nonReentrant returns (uint256[] memory) {
-        uint256[] memory tokenIds = LibMinting.batchRegisterDomains(names, tlds, withSubdomains);
-
-        // Calculate and process batch payment
+    ) external whenNotPaused nonReentrant returns (uint256[] memory) {
         uint256 totalCost = 0;
         for (uint256 i = 0; i < names.length; i++) {
             totalCost += _calculateDomainCost(tlds[i], withSubdomains[i]);
         }
 
-        require(msg.value >= totalCost, "Insufficient payment");
-        LibAppStorage.appStorage().totalRevenue += totalCost;
+        if (totalCost > 0) {
+            LibPayment.collectPayment(totalCost, "batch_registration");
+        }
 
-        // Send to fee collector
-        _forwardFee(totalCost);
-        _refundExcess(totalCost);
+        uint256[] memory tokenIds = LibMinting.batchRegisterDomains(names, tlds, withSubdomains);
 
         return tokenIds;
     }
 
-    // ===== METADATA FUNCTIONS =====
+    // ===== BADGE (AI SUBDOMAIN) FUNCTIONS =====
+
+    function createAISubdomain(
+        string calldata label,
+        string calldata parentDomain,
+        string calldata modelType
+    ) external whenNotPaused nonReentrant returns (uint256) {
+        uint256 parentTokenId = LibAppStorage.appStorage().domainToTokenId[parentDomain];
+        require(parentTokenId != 0, "Parent not found");
+
+        uint256 fee = LibBadgeCreator.calculateAISubdomainFee(parentTokenId);
+        LibPayment.collectPayment(fee, "badge_creation");
+
+        uint256 tokenId = LibBadgeCreator.createAISubdomain(label, parentDomain, modelType);
+
+        return tokenId;
+    }
+
+    function purchaseAICapability(
+        uint256 tokenId,
+        string calldata capabilityType
+    ) external whenNotPaused nonReentrant {
+        uint256 fee = LibBadgeCreator.calculateCapabilityFee(tokenId);
+        LibPayment.collectPayment(fee, "capability_unlock");
+
+        LibBadgeCreator.purchaseAICapability(tokenId, capabilityType);
+    }
+
+    function burnBadge(uint256 tokenId) external whenNotPaused {
+        LibBadgeManager.burnBadge(tokenId);
+    }
+
+    function lockBadgeTransfer(uint256 tokenId) external onlyTokenOwner(tokenId) {
+        LibBadgeManager.lockBadgeTransfer(tokenId);
+    }
+
+    function unlockBadgeTransfer(uint256 tokenId) external onlyTokenOwner(tokenId) {
+        LibBadgeManager.unlockBadgeTransfer(tokenId);
+    }
+
+    function removeCapability(uint256 tokenId, string calldata capabilityType) external onlyAdmin {
+        LibBadgeManager.removeCapability(tokenId, capabilityType);
+    }
+
+    function getActiveCapabilities(uint256 tokenId) external view returns (string[] memory) {
+        return LibBadgeManager.getActiveCapabilities(tokenId);
+    }
+
+    function getBadgeCount(address owner, string calldata parentDomain) external view returns (uint256) {
+        return LibBadgeManager.getBadgeCount(owner, parentDomain);
+    }
+
+    function hasAICapability(uint256 tokenId, string calldata capabilityType) external view returns (bool) {
+        return LibBadgeCreator.hasAICapability(tokenId, capabilityType);
+    }
+
+    function getModelType(uint256 tokenId) external view returns (string memory) {
+        return LibBadgeCreator.getModelType(tokenId);
+    }
+
+    function isAISubdomain(uint256 tokenId) external view returns (bool) {
+        return LibBadgeCreator.isAISubdomain(tokenId);
+    }
+
+    function isBadgeTransferLocked(uint256 tokenId) external view returns (bool) {
+        return LibBadgeManager.isBadgeTransferLocked(tokenId);
+    }
+
+    function getAISubdomainFee(uint256 parentTokenId) external view returns (uint256) {
+        return LibBadgeCreator.calculateAISubdomainFee(parentTokenId);
+    }
+
+    function getCapabilityFee(uint256 tokenId) external view returns (uint256) {
+        return LibBadgeCreator.calculateCapabilityFee(tokenId);
+    }
+
+    // ===== METADATA =====
 
     function setProfileURI(uint256 tokenId, string calldata uri) external onlyTokenOwner(tokenId) {
         LibMetadata.setProfileURI(tokenId, uri);
@@ -205,7 +280,7 @@ function mintSubdomain(
         return LibMetadata.tokenURI(tokenId);
     }
 
-    // ===== REVERSE RESOLUTION FUNCTIONS =====
+    // ===== REVERSE RESOLUTION =====
 
     function setReverse(string calldata domain) external {
         LibReverse.setReverseRecord(domain);
@@ -223,32 +298,31 @@ function mintSubdomain(
         return LibAppStorage.appStorage().reverseOwners[domain];
     }
 
-    // ===== ENHANCEMENT FUNCTIONS =====
+    // ===== ENHANCEMENTS =====
 
-function purchaseFeature(uint256 tokenId, string calldata featureName) external payable whenNotPaused nonReentrant {
-    LibEnhancements.purchaseFeature(tokenId, featureName);
+    function purchaseFeature(uint256 tokenId, string calldata featureName) external whenNotPaused nonReentrant {
+        LibEnhancements.purchaseFeature(tokenId, featureName);
 
-    // Award achievement fragment for certain features
-    bytes32 featureHash = keccak256(bytes(featureName));
-    string memory fragmentType;
+        bytes32 featureHash = keccak256(bytes(featureName));
+        string memory fragmentType;
 
-    if (featureHash == keccak256(bytes("bridge"))) {
-        fragmentType = "bridge_master";
-    } else if (featureHash == keccak256(bytes("subdomain"))) {
-        fragmentType = "subdomain_unlocked";
+        if (featureHash == keccak256(bytes("bridge"))) {
+            fragmentType = "bridge_master";
+        } else if (featureHash == keccak256(bytes("subdomain"))) {
+            fragmentType = "subdomain_unlocked";
+        }
+
+        if (bytes(fragmentType).length > 0) {
+            bytes32 eventHash = keccak256(abi.encodePacked("feature_purchased", tokenId, featureName, block.timestamp));
+            LibEvolution.awardFragment(tokenId, fragmentType, eventHash);
+        }
     }
 
-    if (bytes(fragmentType).length > 0) {
-        bytes32 eventHash = keccak256(abi.encodePacked("feature_purchased", tokenId, featureName, block.timestamp));
-        LibEvolution.awardFragment(tokenId, fragmentType, eventHash);
-    }
-}
-
-    function enableSubdomainFeature(uint256 tokenId) external payable whenNotPaused nonReentrant {
+    function enableSubdomainFeature(uint256 tokenId) external whenNotPaused nonReentrant {
         LibEnhancements.enableSubdomains(tokenId);
     }
 
-    function upgradeExternalDomain(string calldata externalDomain) external payable whenNotPaused nonReentrant {
+    function upgradeExternalDomain(string calldata externalDomain) external whenNotPaused nonReentrant {
         LibEnhancements.upgradeExternalDomain(externalDomain);
     }
 
@@ -260,64 +334,38 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
         return LibEnhancements.isFeatureEnabled(tokenId, featureName);
     }
 
-
     function getAvailableFeatures() external view returns (string[] memory) {
         return LibEnhancements.getAvailableFeatures();
     }
 
-    function getTLDPrice(string calldata tld) external view returns (uint256) {
-        return LibAdmin.getTLDPrice(tld);
-    }
+    // ===== EVOLUTION & FRAGMENTS =====
 
-    function isTLDFree(string calldata tld) external view returns (bool) {
-        return LibAdmin.isFreeTLD(tld);
-    }
-    // ===== EVOLUTION & FRAGMENT FUNCTIONS =====
-
-    /**
-     * @dev Get all fragments for a token
-     */
     function getTokenFragments(uint256 tokenId) external view returns (Fragment[] memory) {
         require(_tokenExists(tokenId), "Token does not exist");
         return LibEvolution.getTokenFragments(tokenId);
     }
 
-    /**
-     * @dev Get evolution level for a token
-     */
     function getEvolutionLevel(uint256 tokenId) external view returns (uint256) {
         require(_tokenExists(tokenId), "Token does not exist");
         return LibEvolution.getEvolutionLevel(tokenId);
     }
 
-    /**
-     * @dev Get fragment count for a token
-     */
     function getFragmentCount(uint256 tokenId) external view returns (uint256) {
         require(_tokenExists(tokenId), "Token does not exist");
         return LibEvolution.getFragmentCount(tokenId);
     }
 
-    /**
-     * @dev Check if token has a specific fragment
-     */
     function hasFragment(uint256 tokenId, string calldata fragmentType) external view returns (bool) {
         require(_tokenExists(tokenId), "Token does not exist");
         return LibEvolution.hasFragment(tokenId, fragmentType);
     }
 
-    /**
-     * @dev Manually award fragment (admin only, for special events)
-     */
     function awardFragment(uint256 tokenId, string calldata fragmentType) external onlyAdmin {
         require(_tokenExists(tokenId), "Token does not exist");
         bytes32 eventHash = keccak256(abi.encodePacked("admin_award", tokenId, fragmentType, block.timestamp));
         LibEvolution.awardFragment(tokenId, fragmentType, eventHash);
     }
 
-    /**
-     * @dev Batch award fragments (admin only, for airdrops/events)
-     */
     function batchAwardFragments(
         uint256[] calldata tokenIds,
         string calldata fragmentType
@@ -331,7 +379,7 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
         }
     }
 
-    // ===== ADMIN FUNCTIONS =====
+    // ===== ADMIN =====
 
     function updateFee(string calldata feeType, uint256 newAmount) external onlyFeeManager {
         LibAdmin.updateFee(feeType, newAmount);
@@ -360,6 +408,8 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
     function getGlobalDescription() external view returns (string memory) {
         return LibAppStorage.appStorage().globalDescription;
     }
+    
+
 
     function pause() external onlyAdmin {
         LibAdmin.pauseContract();
@@ -369,7 +419,6 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
         LibAdmin.unpauseContract();
     }
 
-    // Override role functions to use our library
     function grantRole(bytes32 role, address account) public override onlyRole(getRoleAdmin(role)) {
         super.grantRole(role, account);
         LibAdmin.grantRole(role, account);
@@ -380,7 +429,7 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
         LibAdmin.revokeRole(role, account);
     }
 
-    // ===== VIEW FUNCTIONS =====
+    // ===== VIEW =====
 
     function getDomainInfo(uint256 tokenId) external view returns (Domain memory) {
         require(_tokenExists(tokenId), "Token does not exist");
@@ -440,8 +489,6 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
         return s.nextTokenId - 1;
     }
 
-    function contractURI() external view returns (string memory) {
-
     function contractURI() external pure returns (string memory) {
         return LibMetadata.contractURI();
     }
@@ -491,15 +538,17 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
 
     function transferFrom(address from, address to, uint256 tokenId) public override {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
+        require(!LibBadgeManager.isBadgeTransferLocked(tokenId), "Badge transfer locked");
         _customTransfer(from, to, tokenId);
     }
 
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public override {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Not owner nor approved");
+        require(!LibBadgeManager.isBadgeTransferLocked(tokenId), "Badge transfer locked");
         _customSafeTransfer(from, to, tokenId, data);
     }
 
-    // ===== INTERNAL FUNCTIONS =====
+    // ===== INTERNAL =====
 
     function _tokenExists(uint256 tokenId) internal view returns (bool) {
         return LibAppStorage.appStorage().owners[tokenId] != address(0);
@@ -518,23 +567,18 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
         require(s.owners[tokenId] == from, "Transfer from incorrect owner");
         require(to != address(0), "Transfer to zero address");
 
-        // Clear approvals
         delete s.tokenApprovals[tokenId];
 
-        // Update balances
         s.balances[from]--;
         s.balances[to]++;
         s.owners[tokenId] = to;
 
-        // Update domain owner
         s.domains[tokenId].owner = to;
 
-        // Update user domain arrays
         string memory domain = s.tokenIdToDomain[tokenId];
         _removeFromUserDomains(from, domain);
         s.userDomains[to].push(domain);
 
-        // Handle reverse resolution updates
         LibReverse.handleDomainTransfer(from, to, domain);
 
         emit Transfer(from, to, tokenId);
@@ -576,13 +620,31 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
         }
     }
 
+    function _calculateDomainCost(string calldata tld, bool withSubdomains) internal view returns (uint256) {
+        AppStorage storage s = LibAppStorage.appStorage();
+        
+        // Free TLDs cost nothing
+        if (s.freeTlds[tld]) {
+            return 0;
+        }
+        
+        // Get TLD price (in USDC, 6 decimals)
+        uint256 cost = s.tldPrices[tld];
+        
+        // Add subdomain enhancement fee if requested
+        if (withSubdomains) {
+            cost += s.enhancementPrices["subdomain"];
+        }
+        
+        return cost;
+    }
+
     function _removeFromUserDomains(address user, string memory domain) internal {
         AppStorage storage s = LibAppStorage.appStorage();
         string[] storage userDomains = s.userDomains[user];
 
         for (uint256 i = 0; i < userDomains.length; i++) {
             if (keccak256(bytes(userDomains[i])) == keccak256(bytes(domain))) {
-                // Move last element to current position and pop
                 userDomains[i] = userDomains[userDomains.length - 1];
                 userDomains.pop();
                 break;
@@ -590,60 +652,7 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
         }
     }
 
-    function _processDomainPayment(string calldata tld, bool withEnhancements) internal {
-        uint256 totalCost = _calculateDomainCost(tld, withEnhancements);
 
-        require(msg.value >= totalCost, "Insufficient payment");
-        LibAppStorage.appStorage().totalRevenue += totalCost;
-
-        // Send to fee collector
-        _forwardFee(totalCost);
-        _refundExcess(totalCost);
-    }
-
-    function _processSubdomainPayment(uint256 parentId) internal {
-        uint256 cost = LibMinting.calculateSubdomainFee(parentId);
-        require(msg.value >= cost, "Insufficient payment");
-
-        LibAppStorage.appStorage().totalRevenue += cost;
-
-        _forwardFee(cost);
-        _refundExcess(cost);
-    }
-
-    function _calculateDomainCost(string calldata tld, bool withEnhancements) internal view returns (uint256) {
-        AppStorage storage store = LibAppStorage.appStorage();
-        uint256 totalCost = 0;
-
-        // Add TLD cost
-        if (!store.freeTlds[tld]) {
-            totalCost += store.tldPrices[tld];
-        }
-
-        // Add enhancement cost
-        if (withEnhancements) {
-            totalCost += store.enhancementPrices["subdomain"];
-        }
-
-        return totalCost;
-    }
-
-    function _forwardFee(uint256 amount) private {
-        if (amount == 0) {
-            return;
-        }
-
-        address collector = LibAppStorage.appStorage().feeCollector;
-        (bool success, ) = payable(collector).call{value: amount}("");
-        require(success, "Fee transfer failed");
-    }
-
-    function _refundExcess(uint256 price) private {
-        if (msg.value > price) {
-            (bool success, ) = payable(msg.sender).call{value: msg.value - price}("");
-            require(success, "Refund failed");
-        }
-    }
 
     function _registerFeature(AppStorage storage s, string memory name, uint256 price, uint256 flag) private {
         if (!s.featureExists[name]) {
@@ -655,7 +664,6 @@ function purchaseFeature(uint256 tokenId, string calldata featureName) external 
         s.enhancementPrices[name] = price;
     }
 
-    // Support interface detection
     function supportsInterface(bytes4 interfaceId)
         public
         view

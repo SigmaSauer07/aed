@@ -117,6 +117,11 @@ struct AppStorage {
     mapping(uint256 => uint256) evolutionLevels; // Current evolution level
     mapping(uint256 => mapping(string => bool)) hasFragment; // Quick lookup for specific fragments
 
+    mapping(uint256 => string) aiModelType;
+    mapping(uint256 => bool) isAISubdomain;
+    mapping(uint256 => bool) badgeTransferLocked;
+    mapping(uint256 => mapping(string => bool)) aiCapabilities;
+
     // Future Storage Slots (Reserve for upgrades)
     mapping(uint256 => uint256) futureUint256;
     mapping(address => uint256) futureAddressUint256;

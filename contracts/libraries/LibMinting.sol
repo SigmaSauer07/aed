@@ -4,6 +4,7 @@ pragma solidity ^0.8.30;
 import "../core/AppStorage.sol";
 import "../core/AEDConstants.sol";
 import "./LibAppStorage.sol";
+import "./LibPayment.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 
 library LibMinting {
@@ -13,10 +14,6 @@ library LibMinting {
     uint256 constant MAX_NAME_LENGTH = 63;
     uint256 constant MAX_SUBDOMAINS = 20;
     uint256 constant FEATURE_SUBDOMAINS = 1 << 0;
-
-    string constant PROFILE_SUFFIX = "/profile.json";
-    string constant DEFAULT_DOMAIN_IMAGE_URI = "ipfs://bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/domain_background.png";
-    string constant DEFAULT_SUBDOMAIN_IMAGE_URI = "ipfs://bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/subdomain_background.png";
 
     string constant DEFAULT_PROFILE_TITLE = "Alsania Enhanced Domain";
     string constant DEFAULT_PROFILE_IMAGE = "ipfs://bafybeib5jf536bbe7x44kmgvxm6nntlxpzuexg5x7spzwzi6gfqwmkkj5m/domain_background.png";
@@ -34,18 +31,10 @@ library LibMinting {
 
         require(bytes(name).length >= MIN_NAME_LENGTH && bytes(name).length <= MAX_NAME_LENGTH, "Invalid name length");
         require(s.validTlds[tld], "Invalid TLD");
-
-        
-        // Validate inputs
-        require(bytes(name).length >= MIN_NAME_LENGTH &&
-                bytes(name).length <= MAX_NAME_LENGTH, "Invalid name length");
-        require(LibValidation.isValidDomainName(name), "Invalid domain name");
-
-        string memory normalizedTld = LibValidation.normalizeDomainName(tld);
-        require(s.validTlds[normalizedTld], "Invalid TLD");
         
         // Normalize and check domain availability
         string memory normalizedName = _normalizeName(name);
+        string memory normalizedTld = _normalizeName(tld);
         string memory fullDomain = string(abi.encodePacked(normalizedName, ".", normalizedTld));
         require(!s.domainExists[fullDomain], "Domain already exists");
 
@@ -62,16 +51,6 @@ library LibMinting {
         s.domainExists[fullDomain] = true;
         s.userDomains[msg.sender].push(fullDomain);
 
-        uint256 mintFee = _domainMintFee(s, tld, enableSubdomains);
-        string memory metadataBase = string(abi.encodePacked(s.baseURI, fullDomain));
-
-        s.domains[tokenId] = Domain({
-            name: normalizedName,
-            tld: tld,
-            profileURI: string(abi.encodePacked(metadataBase, PROFILE_SUFFIX)),
-            imageURI: DEFAULT_DOMAIN_IMAGE_URI,
-            subdomainCount: 0,
-            mintFee: mintFee,
         // Initialize domain struct
         s.domains[tokenId] = Domain({
             name: normalizedName,
@@ -116,10 +95,6 @@ library LibMinting {
         require(s.owners[parentTokenId] == msg.sender, "Not parent domain owner");
         require(s.subdomainCounts[parentDomain] < MAX_SUBDOMAINS, "Max subdomains reached");
 
-
-        // Validate subdomain limits
-        require(s.subdomainCounts[parentDomain] < MAX_SUBDOMAINS, "Max subdomains reached");
-
         // Create subdomain name
         string memory normalizedLabel = _normalizeName(label);
         string memory subdomainName = string(abi.encodePacked(normalizedLabel, ".", parentDomain));
@@ -140,17 +115,9 @@ library LibMinting {
         s.domainSubdomains[parentDomain].push(subdomainName);
         s.subdomainOwners[subdomainName] = msg.sender;
 
-        uint256 mintFee = calculateSubdomainFee(parentTokenId);
         s.subdomainCounts[parentDomain]++;
         s.domains[parentTokenId].subdomainCount++;
 
-        string memory metadataBase = string(abi.encodePacked(s.baseURI, subdomainName));
-
-        s.domains[tokenId] = Domain({
-            name: normalizedLabel,
-            tld: _extractTld(parentDomain),
-            profileURI: string(abi.encodePacked(metadataBase, PROFILE_SUFFIX)),
-            imageURI: DEFAULT_SUBDOMAIN_IMAGE_URI,
         // Initialize subdomain struct
         s.domains[tokenId] = Domain({
             name: normalizedLabel,
@@ -158,7 +125,7 @@ library LibMinting {
             profileURI: _buildDefaultProfile(subdomainName, true),
             imageURI: DEFAULT_SUBDOMAIN_IMAGE,
             subdomainCount: 0,
-            mintFee: mintFee,
+            mintFee: 0,
             expiresAt: 0,
             feeEnabled: false,
             isSubdomain: true,
@@ -179,42 +146,26 @@ library LibMinting {
         AppStorage storage s = LibAppStorage.appStorage();
         string memory parentDomain = s.tokenIdToDomain[parentId];
         uint256 subdomainCount = s.subdomainCounts[parentDomain];
-
-        if (subdomainCount < 2) {
-            return 0;
-        }
-
-        uint256 baseFee = 0.1 ether;
-        uint256 multiplier = 2 ** (subdomainCount - 2);
-        return baseFee * multiplier;
         
-        uint256 baseFee = s.fees["subdomainBase"];
-        if (baseFee == 0) {
-            baseFee = 0.1 ether;
-        }
-
         uint256 freeMints = s.fees["subdomainFreeMints"];
         if (freeMints == 0) {
             freeMints = 2;
         }
 
-        if (subdomainCount <= freeMints) {
+        if (subdomainCount < freeMints) {
             return 0;
         }
 
-        uint256 multiplier = s.fees["subdomainMultiplier"];
-        if (multiplier == 0) {
-            multiplier = 2;
+        // Get base fee (admin adjustable, defaults to $0.10)
+        uint256 baseFee = s.fees["subdomainBase"];
+        if (baseFee == 0) {
+            baseFee = AEDConstants(address(this)).DEFAULT_SUBDOMAIN_FEE();
         }
-
+        
+        // Calculate price: baseFee * 2^(count - freeMints)
         uint256 payableCount = subdomainCount - freeMints;
-        uint256 fee = baseFee;
-
-        for (uint256 i = 1; i < payableCount; i++) {
-            fee *= multiplier;
-        }
-
-        return fee;
+        if (payableCount == 0) return baseFee;
+        return baseFee * (2 ** payableCount);
     }
 
     function batchRegisterDomains(
@@ -255,37 +206,6 @@ library LibMinting {
         return string(normalized);
     }
 
-    function _extractTld(string memory domain) private pure returns (string memory) {
-        bytes memory domainBytes = bytes(domain);
-        for (uint256 i = domainBytes.length; i > 0; ) {
-            unchecked {
-                i--;
-            }
-            if (domainBytes[i] == bytes1(".")) {
-                uint256 tldLength = domainBytes.length - (i + 1);
-                bytes memory tldBytes = new bytes(tldLength);
-                for (uint256 j = 0; j < tldLength; j++) {
-                    tldBytes[j] = domainBytes[i + 1 + j];
-                }
-                return string(tldBytes);
-            }
-        }
-        return domain;
-    }
-
-    function _domainMintFee(
-        AppStorage storage s,
-        string memory tld,
-        bool enableSubdomains
-    ) private view returns (uint256) {
-        uint256 mintFee = 0;
-        if (!s.freeTlds[tld]) {
-            mintFee += s.tldPrices[tld];
-        }
-        if (enableSubdomains) {
-            mintFee += s.enhancementPrices["subdomain"];
-        }
-        return mintFee;
     function _buildDefaultProfile(string memory fullDomain, bool isSubdomain) private pure returns (string memory) {
         string memory payload = string(
             abi.encodePacked(

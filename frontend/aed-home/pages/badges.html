@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Badge Manager - AED</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Rajdhani', sans-serif;
+      background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 2.5em;
+      color: #00ff88;
+      margin-bottom: 10px;
+      text-shadow: 0 0 20px rgba(0,255,136,0.5);
+    }
+    .subtitle {
+      font-size: 1.2em;
+      color: #888;
+      margin-bottom: 40px;
+    }
+    .wallet-status {
+      background: rgba(0,255,136,0.1);
+      border: 2px solid #00ff88;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .wallet-status.disconnected {
+      border-color: #ff4444;
+      background: rgba(255,68,68,0.1);
+    }
+    .btn {
+      background: linear-gradient(135deg, #00ff88 0%, #00cc6a 100%);
+      color: #0a0e27;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1em;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(0,255,136,0.4); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .section {
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      padding: 30px;
+      margin-bottom: 30px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .section h2 {
+      color: #00ff88;
+      margin-bottom: 20px;
+      font-size: 1.8em;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #aaa;
+      font-weight: 500;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 1em;
+      font-family: 'Rajdhani', sans-serif;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: #00ff88;
+      background: rgba(255,255,255,0.08);
+    }
+    .badge-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .badge-card {
+      background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+      border: 2px solid rgba(102,126,234,0.3);
+      border-radius: 12px;
+      padding: 20px;
+      transition: all 0.3s;
+    }
+    .badge-card:hover {
+      transform: translateY(-5px);
+      border-color: #667eea;
+      box-shadow: 0 10px 30px rgba(102,126,234,0.3);
+    }
+    .badge-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    .badge-id {
+      background: #667eea;
+      color: white;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.9em;
+      font-weight: 600;
+    }
+    .badge-model {
+      font-size: 1.3em;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 10px;
+    }
+    .capabilities {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 15px;
+    }
+    .cap-badge {
+      background: rgba(0,255,136,0.2);
+      color: #00ff88;
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 0.85em;
+      border: 1px solid #00ff88;
+    }
+    .cap-badge.locked {
+      background: rgba(255,68,68,0.2);
+      color: #ff4444;
+      border-color: #ff4444;
+    }
+    .fee-info {
+      background: rgba(255,193,7,0.1);
+      border-left: 3px solid #ffc107;
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 5px;
+      font-size: 0.95em;
+    }
+    .status-message {
+      padding: 15px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-weight: 500;
+    }
+    .status-message.success {
+      background: rgba(0,255,136,0.1);
+      border: 1px solid #00ff88;
+      color: #00ff88;
+    }
+    .status-message.error {
+      background: rgba(255,68,68,0.1);
+      border: 1px solid #ff4444;
+      color: #ff4444;
+    }
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #00ff88;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🤖 AI Badge Manager</h1>
+    <p class="subtitle">Create and manage AI agent identities on-chain</p>
+
+    <div id="walletStatus" class="wallet-status disconnected">
+      <div>
+        <strong>Wallet:</strong> <span id="walletAddress">Not connected</span>
+      </div>
+      <button class="btn" id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+    </div>
+
+    <div id="statusMessage"></div>
+
+    <div class="section">
+      <h2>Mint New Badge</h2>
+      <div class="form-group">
+        <label>Select Parent Domain</label>
+        <select id="parentDomain">
+          <option value="">-- Select your domain --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Badge Label (subdomain name)</label>
+        <input type="text" id="badgeLabel" placeholder="claude" />
+      </div>
+      <div class="form-group">
+        <label>AI Model Type</label>
+        <select id="modelType">
+          <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+          <option value="gpt-4">GPT-4</option>
+          <option value="gpt-4-turbo">GPT-4 Turbo</option>
+          <option value="gemini-pro">Gemini Pro</option>
+          <option value="llama-3.1-70b">Llama 3.1 70B</option>
+          <option value="custom">Custom Model</option>
+        </select>
+      </div>
+      <div class="form-group" id="customModelGroup" style="display:none;">
+        <label>Custom Model Identifier</label>
+        <input type="text" id="customModel" placeholder="my-local-model-v1" />
+      </div>
+      <div class="fee-info">
+        <strong>Minting Fee:</strong> <span id="mintFee">Connect wallet to see fee</span>
+      </div>
+      <button class="btn" id="mintBtn" onclick="mintBadge()" disabled>Mint Badge</button>
+    </div>
+
+    <div class="section">
+      <h2>Your AI Badges</h2>
+      <div id="badgeList" class="badge-list">
+        <p style="color: #888;">Connect wallet to view your badges...</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Purchase Capabilities</h2>
+      <div class="form-group">
+        <label>Select Badge</label>
+        <select id="capabilityBadge">
+          <option value="">-- Select badge --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Select Capability</label>
+        <select id="capabilityType">
+          <option value="ai_communication">🗨️ Communication - Agent messaging</option>
+          <option value="ai_vision">👁️ Vision - Image processing</option>
+          <option value="ai_memory">🧠 Memory - IPFS storage</option>
+          <option value="ai_reasoning">🎯 Reasoning - Enhanced logic</option>
+        </select>
+      </div>
+      <div class="fee-info">
+        <strong>Capability Fee:</strong> <span id="capFee">Select badge to see fee</span>
+      </div>
+      <button class="btn btn-secondary" id="capBtn" onclick="purchaseCapability()" disabled>Purchase Capability</button>
+    </div>
+  </div>
+
+  <script>
+    const CONTRACT_ADDRESS = "0x45e441F9e722aAC73784F49A4bad8aF45B95A5DC";
+    const AMOY_CHAIN_ID = "0x13882"; // 80002
+    
+    const ABI = [
+      "function getUserDomains(address user) view returns (string[])",
+      "function createAISubdomain(string label, string parentDomain, string modelType) payable returns (uint256)",
+      "function purchaseAICapability(uint256 tokenId, string capabilityType) payable",
+      "function getAISubdomainFee(uint256 parentTokenId) view returns (uint256)",
+      "function getCapabilityFee(uint256 tokenId) view returns (uint256)",
+      "function getTokenIdByDomain(string domain) view returns (uint256)",
+      "function isAISubdomain(uint256 tokenId) view returns (bool)",
+      "function getModelType(uint256 tokenId) view returns (string)",
+      "function getActiveCapabilities(uint256 tokenId) view returns (string[])",
+      "function getDomainByTokenId(uint256 tokenId) view returns (string)"
+    ];
+
+    let provider, signer, contract, userAddress;
+
+    // Connect wallet
+    async function connectWallet() {
+      try {
+        if (!window.ethereum) {
+          showMessage("Please install MetaMask", "error");
+          return;
+        }
+
+        // Request account access
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        userAddress = accounts[0];
+
+        // Switch to Amoy if needed
+        try {
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: AMOY_CHAIN_ID }],
+          });
+        } catch (switchError) {
+          if (switchError.code === 4902) {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [{
+                chainId: AMOY_CHAIN_ID,
+                chainName: 'Polygon Amoy Testnet',
+                rpcUrls: ['https://rpc-amoy.polygon.technology'],
+                nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+                blockExplorerUrls: ['https://www.oklink.com/amoy']
+              }]
+            });
+          }
+        }
+
+        provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+        document.getElementById('walletAddress').textContent = `${userAddress.slice(0,6)}...${userAddress.slice(-4)}`;
+        document.getElementById('walletStatus').classList.remove('disconnected');
+        document.getElementById('connectBtn').textContent = 'Connected ✓';
+        document.getElementById('connectBtn').disabled = true;
+
+        await loadUserData();
+        showMessage("Wallet connected successfully!", "success");
+      } catch (error) {
+        showMessage(`Connection failed: ${error.message}`, "error");
+      }
+    }
+
+    // Load user domains and badges
+    async function loadUserData() {
+      try {
+        // Get user domains
+        const domains = await contract.getUserDomains(userAddress);
+        const parentSelect = document.getElementById('parentDomain');
+        parentSelect.innerHTML = '<option value="">-- Select your domain --</option>';
+        
+        domains.forEach(domain => {
+          const option = document.createElement('option');
+          option.value = domain;
+          option.textContent = domain;
+          parentSelect.appendChild(option);
+        });
+
+        document.getElementById('mintBtn').disabled = false;
+
+        // Load badges
+        await loadBadges(domains);
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    }
+
+    // Load user badges
+    async function loadBadges(domains) {
+      const badgeListDiv = document.getElementById('badgeList');
+      const capBadgeSelect = document.getElementById('capabilityBadge');
+      
+      badgeListDiv.innerHTML = '';
+      capBadgeSelect.innerHTML = '<option value="">-- Select badge --</option>';
+
+      let badgeCount = 0;
+
+      for (const domain of domains) {
+        try {
+          const tokenId = await contract.getTokenIdByDomain(domain);
+          const isBadge = await contract.isAISubdomain(tokenId);
+          
+          if (isBadge) {
+            badgeCount++;
+            const modelType = await contract.getModelType(tokenId);
+            const capabilities = await contract.getActiveCapabilities(tokenId);
+            
+            // Add to capability selector
+            const option = document.createElement('option');
+            option.value = tokenId;
+            option.textContent = `${domain} (${modelType})`;
+            capBadgeSelect.appendChild(option);
+
+            // Create badge card
+            const card = createBadgeCard(tokenId, domain, modelType, capabilities);
+            badgeListDiv.appendChild(card);
+          }
+        } catch (e) {
+          console.error(`Error loading badge ${domain}:`, e);
+        }
+      }
+
+      if (badgeCount === 0) {
+        badgeListDiv.innerHTML = '<p style="color: #888;">No badges minted yet. Create your first AI badge above!</p>';
+      }
+
+      document.getElementById('capBtn').disabled = false;
+    }
+
+    // Create badge card HTML
+    function createBadgeCard(tokenId, domain, modelType, capabilities) {
+      const card = document.createElement('div');
+      card.className = 'badge-card';
+      
+      const allCaps = ['ai_communication', 'ai_vision', 'ai_memory', 'ai_reasoning'];
+      const capBadges = allCaps.map(cap => {
+        const hasIt = capabilities.includes(cap);
+        const icon = cap === 'ai_communication' ? '🗨️' : cap === 'ai_vision' ? '👁️' : cap === 'ai_memory' ? '🧠' : '🎯';
+        return `<span class="cap-badge ${hasIt ? '' : 'locked'}">${icon} ${cap.replace('ai_', '')}</span>`;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="badge-header">
+          <div class="badge-model">${domain}</div>
+          <span class="badge-id">#${tokenId}</span>
+        </div>
+        <div style="color: #888; margin-bottom: 10px;">Model: ${modelType}</div>
+        <div class="capabilities">${capBadges}</div>
+      `;
+      return card;
+    }
+
+    // Mint new badge
+    async function mintBadge() {
+      const label = document.getElementById('badgeLabel').value.trim();
+      const parentDomain = document.getElementById('parentDomain').value;
+      let modelType = document.getElementById('modelType').value;
+
+      if (modelType === 'custom') {
+        modelType = document.getElementById('customModel').value.trim();
+      }
+
+      if (!label || !parentDomain || !modelType) {
+        showMessage("Please fill all fields", "error");
+        return;
+      }
+
+      try {
+        const parentTokenId = await contract.getTokenIdByDomain(parentDomain);
+        const fee = await contract.getAISubdomainFee(parentTokenId);
+
+        document.getElementById('mintBtn').innerHTML = '<span class="loading"></span> Minting...';
+        document.getElementById('mintBtn').disabled = true;
+
+        const tx = await contract.createAISubdomain(label, parentDomain, modelType, { value: fee });
+        await tx.wait();
+
+        showMessage(`Badge minted successfully! ${label}.${parentDomain}`, "success");
+        await loadUserData();
+      } catch (error) {
+        showMessage(`Minting failed: ${error.message}`, "error");
+      } finally {
+        document.getElementById('mintBtn').innerHTML = 'Mint Badge';
+        document.getElementById('mintBtn').disabled = false;
+      }
+    }
+
+    // Purchase capability
+    async function purchaseCapability() {
+      const tokenId = document.getElementById('capabilityBadge').value;
+      const capType = document.getElementById('capabilityType').value;
+
+      if (!tokenId || !capType) {
+        showMessage("Please select badge and capability", "error");
+        return;
+      }
+
+      try {
+        const fee = await contract.getCapabilityFee(tokenId);
+
+        document.getElementById('capBtn').innerHTML = '<span class="loading"></span> Purchasing...';
+        document.getElementById('capBtn').disabled = true;
+
+        const tx = await contract.purchaseAICapability(tokenId, capType, { value: fee });
+        await tx.wait();
+
+        showMessage(`Capability ${capType} unlocked!`, "success");
+        await loadUserData();
+      } catch (error) {
+        showMessage(`Purchase failed: ${error.message}`, "error");
+      } finally {
+        document.getElementById('capBtn').innerHTML = 'Purchase Capability';
+        document.getElementById('capBtn').disabled = false;
+      }
+    }
+
+    // Update fee displays
+    document.getElementById('parentDomain').addEventListener('change', async (e) => {
+      if (e.target.value && contract) {
+        try {
+          const tokenId = await contract.getTokenIdByDomain(e.target.value);
+          const fee = await contract.getAISubdomainFee(tokenId);
+          document.getElementById('mintFee').textContent = `${ethers.formatEther(fee)} MATIC`;
+        } catch (error) {
+          document.getElementById('mintFee').textContent = 'Error calculating fee';
+        }
+      }
+    });
+
+    document.getElementById('capabilityBadge').addEventListener('change', async (e) => {
+      if (e.target.value && contract) {
+        try {
+          const fee = await contract.getCapabilityFee(e.target.value);
+          document.getElementById('capFee').textContent = `${ethers.formatEther(fee)} MATIC`;
+        } catch (error) {
+          document.getElementById('capFee').textContent = 'Error calculating fee';
+        }
+      }
+    });
+
+    document.getElementById('modelType').addEventListener('change', (e) => {
+      document.getElementById('customModelGroup').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    });
+
+    // Show status message
+    function showMessage(text, type) {
+      const div = document.getElementById('statusMessage');
+      div.innerHTML = `<div class="status-message ${type}">${text}</div>`;
+      setTimeout(() => div.innerHTML = '', 5000);
+    }
+  </script>
+</body>
+</html>

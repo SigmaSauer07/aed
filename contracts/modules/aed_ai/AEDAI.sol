@@ -2,7 +2,7 @@
 pragma solidity ^0.8.30;
 
 import "../modules/base/ModuleBase.sol";
-import "../libraries/LibAISubdomains.sol";
+import "../libraries/LibBadgeCreator.sol";
 import "../libraries/LibBadges.sol";
 import "../libraries/LibAppStorage.sol";
 
@@ -25,11 +25,11 @@ contract AEDAI is ModuleBase {
         string calldata modelType
     ) external payable whenNotPaused returns (uint256) {
         // Calculate and check payment
-        uint256 price = LibAISubdomains.calculateAISubdomainFee();
+        uint256 price = LibBadgeCreator.calculateAISubdomainFee();
         require(msg.value >= price, "Insufficient payment");
         
         // Create AI subdomain
-        uint256 tokenId = LibAISubdomains.createAISubdomain(label, parentDomain, modelType);
+        uint256 tokenId = LibBadgeCreator.createAISubdomain(label, parentDomain, modelType);
         
         // Process payment
         AppStorage storage s = LibAppStorage.appStorage();
@@ -55,9 +55,9 @@ contract AEDAI is ModuleBase {
         uint256 tokenId,
         string calldata capabilityType
     ) external payable whenNotPaused {
-        LibAISubdomains.purchaseAICapability(tokenId, capabilityType);
+        LibBadgeCreator.purchaseAICapability(tokenId, capabilityType);
         
-        // Payment already processed in LibAISubdomains
+        // Payment already processed in LibBadgeCreator
         AppStorage storage s = LibAppStorage.appStorage();
         uint256 price = _getCapabilityPrice(capabilityType);
         
@@ -93,7 +93,7 @@ contract AEDAI is ModuleBase {
         uint256 tokenId,
         string calldata capabilityType
     ) external view returns (bool) {
-        return LibAISubdomains.hasAICapability(tokenId, capabilityType);
+        return LibBadgeCreator.hasAICapability(tokenId, capabilityType);
     }
     
     /**
@@ -127,28 +127,28 @@ contract AEDAI is ModuleBase {
         string calldata parentDomain,
         string calldata modelType
     ) external view returns (uint256) {
-        return LibAISubdomains.getAISubdomain(parentDomain, modelType);
+        return LibBadgeCreator.getAISubdomain(parentDomain, modelType);
     }
     
     /**
      * @dev Check if token is an AI subdomain
      */
     function isAISubdomain(uint256 tokenId) external view returns (bool) {
-        return LibAISubdomains.isAISubdomain(tokenId);
+        return LibBadgeCreator.isAISubdomain(tokenId);
     }
     
     /**
      * @dev Get model type for AI subdomain
      */
     function getModelType(uint256 tokenId) external view returns (string memory) {
-        return LibAISubdomains.getModelType(tokenId);
+        return LibBadgeCreator.getModelType(tokenId);
     }
     
     /**
      * @dev Get AI subdomain creation fee
      */
     function getAISubdomainFee() external pure returns (uint256) {
-        return LibAISubdomains.calculateAISubdomainFee();
+        return LibBadgeCreator.calculateAISubdomainFee();
     }
     
     /**

@@ -3,6 +3,7 @@ pragma solidity ^0.8.30;
 
 import "../core/AppStorage.sol";
 import "./LibAppStorage.sol";
+import "./LibPayment.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 error FeatureUnavailable(string featureName);
@@ -35,18 +36,11 @@ library LibEnhancements {
         uint256 flag = _featureFlag(s, featureName);
         require(flag != 0, "Feature not supported");
 
-        uint256 price = s.enhancementPrices[featureName];
-        if (price > 0) {
-            require(msg.value >= price, "Insufficient payment");
-            s.totalRevenue += price;
-
-            payable(s.feeCollector).transfer(price);
-
-            if (msg.value > price) {
-                payable(msg.sender).transfer(msg.value - price);
-            }
-        } else {
-            require(msg.value == 0, "No payment required");
+        uint256 priceUSDC = s.enhancementPrices[featureName];
+        
+        if (priceUSDC > 0) {
+            // Collect USDC payment
+            LibPayment.collectPayment(priceUSDC, featureName);
         }
 
         s.domainFeatures[tokenId] |= flag;
@@ -55,7 +49,7 @@ library LibEnhancements {
             s.enhancedDomains[domain] = true;
         }
 
-        emit FeaturePurchased(tokenId, featureName, price);
+        emit FeaturePurchased(tokenId, featureName, priceUSDC);
         emit FeatureEnabled(tokenId, flag);
     }
 
@@ -72,17 +66,11 @@ library LibEnhancements {
     function upgradeExternalDomain(string calldata externalDomain) internal {
         AppStorage storage s = LibAppStorage.appStorage();
 
-        uint256 price = s.enhancementPrices["byo"];
-        require(msg.value >= price, "Insufficient payment");
+        uint256 priceUSDC = s.enhancementPrices["byo"];
+        LibPayment.collectPayment(priceUSDC, "byo_domain");
 
         // Store external domain upgrade
         s.futureStringString[externalDomain] = "upgraded";
-        s.totalRevenue += price;
-
-        _forwardFee(s.feeCollector, price);
-
-        // Refund excess
-        _refundExcess(price);
     }
 
     function getFeaturePrice(string calldata featureName) internal view returns (uint256) {

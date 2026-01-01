@@ -1,0 +1,82 @@
+[
+  {
+    "type": "function",
+    "name": "createAISubdomain",
+    "stateMutability": "payable",
+    "inputs": [
+      { "name": "label", "type": "string" },
+      { "name": "parentDomain", "type": "string" },
+      { "name": "modelType", "type": "string" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "purchaseAICapability",
+    "stateMutability": "payable",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256" },
+      { "name": "capabilityType", "type": "string" }
+    ],
+    "outputs": []
+  },
+  {
+    "type": "function",
+    "name": "hasAICapability",
+    "stateMutability": "view",
+    "inputs": [
+      { "name": "tokenId", "type": "uint256" },
+      { "name": "capabilityType", "type": "string" }
+    ],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "getModelType",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": [{ "name": "", "type": "string" }]
+  },
+  {
+    "type": "function",
+    "name": "isAISubdomain",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": [{ "name": "", "type": "bool" }]
+  },
+  {
+    "type": "function",
+    "name": "getAISubdomainFee",
+    "stateMutability": "view",
+    "inputs": [{ "name": "parentTokenId", "type": "uint256" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "getCapabilityFee",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "type": "function",
+    "name": "getActiveCapabilities",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": [{ "name": "", "type": "string[]" }]
+  },
+  {
+    "type": "function",
+    "name": "ownerOf",
+    "stateMutability": "view",
+    "inputs": [{ "name": "tokenId", "type": "uint256" }],
+    "outputs": [{ "name": "", "type": "address" }]
+  },
+  {
+    "type": "function",
+    "name": "getTokenIdByDomain",
+    "stateMutability": "view",
+    "inputs": [{ "name": "domain", "type": "string" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  }
+]

@@ -16,6 +16,16 @@ contract AEDConstants {
     uint256 public constant MIN_NAME_LENGTH = 1;
     uint256 public constant MAX_NAME_LENGTH = 63;
     uint256 public constant MAX_SUBDOMAINS = 20;
+    uint256 public constant MAX_BADGES = 10;
+    
+    // Default pricing (in USDC with 6 decimals: 1000000 = $1.00)
+    // Admin can adjust these via setFeeAmount()
+    uint256 public constant DEFAULT_BADGE_FEE = 1000000;           // $1.00
+    uint256 public constant DEFAULT_CAPABILITY_FEE = 1000000;      // $1.00
+    uint256 public constant DEFAULT_SUBDOMAIN_FEE = 100000;        // $0.10
+    uint256 public constant DEFAULT_SUBDOMAIN_ENHANCEMENT = 2000000; // $2.00
+    uint256 public constant DEFAULT_PAID_TLD = 1000000;            // $1.00
+    uint256 public constant DEFAULT_BYO_DOMAIN = 5000000;          // $5.00
     
     // Feature flags
     uint256 public constant FEATURE_SUBDOMAINS = 1 << 0;

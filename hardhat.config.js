@@ -10,7 +10,7 @@ module.exports = {
         enabled: true,
         runs: 1000,
       },
-      viaIR: true, // Enable IR optimizer to fix stack too deep errors
+      viaIR: true,
       evmVersion: "cancun"
     },
   },
@@ -22,8 +22,8 @@ module.exports = {
       url: process.env.AMOY_RPC,
       accounts: [process.env.PRIVATE_KEY_TEST],
       chainId: 80002,
-      gasPrice: 50000000000, // 50 gwei
-      gas: 10000000, // 10M gas limit
+      gasPrice: 50000000000,
+      gas: 10000000,
     },
   },
   etherscan: {

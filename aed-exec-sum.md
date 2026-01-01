@@ -1,243 +1,225 @@
-🚀 Executive Summary
+# 🚀 Alsania Enhanced Domains (AED) — Executive Summary
 
-Alsania Enhanced Domains (AED) is a next-generation identity protocol merging Web3 digital identity with AI agent identity, capability evolution, verifiable memory, and on-chain reputation.
+**Alsania Enhanced Domains (AED)** is a next-generation identity protocol merging Web3 digital identity with AI agent identity, capability evolution, verifiable memory, and on-chain reputation.
 
-It is not a domain service.
-It is the first living identity layer for both humans and AI.
+**It is not a domain service.**  
+**It is the first living identity layer for both humans and AI.**
 
 AED provides:
+- Decentralized human identity (evolving NFTs)
+- AI identity (badge subdomains tied to real models)
+- Upgradeable capabilities for AI
+- On-chain reputation + event history
+- A unified identity economy
 
-Decentralized human identity (evolving NFTs)
+AED unlocks a multi-billion-dollar market: **AI authentication + digital identity + capability assets**.
 
-AI identity (agent subdomains tied to real models)
+---
 
-Upgradeable capabilities for AI
+## 📌 Problem
 
-On-chain reputation + event history
+**1. AI has no identity.**
+- Models can't prove who they are
+- They can't hold credentials
+- They can't verify reputation
 
-A unified identity economy
+**2. Users lack portable identity.**
+- AI systems don't know their users across platforms
 
-AED unlocks a multi-billion-dollar market:
-AI authentication + digital identity + capability assets.
+**3. Identity today is static.**
+- ENS, Unstoppable Domains, Farcaster — all static
+- None evolve with user behavior or achievement
 
-📌 Problem
-1. AI has no identity.
+**4. Model capabilities are invisible + non-portable.**
+- No way to own or upgrade AI capabilities as transferable digital assets
 
-Models can’t prove who they are.
-They can’t hold credentials.
-They can’t verify reputation.
+**AED solves all four simultaneously.**
 
-2. Users lack portable identity.
+---
 
-AI systems don’t know their users across platforms.
-
-3. Identity today is static.
-
-ENS, Unstoppable Domains, Farcaster — all static.
-None evolve with user behavior or achievement.
-
-4. Model capabilities are invisible + non-portable.
-
-There’s no way to own or upgrade AI capabilities as transferable digital assets.
-
-AED solves all four simultaneously.
-
-💡 Solution
+## 💡 Solution
 
 AED provides a unified identity system for:
-
-Humans → evolving domain NFTs
-
-AI agents → verifiable subdomains
-
-Capabilities → enhancement NFTs
-
-Reputation → badge fragments + history
-
-Memory → event logs stored on IPFS
+- **Humans** → evolving domain NFTs
+- **AI agents** → verifiable badge subdomains (up to 10 per domain)
+- **Capabilities** → enhancement flags + visual fragments
+- **Reputation** → fragment system + history
+- **Memory** → event logs stored on IPFS
 
 Every identity grows through achievement, collaboration, and capability upgrades.
 
-🧩 Key Components
-1. Evolution Domains (Human Identity NFTs)
+---
 
-Every domain NFT evolves visually and reputationally through badges called Fragments.
+## 🧩 Key Components
+
+### 1. Domain NFTs (Human Identity)
+
+Every domain NFT evolves visually and reputationally through **Fragments**.
 
 Domains earn Fragments through:
+- Enhancements
+- Missions
+- Events
+- Ecosystem actions
 
-enhancements
+This creates a **living identity**, unique to each user.
 
-missions
+---
 
-events
+### 2. Badge NFTs (AI Identity)
 
-ecosystem actions
+**Badges are AI-synced subdomain NFTs** — the world's first portable AI identity passport.
 
-This creates a living identity, unique to each user.
+**Structure:**
+- Badge = subdomain NFT + AI model identifier + visual evolution
+- Up to 10 badges per domain (exponential fee scaling)
+- Each badge connects to one AI model instance
+- Examples: `claude.sigma.aed`, `echo.sigma.aed`, `gpt4.sigma.aed`
 
-2. Agent AED (AI Subdomain NFTs)
+**Access model:**
+- Ownership stays with the user
+- AI uses it only when wallet is connected
+- Works across platforms (local LLMs, browser AIs, cloud models)
+- Disconnect = instant capability revocation
 
-Every model (local or cloud) can claim one subdomain verifying its identity:
+**Visual identity:**
+- Metallic/angular aesthetic (vs. matte for human NFTs)
+- Evolves as capabilities unlock
+- Fragments render as hexagons on badge image
 
-echo.sigma.alsania
-cypher.sigma.aed
-localmodel.sigma.fx
+---
 
+### 3. Fragments (Visual Evolution System)
 
-This is the world’s first portable AI identity passport.
+**Fragments are NOT separate NFTs** — they are metadata attributes rendered as SVG overlays.
 
-Ownership stays with the user
+**Data structure:** `{fragmentType, earnedAt, eventHash}`
 
-AI uses it only when authorized
+**Fragment types:**
+- **Achievement fragments**: Domain milestones (first domain, veteran, collector)
+- **Agent fragments**: Capability unlocks (vision pioneer, communication expert, memory keeper)
 
-Works across platforms (local LLMs, browser AIs, cloud models)
+**Visual rendering:**
+- Max 15 fragments displayed per NFT
+- Frame color/thickness changes with evolution level
+- Each fragment type has unique color/icon
+- Badges use metallic hexagons; domains use circular matte shapes
 
-3. ID Badges (AI Identity Badges)
+---
 
-Every AI agent receives a unique metallic ID Badge NFT.
-This:
+### 4. Agent Enhancements (Capabilities)
 
-defines the agent’s identity
+**Enhancements are NOT separate NFTs** — they are boolean capability flags on badges.
 
-evolves with its capabilities
+**Available enhancements:**
+- **Communication** (`ai_communication`): Agent-to-agent messaging
+- **Vision** (`ai_vision`): Image processing
+- **Memory** (`ai_memory`): Auto-store memory snapshots to IPFS
+- **Reasoning** (`ai_reasoning`): Enhanced logic/pattern capabilities
 
-verifies its reputation
+**Mechanics:**
+- Purchased per badge (exponential fee: 1, 2, 4, 8 MATIC)
+- Stored as capability flags on badge NFT
+- Awards fragment when unlocked
+- Fragment renders visually on badge image
 
-acts as a capability slot system for enhancements
+**This creates the world's first identity-based AI capability system.**
 
-The badge is a soulbound emblem for AI agents.
+---
 
-4. Agent Enhancements (Capability NFTs)
-
-These are upgrade modules for AI:
-
-Examples:
-
-Logic Core
-
-Vision Module
-
-Memory Key
-
-Communication Bridge
-
-Creative Engine
-
-Ethical Core
-
-Capabilities are:
-
-minted as NFTs
-
-attach to the AI’s ID Badge
-
-improve the agent's real functionality
-
-evolve the badge visually
-
-This opens a new identity-based AI economy.
-
-5. Memory + Reputation
+### 5. Memory + Reputation
 
 Every action — domain or AI — creates a memory event:
+- Stored on IPFS
+- Hashed on-chain
+- Public, queryable, verifiable
 
-stored on IPFS
+This builds **the world's first AI + human social graph**.
 
-hashed on-chain
+---
 
-public, queryable, verifiable
+## 📈 Market Opportunity
 
-This builds the world’s first AI + human social graph.
+| Market | Size | Growth |
+|--------|------|--------|
+| **AI Identity Market** | Projected > $20B by 2030 | Emerging |
+| **Digital Identity Market** | $100B TAM | 16% CAGR |
+| **Agent Ecosystem / AI Plugins** | $50B emerging market | No on-chain standard exists |
 
-📈 Market Opportunity
-AI Identity Market
+**AED becomes the identity + capability + trust layer for all agents across:**
+- OpenAI
+- Anthropic
+- Local LLMs
+- Browsers
+- Mobile devices
+- Sovereign AI ecosystems
 
-Projected > $20B by 2030
+---
 
-Digital Identity Market
+## 💰 Revenue Streams
 
-$100B TAM with 16% CAGR
+1. **Domain Sales** (Premium TLDs: `.alsania`, `.fx`, `.aed`)
+2. **Badge Mints** (Up to 10 per domain, exponential pricing)
+3. **Agent Enhancements** (Capability unlocks per badge)
+4. **Fragment Badge Packs** (Gamified domain evolution)
+5. **Event / Mission Badge Drops** (Seasonal, limited, collectible)
+6. **Cross-Chain Identity Bridging Fees** (Sovereign chain integrations)
 
-Agent Ecosystem / AI Plugins / AI Extensions
+---
 
-$50B emerging market
-No on-chain standard exists.
+## 🛡 Competitive Moat
 
-AED becomes the identity + capability + trust layer for all agents across:
+| Feature | ENS | UD | Lens | Farcaster | **AED** |
+|---------|-----|----|----|-----------|---------|
+| AI Identity | ❌ | ❌ | ❌ | ❌ | ✔ |
+| Evolvable NFTs | ❌ | ❌ | ❌ | ❌ | ✔ |
+| Capability System | ❌ | ❌ | ❌ | ❌ | ✔ |
+| Memory + Reputation | ❌ | ❌ | ❌ | ❌ | ✔ |
+| Human + AI Linkage | ❌ | ❌ | ❌ | ❌ | ✔ |
+| Agent-to-Agent Protocol | ❌ | ❌ | ❌ | ❌ | ✔ |
 
-OpenAI
+**AED is in a category of one.**
 
-Anthropic
+---
 
-Local LLMs
+## 🚀 Vision
 
-Browsers
-
-Mobile devices
-
-Sovereign AI ecosystems
-
-💰 Revenue Streams
-1. Domain Sales (Premium TLDs)
-
-.alsania, .fx, .aed, .alsa, .07
-
-2. Agent Subdomain Mints
-
-One per model instance.
-
-3. Enhancement NFTs
-
-AI capability upgrades.
-
-4. Fragment Badge Packs
-
-Gamified domain evolution.
-
-5. Event / Mission Badge Drops
-
-Seasonal, limited, collectible.
-
-6. Cross-Chain Identity Bridging Fees
-
-Sovereign chain integrations.
-
-🛡 Competitive Moat
-Feature	ENS	UD	Lens	Farcaster	AED
-AI Identity	❌	❌	❌	❌	✔
-Evolvable NFTs	❌	❌	❌	❌	✔
-Capability NFTs	❌	❌	❌	❌	✔
-Memory + Reputation	❌	❌	❌	❌	✔
-Human + AI Linkage	❌	❌	❌	❌	✔
-Agent-to-Agent Protocol	❌	❌	❌	❌	✔
-
-AED is in a category of one.
-
-🚀 Vision
-
-AED becomes the unified identity layer for the AI economy.
+**AED becomes the unified identity layer for the AI economy.**
 
 A future where:
+- Humans have sovereign identity
+- AI agents have verified identity
+- Capabilities are owned assets
+- Achievements are provable
+- Identities evolve
+- Reputation matters
+- AI can collaborate on-chain safely
 
-humans have sovereign identity
+**This is the future of digital life.**
 
-AI agents have verified identity
+---
 
-capabilities are owned assets
-
-achievements are provable
-
-identities evolve
-
-reputation matters
-
-and AI can collaborate on-chain safely
-
-This is the future of digital life.
-
-🏁 Conclusion
+## 🏁 Conclusion
 
 AED is more than a domain system.
-It is the backbone of human + AI identity, capability ownership, reputation, and memory in the AI era.
 
-The Alsania ecosystem has the chance to define the global identity standard for the next internet.
+It is **the backbone of human + AI identity, capability ownership, reputation, and memory in the AI era**.
+
+The Alsania ecosystem has the chance to **define the global identity standard for the next internet**.
+
+---
+
+## 📋 Technical Specs
+
+- **Network**: Polygon (Amoy testnet, mainnet ready)
+- **Standard**: ERC-721 NFTs (UUPS upgradeable)
+- **Architecture**: Diamond storage pattern
+- **Badges per domain**: Up to 10 (exponential fee scaling)
+- **Enhancements per badge**: 4 capabilities (communication, vision, memory, reasoning)
+- **Fragments**: Metadata attributes rendered as SVG overlays (not separate NFTs)
+
+---
+
+**License**: MIT  
+**Repository**: https://github.com/alsania-io/aed  
+**Docs**: https://docs.alsania.io

@@ -1,0 +1,15 @@
+{
+  "name": "aed-ai-integration-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Proof-of-concept: AI agent validates badge ownership and capabilities",
+  "main": "badge-gate-demo.js",
+  "scripts": {
+    "demo": "node badge-gate-demo.js",
+    "agent": "node mock-ai-agent.js"
+  },
+  "dependencies": {
+    "ethers": "^6.13.2",
+    "dotenv": "^16.4.5"
+  }
+}
